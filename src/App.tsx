@@ -57,12 +57,14 @@ const CenterMenu = styled.div`
 
   a {
     padding: 1rem 2rem;
-    background-color: #007bff;
+    width: 200px;
+    text-align: center;
+    background-color: #333;
     color: white;
     text-decoration: none;
     border-radius: 4px;
     &:hover {
-      background-color: #0056b3;
+      background-color: #444;
     }
   }
 `;
