@@ -298,8 +298,10 @@ export default function AclAmm() {
 
     let newPriceRange = priceRange;
 
+    const isPriceRangeUpdating = counter >= startTime && counter <= endTime;
+
     // Price range update logic
-    if (counter >= startTime && counter <= endTime) {
+    if (isPriceRangeUpdating) {
       // Q0 is updating.
       newPriceRange =
         ((counter - startTime) * targetPriceRange +
@@ -342,13 +344,16 @@ export default function AclAmm() {
             virtualBalanceB: centerBalanceB / newDenominator,
           });
         }
-
-        return; // Skip the regular virtual balance updates
       }
     }
 
-    if (poolCenteredness > margin / 100 && priceUpdateMode !== "slow-increase")
+    if (
+      poolCenteredness > margin / 100 &&
+      (priceUpdateMode !== "slow-increase" ||
+        (priceUpdateMode === "slow-increase" && !isPriceRangeUpdating))
+    ) {
       return;
+    }
 
     const tau = priceShiftDailyRate / timeFix;
 
