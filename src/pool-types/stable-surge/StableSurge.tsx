@@ -20,12 +20,17 @@ export default function StableSurge() {
   const [inputBalanceA, setInputBalanceA] = useState<number>(1000);
   const [inputBalanceB, setInputBalanceB] = useState<number>(1000);
   const [inputAmplification, setInputAmplification] = useState<number>(100);
+  const [inputSwapFee, setInputSwapFee] = useState<number>(1);
 
   const [initialBalanceA, setInitialBalanceA] = useState<number>(1000);
   const [initialBalanceB, setInitialBalanceB] = useState<number>(1000);
   const [amplification, setAmplification] = useState<number>(100);
+  const [swapFee, setSwapFee] = useState<number>(1);
   const [currentBalanceA, setCurrentBalanceA] = useState<number>(1000);
   const [currentBalanceB, setCurrentBalanceB] = useState<number>(1000);
+
+  const [swapTokenIn, setSwapTokenIn] = useState("Token A");
+  const [swapAmountIn, setSwapAmountIn] = useState<number>(100);
 
   const currentInvariant = useMemo(() => {
     return stableInvariant(amplification, [currentBalanceA, currentBalanceB]);
@@ -66,12 +71,73 @@ export default function StableSurge() {
     });
   }, [currentBalanceA, currentBalanceB, amplification, currentInvariant]);
 
+  const calculatedSwapAmountOut = useMemo(() => {
+    if (!swapAmountIn) return 0;
+
+    if (swapTokenIn === "Token A") {
+      // Swapping Token A for Token B
+      const newBalanceA = currentBalanceA + swapAmountIn;
+      const newBalanceB = getTokenBalanceGivenInvariantAndAllOtherBalances(
+        amplification,
+        [newBalanceA, currentBalanceB],
+        currentInvariant,
+        1
+      );
+      return currentBalanceB - newBalanceB;
+    } else {
+      // Swapping Token B for Token A
+      const newBalanceB = currentBalanceB + swapAmountIn;
+      const newBalanceA = getTokenBalanceGivenInvariantAndAllOtherBalances(
+        amplification,
+        [currentBalanceA, newBalanceB],
+        currentInvariant,
+        0
+      );
+      return currentBalanceA - newBalanceA;
+    }
+  }, [
+    swapAmountIn,
+    swapTokenIn,
+    currentBalanceA,
+    currentBalanceB,
+    currentInvariant,
+  ]);
+
   const handleUpdate = () => {
     setInitialBalanceA(inputBalanceA);
     setInitialBalanceB(inputBalanceB);
     setAmplification(inputAmplification);
+    setSwapFee(inputSwapFee);
     setCurrentBalanceA(inputBalanceA);
     setCurrentBalanceB(inputBalanceB);
+  };
+
+  const handleSwap = () => {
+    const amountIn = Number(swapAmountIn);
+
+    if (swapTokenIn === "Token A") {
+      // Swapping Token A for Token B
+      const newBalanceA = currentBalanceA + amountIn;
+      const newBalanceB = getTokenBalanceGivenInvariantAndAllOtherBalances(
+        amplification,
+        [newBalanceA, currentBalanceB],
+        currentInvariant,
+        1
+      );
+      setCurrentBalanceA(newBalanceA);
+      setCurrentBalanceB(newBalanceB);
+    } else {
+      // Swapping Token A for Token B
+      const newBalanceB = currentBalanceB + amountIn;
+      const newBalanceA = getTokenBalanceGivenInvariantAndAllOtherBalances(
+        amplification,
+        [currentBalanceA, newBalanceB],
+        currentInvariant,
+        0
+      );
+      setCurrentBalanceA(newBalanceA);
+      setCurrentBalanceB(newBalanceB);
+    }
   };
 
   return (
@@ -108,6 +174,15 @@ export default function StableSurge() {
                 value={inputAmplification}
                 onChange={(e) => setInputAmplification(Number(e.target.value))}
               />
+              <TextField
+                label="Static Swap Fee (%)"
+                type="number"
+                fullWidth
+                margin="normal"
+                value={inputSwapFee}
+                onChange={(e) => setInputSwapFee(Number(e.target.value))}
+                inputProps={{ step: "0.1", min: "0", max: "100" }}
+              />
               <Button
                 variant="contained"
                 fullWidth
@@ -115,6 +190,50 @@ export default function StableSurge() {
                 style={{ marginTop: 16 }}
               >
                 Initialize Pool
+              </Button>
+            </AccordionDetails>
+          </Accordion>
+
+          <Accordion>
+            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+              <Typography variant="h6">Swap Exact In</Typography>
+            </AccordionSummary>
+            <AccordionDetails>
+              <TextField
+                select
+                label="Token In"
+                fullWidth
+                margin="normal"
+                value={swapTokenIn}
+                onChange={(e) => setSwapTokenIn(e.target.value)}
+                SelectProps={{
+                  native: true,
+                }}
+              >
+                <option value="Token A">Token A</option>
+                <option value="Token B">Token B</option>
+              </TextField>
+              <TextField
+                label="Amount In"
+                type="number"
+                fullWidth
+                margin="normal"
+                value={swapAmountIn}
+                onChange={(e) => setSwapAmountIn(Number(e.target.value))}
+              />
+              <Typography style={{ marginTop: 8, marginBottom: 8 }}>
+                Amount Out {swapTokenIn === "Token A" ? "B" : "A"}:{" "}
+                {calculatedSwapAmountOut > 0
+                  ? calculatedSwapAmountOut.toFixed(2)
+                  : "0"}
+              </Typography>
+              <Button
+                variant="contained"
+                fullWidth
+                onClick={handleSwap}
+                style={{ marginTop: 16 }}
+              >
+                Swap
               </Button>
             </AccordionDetails>
           </Accordion>
@@ -147,6 +266,10 @@ export default function StableSurge() {
             <div style={{ display: "flex", justifyContent: "space-between" }}>
               <Typography>Amplification:</Typography>
               <Typography>{amplification.toFixed(2)}</Typography>
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between" }}>
+              <Typography>Swap Fee (%):</Typography>
+              <Typography>{swapFee.toFixed(2)}</Typography>
             </div>
             <div style={{ display: "flex", justifyContent: "space-between" }}>
               <Typography>Current Invariant:</Typography>
