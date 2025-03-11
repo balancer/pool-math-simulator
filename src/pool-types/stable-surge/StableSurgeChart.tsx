@@ -7,7 +7,8 @@ import * as d3 from "d3";
 export const StableSurgeChart: React.FC<{
   curvePoints: { x: number; y: number }[];
   currentPoint?: { x: number; y: number };
-}> = ({ curvePoints, currentPoint }) => {
+  initialCurvePoints?: { x: number; y: number }[];
+}> = ({ curvePoints, currentPoint, initialCurvePoints }) => {
   const svgRef = useRef<SVGSVGElement>(null);
 
   useEffect(() => {
@@ -26,16 +27,17 @@ export const StableSurgeChart: React.FC<{
       const innerWidth = width - margin.left - margin.right;
       const innerHeight = height - margin.top - margin.bottom;
 
-      // Create scales with dynamic domains based on curve points
+      // Update scale domains to consider both curves
+      const allPoints = [...curvePoints, ...(initialCurvePoints || [])];
       const xScale = d3
         .scaleLinear()
-        .domain(d3.extent(curvePoints, (d) => d.x) as [number, number])
+        .domain(d3.extent(allPoints, (d) => d.x) as [number, number])
         .range([0, innerWidth])
         .nice();
 
       const yScale = d3
         .scaleLinear()
-        .domain(d3.extent(curvePoints, (d) => d.y) as [number, number])
+        .domain(d3.extent(allPoints, (d) => d.y) as [number, number])
         .range([innerHeight, 0])
         .nice();
 
@@ -79,6 +81,23 @@ export const StableSurgeChart: React.FC<{
         .call(d3.axisBottom(xScale));
 
       svg.append("g").call(d3.axisLeft(yScale));
+
+      // Add initial curve if it exists
+      if (initialCurvePoints) {
+        const initialLine = d3
+          .line<any>()
+          .x((d) => xScale(d.x))
+          .y((d) => yScale(d.y));
+
+        svg
+          .append("path")
+          .datum(initialCurvePoints)
+          .attr("fill", "none")
+          .attr("stroke", "#ff0000")
+          .attr("stroke-width", 2)
+          .attr("stroke-dasharray", "5,5")
+          .attr("d", initialLine);
+      }
 
       // Add curve
       const line = d3
@@ -138,7 +157,7 @@ export const StableSurgeChart: React.FC<{
     return () => {
       resizeObserver.disconnect();
     };
-  }, [curvePoints, currentPoint]);
+  }, [curvePoints, currentPoint, initialCurvePoints]);
 
   return <svg ref={svgRef}></svg>;
 };

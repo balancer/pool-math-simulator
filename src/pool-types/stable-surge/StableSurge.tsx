@@ -71,12 +71,53 @@ export default function StableSurge() {
     });
   }, [currentBalanceA, currentBalanceB, amplification, currentInvariant]);
 
+  const initialCurvePoints = useMemo(() => {
+    const initialInvariant = stableInvariant(amplification, [
+      initialBalanceA,
+      initialBalanceB,
+    ]);
+
+    const lastBalanceB = initialBalanceB / 100;
+    let lastBalanceA = initialBalanceA;
+
+    for (let i = 0; i < 1000; i++) {
+      const currentA = (i * initialBalanceB) / 10;
+      const balances = [currentA, initialBalanceB];
+      const currentB = getTokenBalanceGivenInvariantAndAllOtherBalances(
+        amplification,
+        balances,
+        initialInvariant,
+        1
+      );
+      if (currentB < lastBalanceB) {
+        lastBalanceA = currentA;
+        break;
+      }
+    }
+
+    const step = lastBalanceA / 1000;
+
+    return Array.from({ length: 1000 }, (_, i) => {
+      const x = (i + 1) * step;
+      const balances = [x, initialBalanceB];
+      const y = getTokenBalanceGivenInvariantAndAllOtherBalances(
+        amplification,
+        balances,
+        initialInvariant,
+        1
+      );
+
+      return { x, y };
+    });
+  }, [initialBalanceA, initialBalanceB, amplification]);
+
   const calculatedSwapAmountOut = useMemo(() => {
     if (!swapAmountIn) return 0;
+    const fees = (swapAmountIn * swapFee) / 100;
 
     if (swapTokenIn === "Token A") {
       // Swapping Token A for Token B
-      const newBalanceA = currentBalanceA + swapAmountIn;
+      const newBalanceA = currentBalanceA + swapAmountIn - fees;
       const newBalanceB = getTokenBalanceGivenInvariantAndAllOtherBalances(
         amplification,
         [newBalanceA, currentBalanceB],
@@ -86,7 +127,7 @@ export default function StableSurge() {
       return currentBalanceB - newBalanceB;
     } else {
       // Swapping Token B for Token A
-      const newBalanceB = currentBalanceB + swapAmountIn;
+      const newBalanceB = currentBalanceB + swapAmountIn - fees;
       const newBalanceA = getTokenBalanceGivenInvariantAndAllOtherBalances(
         amplification,
         [currentBalanceA, newBalanceB],
@@ -114,21 +155,22 @@ export default function StableSurge() {
 
   const handleSwap = () => {
     const amountIn = Number(swapAmountIn);
+    const fees = (swapAmountIn * swapFee) / 100;
 
     if (swapTokenIn === "Token A") {
       // Swapping Token A for Token B
-      const newBalanceA = currentBalanceA + amountIn;
+      const newBalanceA = currentBalanceA + amountIn - fees;
       const newBalanceB = getTokenBalanceGivenInvariantAndAllOtherBalances(
         amplification,
         [newBalanceA, currentBalanceB],
         currentInvariant,
         1
       );
-      setCurrentBalanceA(newBalanceA);
+      setCurrentBalanceA(newBalanceA + fees);
       setCurrentBalanceB(newBalanceB);
     } else {
       // Swapping Token A for Token B
-      const newBalanceB = currentBalanceB + amountIn;
+      const newBalanceB = currentBalanceB + amountIn - fees;
       const newBalanceA = getTokenBalanceGivenInvariantAndAllOtherBalances(
         amplification,
         [currentBalanceA, newBalanceB],
@@ -136,7 +178,7 @@ export default function StableSurge() {
         0
       );
       setCurrentBalanceA(newBalanceA);
-      setCurrentBalanceB(newBalanceB);
+      setCurrentBalanceB(newBalanceB + fees);
     }
   };
 
@@ -246,6 +288,7 @@ export default function StableSurge() {
               <StableSurgeChart
                 curvePoints={curvePoints}
                 currentPoint={{ x: currentBalanceA, y: currentBalanceB }}
+                initialCurvePoints={initialCurvePoints}
               />
             </div>
           </Paper>
