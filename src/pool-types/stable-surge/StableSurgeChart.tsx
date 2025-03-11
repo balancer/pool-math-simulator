@@ -185,6 +185,70 @@ export const StableSurgeChart: React.FC<{
           .attr("stroke", "white")
           .attr("stroke-width", 2);
       }
+
+      // Add legend
+      const legendItems = [
+        { color: "#8884d8", text: "Current Invariant" },
+        { color: "#ff0000", text: "Initial Invariant", isDashed: true },
+        { color: "#4CAF50", text: "Current Balances" },
+        { color: "#006400", text: "Post-Swap Balances" },
+        { color: "#ff0000", text: "Imbalance Thresholds" },
+      ];
+
+      const legendPadding = 10;
+      const legendItemHeight = 25;
+      const legendWidth = 190;
+      const legendHeight =
+        legendItems.length * legendItemHeight + legendPadding * 2;
+
+      const legend = svg
+        .append("g")
+        .attr("class", "legend")
+        .attr("transform", `translate(${innerWidth - 200}, 20)`);
+
+      // Legend background - updated height
+      legend
+        .append("rect")
+        .attr("width", legendWidth)
+        .attr("height", legendHeight)
+        .attr("fill", "white")
+        .attr("stroke", "#ccc")
+        .attr("rx", 5);
+
+      // Legend items
+      legendItems.forEach((item, i) => {
+        const g = legend
+          .append("g")
+          .attr(
+            "transform",
+            `translate(${2 * legendPadding}, ${
+              2 * legendPadding + i * legendItemHeight
+            })`
+          );
+
+        if (item.isDashed || item.color === "#8884d8") {
+          g.append("line")
+            .attr("x1", -6)
+            .attr("x2", 6)
+            .attr("y1", 0)
+            .attr("y2", 0)
+            .attr("stroke", item.color)
+            .attr("stroke-width", 2)
+            .attr("stroke-dasharray", item.isDashed ? "5,5" : "none");
+        } else {
+          g.append("circle")
+            .attr("r", 6)
+            .attr("fill", item.color)
+            .attr("stroke", "white")
+            .attr("stroke-width", 2);
+        }
+
+        g.append("text")
+          .attr("x", 15)
+          .attr("y", 5)
+          .text(item.text)
+          .style("font-size", "12px");
+      });
     };
 
     renderChart();

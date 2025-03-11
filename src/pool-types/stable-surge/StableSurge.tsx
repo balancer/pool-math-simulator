@@ -446,71 +446,112 @@ export default function StableSurge() {
 
         {/* Right Column - Current Values */}
         <Grid item xs={3}>
-          <Paper style={{ padding: 16 }}>
-            <Typography variant="h6">Current Values</Typography>
-            <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <Typography>Current Balance A:</Typography>
-              <Typography>{currentBalanceA.toFixed(2)}</Typography>
-            </div>
-            <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <Typography>Current Balance B:</Typography>
-              <Typography>{currentBalanceB.toFixed(2)}</Typography>
-            </div>
-            <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <Typography>Current Invariant:</Typography>
-              <Typography>{currentInvariant.toFixed(2)}</Typography>
-            </div>
-          </Paper>
-          <Paper style={{ padding: 16, marginTop: 16 }}>
-            <Typography variant="h6">Pool Parameters</Typography>
-            <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <Typography>Amplification Factor:</Typography>
-              <Typography>{amplification.toFixed(2)}</Typography>
-            </div>
-            <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <Typography>Static Swap Fee (%):</Typography>
-              <Typography>{swapFee.toFixed(2)}</Typography>
-            </div>
-            <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <Typography>Surge Threshold (%):</Typography>
-              <Typography>{surgeThreshold.toFixed(2)}</Typography>
-            </div>
-            <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <Typography>Max Surge Fee (%):</Typography>
-              <Typography>{maxSurgeFee.toFixed(2)}</Typography>
-            </div>
-          </Paper>
-          <Paper style={{ padding: 16, marginTop: 16 }}>
-            <Typography variant="h6">Initial Values</Typography>
-            <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <Typography>Initial Balance A:</Typography>
-              <Typography>{initialBalanceA.toFixed(2)}</Typography>
-            </div>
-            <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <Typography>Initial Balance B:</Typography>
-              <Typography>{initialBalanceB.toFixed(2)}</Typography>
-            </div>
-            <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <Typography>Initial Invariant:</Typography>
-              <Typography>
-                {stableInvariant(amplification, [
-                  initialBalanceA,
-                  initialBalanceB,
-                ]).toFixed(2)}
-              </Typography>
-            </div>
-          </Paper>
-          <Paper style={{ padding: 16, marginTop: 16 }}>
-            <Typography variant="h6">Collected Fees</Typography>
-            <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <Typography>Token A:</Typography>
-              <Typography>{totalFeesTokenA.toFixed(2)}</Typography>
-            </div>
-            <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <Typography>Token B:</Typography>
-              <Typography>{totalFeesTokenB.toFixed(2)}</Typography>
-            </div>
-          </Paper>
+          <Accordion defaultExpanded>
+            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+              <Typography variant="h6">Current Values</Typography>
+            </AccordionSummary>
+            <AccordionDetails>
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <Typography>Current Balance A:</Typography>
+                <Typography>{currentBalanceA.toFixed(2)}</Typography>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <Typography>Current Balance B:</Typography>
+                <Typography>{currentBalanceB.toFixed(2)}</Typography>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <Typography>Current Invariant:</Typography>
+                <Typography>{currentInvariant.toFixed(2)}</Typography>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <Typography>Current Imbalance (%):</Typography>
+                <Typography>
+                  {calculateImbalance([
+                    currentBalanceA,
+                    currentBalanceB,
+                  ]).toFixed(2)}
+                </Typography>
+              </div>
+              {previewPoint && (
+                <div
+                  style={{ display: "flex", justifyContent: "space-between" }}
+                >
+                  <Typography>Post-Swap Imbalance (%):</Typography>
+                  <Typography>
+                    {calculateImbalance([
+                      previewPoint.x,
+                      previewPoint.y,
+                    ]).toFixed(2)}
+                  </Typography>
+                </div>
+              )}
+            </AccordionDetails>
+          </Accordion>
+
+          <Accordion defaultExpanded>
+            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+              <Typography variant="h6">Pool Parameters</Typography>
+            </AccordionSummary>
+            <AccordionDetails>
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <Typography>Amplification Factor:</Typography>
+                <Typography>{amplification.toFixed(2)}</Typography>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <Typography>Static Swap Fee (%):</Typography>
+                <Typography>{swapFee.toFixed(2)}</Typography>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <Typography>Surge Threshold (%):</Typography>
+                <Typography>{surgeThreshold.toFixed(2)}</Typography>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <Typography>Max Surge Fee (%):</Typography>
+                <Typography>{maxSurgeFee.toFixed(2)}</Typography>
+              </div>
+            </AccordionDetails>
+          </Accordion>
+
+          <Accordion defaultExpanded>
+            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+              <Typography variant="h6">Initial Values</Typography>
+            </AccordionSummary>
+            <AccordionDetails>
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <Typography>Initial Balance A:</Typography>
+                <Typography>{initialBalanceA.toFixed(2)}</Typography>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <Typography>Initial Balance B:</Typography>
+                <Typography>{initialBalanceB.toFixed(2)}</Typography>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <Typography>Initial Invariant:</Typography>
+                <Typography>
+                  {stableInvariant(amplification, [
+                    initialBalanceA,
+                    initialBalanceB,
+                  ]).toFixed(2)}
+                </Typography>
+              </div>
+            </AccordionDetails>
+          </Accordion>
+
+          <Accordion defaultExpanded>
+            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+              <Typography variant="h6">Collected Fees</Typography>
+            </AccordionSummary>
+            <AccordionDetails>
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <Typography>Token A:</Typography>
+                <Typography>{totalFeesTokenA.toFixed(2)}</Typography>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <Typography>Token B:</Typography>
+                <Typography>{totalFeesTokenB.toFixed(2)}</Typography>
+              </div>
+            </AccordionDetails>
+          </Accordion>
         </Grid>
       </Grid>
     </Container>
