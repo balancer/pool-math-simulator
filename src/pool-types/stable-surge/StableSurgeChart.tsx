@@ -8,7 +8,17 @@ export const StableSurgeChart: React.FC<{
   curvePoints: { x: number; y: number }[];
   currentPoint?: { x: number; y: number };
   initialCurvePoints?: { x: number; y: number }[];
-}> = ({ curvePoints, currentPoint, initialCurvePoints }) => {
+  previewPoint?: { x: number; y: number };
+  lowerImbalanceThreshold?: { x: number; y: number };
+  upperImbalanceThreshold?: { x: number; y: number };
+}> = ({
+  curvePoints,
+  currentPoint,
+  initialCurvePoints,
+  previewPoint,
+  lowerImbalanceThreshold,
+  upperImbalanceThreshold,
+}) => {
   const svgRef = useRef<SVGSVGElement>(null);
 
   useEffect(() => {
@@ -140,6 +150,41 @@ export const StableSurgeChart: React.FC<{
           .attr("stroke", "white")
           .attr("stroke-width", 2);
       }
+
+      // After drawing the current point, add the preview point if it exists
+      if (previewPoint) {
+        svg
+          .append("circle")
+          .attr("cx", xScale(previewPoint.x))
+          .attr("cy", yScale(previewPoint.y))
+          .attr("r", 6)
+          .attr("fill", "#006400") // Changed from #000080 to #006400 (dark green)
+          .attr("stroke", "white")
+          .attr("stroke-width", 2);
+      }
+
+      // After drawing the preview point, add the imbalance threshold points
+      if (lowerImbalanceThreshold) {
+        svg
+          .append("circle")
+          .attr("cx", xScale(lowerImbalanceThreshold.x))
+          .attr("cy", yScale(lowerImbalanceThreshold.y))
+          .attr("r", 6)
+          .attr("fill", "#ff0000") // Red color
+          .attr("stroke", "white")
+          .attr("stroke-width", 2);
+      }
+
+      if (upperImbalanceThreshold) {
+        svg
+          .append("circle")
+          .attr("cx", xScale(upperImbalanceThreshold.x))
+          .attr("cy", yScale(upperImbalanceThreshold.y))
+          .attr("r", 6)
+          .attr("fill", "#ff0000") // Red color
+          .attr("stroke", "white")
+          .attr("stroke-width", 2);
+      }
     };
 
     renderChart();
@@ -157,7 +202,14 @@ export const StableSurgeChart: React.FC<{
     return () => {
       resizeObserver.disconnect();
     };
-  }, [curvePoints, currentPoint, initialCurvePoints]);
+  }, [
+    curvePoints,
+    currentPoint,
+    initialCurvePoints,
+    previewPoint,
+    lowerImbalanceThreshold,
+    upperImbalanceThreshold,
+  ]);
 
   return <svg ref={svgRef}></svg>;
 };

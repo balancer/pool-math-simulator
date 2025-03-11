@@ -15,17 +15,21 @@ import { stableInvariant } from "../stable-pool/StableMath";
 import { StableSurgeChart } from "./StableSurgeChart";
 import * as d3 from "d3";
 import { getTokenBalanceGivenInvariantAndAllOtherBalances } from "../stable-pool/StableMath";
-
+import { calculateImbalance, getSurgeFeePercentage } from "./StableSurgeHook";
 export default function StableSurge() {
   const [inputBalanceA, setInputBalanceA] = useState<number>(1000);
   const [inputBalanceB, setInputBalanceB] = useState<number>(1000);
   const [inputAmplification, setInputAmplification] = useState<number>(100);
   const [inputSwapFee, setInputSwapFee] = useState<number>(1);
+  const [inputMaxSurgeFee, setInputMaxSurgeFee] = useState<number>(10);
+  const [inputSurgeThreshold, setInputSurgeThreshold] = useState<number>(20);
 
   const [initialBalanceA, setInitialBalanceA] = useState<number>(1000);
   const [initialBalanceB, setInitialBalanceB] = useState<number>(1000);
   const [amplification, setAmplification] = useState<number>(100);
   const [swapFee, setSwapFee] = useState<number>(1);
+  const [maxSurgeFee, setMaxSurgeFee] = useState<number>(10);
+  const [surgeThreshold, setSurgeThreshold] = useState<number>(20);
   const [currentBalanceA, setCurrentBalanceA] = useState<number>(1000);
   const [currentBalanceB, setCurrentBalanceB] = useState<number>(1000);
 
@@ -113,9 +117,32 @@ export default function StableSurge() {
     });
   }, [initialBalanceA, initialBalanceB, amplification]);
 
-  const calculatedSwapAmountOut = useMemo(() => {
-    if (!swapAmountIn) return 0;
-    const fees = (swapAmountIn * swapFee) / 100;
+  const swapPreview = useMemo(() => {
+    if (!swapAmountIn) return { amountOut: 0, fee: 0, feePercentage: 0 };
+
+    // Calculate surge fee
+    const newBalances = [...[currentBalanceA, currentBalanceB]];
+    const currentBalances = [currentBalanceA, currentBalanceB];
+    const tokenIndexIn = swapTokenIn === "Token A" ? 0 : 1;
+    const tokenIndexOut = swapTokenIn === "Token A" ? 1 : 0;
+    newBalances[tokenIndexIn] += swapAmountIn;
+    newBalances[tokenIndexOut] =
+      getTokenBalanceGivenInvariantAndAllOtherBalances(
+        amplification,
+        newBalances,
+        currentInvariant,
+        tokenIndexOut
+      );
+
+    const surgeFee = getSurgeFeePercentage(
+      maxSurgeFee,
+      surgeThreshold,
+      swapFee,
+      newBalances,
+      currentBalances
+    );
+
+    const fees = (swapAmountIn * surgeFee) / 100;
 
     if (swapTokenIn === "Token A") {
       // Swapping Token A for Token B
@@ -126,7 +153,11 @@ export default function StableSurge() {
         currentInvariant,
         1
       );
-      return currentBalanceB - newBalanceB;
+      return {
+        amountOut: currentBalanceB - newBalanceB,
+        fee: fees,
+        feePercentage: surgeFee,
+      };
     } else {
       // Swapping Token B for Token A
       const newBalanceB = currentBalanceB + swapAmountIn - fees;
@@ -136,7 +167,11 @@ export default function StableSurge() {
         currentInvariant,
         0
       );
-      return currentBalanceA - newBalanceA;
+      return {
+        amountOut: currentBalanceA - newBalanceA,
+        fee: fees,
+        feePercentage: surgeFee,
+      };
     }
   }, [
     swapAmountIn,
@@ -144,6 +179,64 @@ export default function StableSurge() {
     currentBalanceA,
     currentBalanceB,
     currentInvariant,
+    maxSurgeFee,
+    surgeThreshold,
+    swapFee,
+    amplification,
+  ]);
+
+  const [lowerImbalanceThreshold, upperImbalanceThreshold] = useMemo(() => {
+    let lowerBalanceAImbalance = 0;
+    let upperBalanceAImbalance = 0;
+    let lowerImbalanceThreshold = { x: 0, y: 0 };
+    let upperImbalanceThreshold = { x: 0, y: 0 };
+    for (let i = 1; i <= 10000; i++) {
+      const balanceA = (i * initialBalanceA) / 100;
+      const balanceB = getTokenBalanceGivenInvariantAndAllOtherBalances(
+        amplification,
+        [balanceA, initialBalanceB],
+        currentInvariant,
+        1
+      );
+
+      const imbalance = calculateImbalance([balanceA, balanceB]);
+      if (imbalance < surgeThreshold && lowerBalanceAImbalance === 0) {
+        lowerBalanceAImbalance = balanceA;
+        lowerImbalanceThreshold = { x: balanceA, y: balanceB };
+      }
+      if (
+        imbalance > surgeThreshold &&
+        upperBalanceAImbalance === 0 &&
+        lowerBalanceAImbalance !== 0
+      ) {
+        upperBalanceAImbalance = balanceA;
+        upperImbalanceThreshold = { x: balanceA, y: balanceB };
+        break;
+      }
+    }
+    return [lowerImbalanceThreshold, upperImbalanceThreshold];
+  }, [currentInvariant, surgeThreshold]);
+
+  const previewPoint = useMemo(() => {
+    if (!swapPreview.amountOut) return undefined;
+
+    if (swapTokenIn === "Token A") {
+      return {
+        x: currentBalanceA + swapAmountIn - swapPreview.fee,
+        y: currentBalanceB - swapPreview.amountOut,
+      };
+    } else {
+      return {
+        x: currentBalanceA - swapPreview.amountOut,
+        y: currentBalanceB + swapAmountIn - swapPreview.fee,
+      };
+    }
+  }, [
+    swapPreview,
+    swapAmountIn,
+    swapTokenIn,
+    currentBalanceA,
+    currentBalanceB,
   ]);
 
   const handleUpdate = () => {
@@ -151,13 +244,38 @@ export default function StableSurge() {
     setInitialBalanceB(inputBalanceB);
     setAmplification(inputAmplification);
     setSwapFee(inputSwapFee);
+    setMaxSurgeFee(inputMaxSurgeFee);
+    setSurgeThreshold(inputSurgeThreshold);
     setCurrentBalanceA(inputBalanceA);
     setCurrentBalanceB(inputBalanceB);
   };
 
   const handleSwap = () => {
     const amountIn = Number(swapAmountIn);
-    const fees = (swapAmountIn * swapFee) / 100;
+
+    // Calculate surge fee
+    const newBalances = [...[currentBalanceA, currentBalanceB]];
+    const currentBalances = [currentBalanceA, currentBalanceB];
+    const tokenIndexIn = swapTokenIn === "Token A" ? 0 : 1;
+    const tokenIndexOut = swapTokenIn === "Token A" ? 1 : 0;
+    newBalances[tokenIndexIn] += swapAmountIn;
+    newBalances[tokenIndexOut] =
+      getTokenBalanceGivenInvariantAndAllOtherBalances(
+        amplification,
+        newBalances,
+        currentInvariant,
+        tokenIndexOut
+      );
+
+    const surgeFee = getSurgeFeePercentage(
+      maxSurgeFee,
+      surgeThreshold,
+      swapFee,
+      newBalances,
+      currentBalances
+    );
+
+    const fees = (amountIn * surgeFee) / 100;
 
     if (swapTokenIn === "Token A") {
       // Swapping Token A for Token B
@@ -229,6 +347,24 @@ export default function StableSurge() {
                 onChange={(e) => setInputSwapFee(Number(e.target.value))}
                 inputProps={{ step: "0.1", min: "0", max: "100" }}
               />
+              <TextField
+                label="Max Surge Fee (%)"
+                type="number"
+                fullWidth
+                margin="normal"
+                value={inputMaxSurgeFee}
+                onChange={(e) => setInputMaxSurgeFee(Number(e.target.value))}
+                inputProps={{ step: "0.1", min: "0", max: "100" }}
+              />
+              <TextField
+                label="Surge Threshold (%)"
+                type="number"
+                fullWidth
+                margin="normal"
+                value={inputSurgeThreshold}
+                onChange={(e) => setInputSurgeThreshold(Number(e.target.value))}
+                inputProps={{ step: "0.1", min: "0", max: "100" }}
+              />
               <Button
                 variant="contained"
                 fullWidth
@@ -269,15 +405,15 @@ export default function StableSurge() {
               />
               <Typography style={{ marginTop: 8, marginBottom: 8 }}>
                 Amount Out {swapTokenIn === "Token A" ? "B" : "A"}:{" "}
-                {calculatedSwapAmountOut > 0
-                  ? calculatedSwapAmountOut.toFixed(2)
+                {swapPreview.amountOut > 0
+                  ? swapPreview.amountOut.toFixed(2)
                   : "0"}
               </Typography>
               <Typography style={{ marginBottom: 8 }}>
-                Fee:{" "}
-                {swapAmountIn
-                  ? ((swapAmountIn * swapFee) / 100).toFixed(2)
-                  : "0"}{" "}
+                Surge Fee (%): {swapPreview.feePercentage.toFixed(2)}
+              </Typography>
+              <Typography style={{ marginBottom: 8 }}>
+                Fee: {swapPreview.fee > 0 ? swapPreview.fee.toFixed(2) : "0"}{" "}
                 {swapTokenIn}
               </Typography>
               <Button
@@ -300,6 +436,9 @@ export default function StableSurge() {
                 curvePoints={curvePoints}
                 currentPoint={{ x: currentBalanceA, y: currentBalanceB }}
                 initialCurvePoints={initialCurvePoints}
+                previewPoint={previewPoint}
+                lowerImbalanceThreshold={lowerImbalanceThreshold}
+                upperImbalanceThreshold={upperImbalanceThreshold}
               />
             </div>
           </Paper>
@@ -323,6 +462,25 @@ export default function StableSurge() {
             </div>
           </Paper>
           <Paper style={{ padding: 16, marginTop: 16 }}>
+            <Typography variant="h6">Pool Parameters</Typography>
+            <div style={{ display: "flex", justifyContent: "space-between" }}>
+              <Typography>Amplification Factor:</Typography>
+              <Typography>{amplification.toFixed(2)}</Typography>
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between" }}>
+              <Typography>Static Swap Fee (%):</Typography>
+              <Typography>{swapFee.toFixed(2)}</Typography>
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between" }}>
+              <Typography>Surge Threshold (%):</Typography>
+              <Typography>{surgeThreshold.toFixed(2)}</Typography>
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between" }}>
+              <Typography>Max Surge Fee (%):</Typography>
+              <Typography>{maxSurgeFee.toFixed(2)}</Typography>
+            </div>
+          </Paper>
+          <Paper style={{ padding: 16, marginTop: 16 }}>
             <Typography variant="h6">Initial Values</Typography>
             <div style={{ display: "flex", justifyContent: "space-between" }}>
               <Typography>Initial Balance A:</Typography>
@@ -331,14 +489,6 @@ export default function StableSurge() {
             <div style={{ display: "flex", justifyContent: "space-between" }}>
               <Typography>Initial Balance B:</Typography>
               <Typography>{initialBalanceB.toFixed(2)}</Typography>
-            </div>
-            <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <Typography>Amplification:</Typography>
-              <Typography>{amplification.toFixed(2)}</Typography>
-            </div>
-            <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <Typography>Swap Fee (%):</Typography>
-              <Typography>{swapFee.toFixed(2)}</Typography>
             </div>
             <div style={{ display: "flex", justifyContent: "space-between" }}>
               <Typography>Initial Invariant:</Typography>
