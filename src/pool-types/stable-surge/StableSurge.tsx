@@ -124,7 +124,10 @@ export default function StableSurge() {
         <Grid item xs={6}>
           <Paper style={{ padding: 16, textAlign: "center" }}>
             <div style={{ width: "100%", height: 600 }}>
-              <StableSurgeChart curvePoints={curvePoints} />
+              <StableSurgeChart
+                curvePoints={curvePoints}
+                currentPoint={{ x: currentBalanceA, y: currentBalanceB }}
+              />
             </div>
           </Paper>
         </Grid>

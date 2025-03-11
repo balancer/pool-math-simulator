@@ -6,7 +6,8 @@ import * as d3 from "d3";
 // Add this new component
 export const StableSurgeChart: React.FC<{
   curvePoints: { x: number; y: number }[];
-}> = ({ curvePoints }) => {
+  currentPoint?: { x: number; y: number };
+}> = ({ curvePoints, currentPoint }) => {
   const svgRef = useRef<SVGSVGElement>(null);
 
   useEffect(() => {
@@ -108,6 +109,18 @@ export const StableSurgeChart: React.FC<{
         .attr("y", -40)
         .attr("text-anchor", "middle")
         .text("Balance B");
+
+      // After drawing the curve, add the current point if it exists
+      if (currentPoint) {
+        svg
+          .append("circle")
+          .attr("cx", xScale(currentPoint.x))
+          .attr("cy", yScale(currentPoint.y))
+          .attr("r", 6)
+          .attr("fill", "#4CAF50") // Green color
+          .attr("stroke", "white")
+          .attr("stroke-width", 2);
+      }
     };
 
     renderChart();
@@ -125,7 +138,7 @@ export const StableSurgeChart: React.FC<{
     return () => {
       resizeObserver.disconnect();
     };
-  }, [curvePoints]);
+  }, [curvePoints, currentPoint]);
 
   return <svg ref={svgRef}></svg>;
 };
