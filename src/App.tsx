@@ -18,6 +18,7 @@ const TopNav = styled.nav`
   padding: 1rem;
   background-color: #f8f9fa;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
 `;
 
 const Logo = styled(Link)`
