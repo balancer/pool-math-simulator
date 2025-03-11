@@ -31,6 +31,8 @@ export default function StableSurge() {
 
   const [swapTokenIn, setSwapTokenIn] = useState("Token A");
   const [swapAmountIn, setSwapAmountIn] = useState<number>(100);
+  const [totalFeesTokenA, setTotalFeesTokenA] = useState<number>(0);
+  const [totalFeesTokenB, setTotalFeesTokenB] = useState<number>(0);
 
   const currentInvariant = useMemo(() => {
     return stableInvariant(amplification, [currentBalanceA, currentBalanceB]);
@@ -168,8 +170,9 @@ export default function StableSurge() {
       );
       setCurrentBalanceA(newBalanceA + fees);
       setCurrentBalanceB(newBalanceB);
+      setTotalFeesTokenA((prevFees) => prevFees + fees);
     } else {
-      // Swapping Token A for Token B
+      // Swapping Token B for Token A
       const newBalanceB = currentBalanceB + amountIn - fees;
       const newBalanceA = getTokenBalanceGivenInvariantAndAllOtherBalances(
         amplification,
@@ -179,6 +182,7 @@ export default function StableSurge() {
       );
       setCurrentBalanceA(newBalanceA);
       setCurrentBalanceB(newBalanceB + fees);
+      setTotalFeesTokenB((prevFees) => prevFees + fees);
     }
   };
 
@@ -269,6 +273,13 @@ export default function StableSurge() {
                   ? calculatedSwapAmountOut.toFixed(2)
                   : "0"}
               </Typography>
+              <Typography style={{ marginBottom: 8 }}>
+                Fee:{" "}
+                {swapAmountIn
+                  ? ((swapAmountIn * swapFee) / 100).toFixed(2)
+                  : "0"}{" "}
+                {swapTokenIn}
+              </Typography>
               <Button
                 variant="contained"
                 fullWidth
@@ -297,6 +308,21 @@ export default function StableSurge() {
         {/* Right Column - Current Values */}
         <Grid item xs={3}>
           <Paper style={{ padding: 16 }}>
+            <Typography variant="h6">Current Values</Typography>
+            <div style={{ display: "flex", justifyContent: "space-between" }}>
+              <Typography>Current Balance A:</Typography>
+              <Typography>{currentBalanceA.toFixed(2)}</Typography>
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between" }}>
+              <Typography>Current Balance B:</Typography>
+              <Typography>{currentBalanceB.toFixed(2)}</Typography>
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between" }}>
+              <Typography>Current Invariant:</Typography>
+              <Typography>{currentInvariant.toFixed(2)}</Typography>
+            </div>
+          </Paper>
+          <Paper style={{ padding: 16, marginTop: 16 }}>
             <Typography variant="h6">Initial Values</Typography>
             <div style={{ display: "flex", justifyContent: "space-between" }}>
               <Typography>Initial Balance A:</Typography>
@@ -315,8 +341,24 @@ export default function StableSurge() {
               <Typography>{swapFee.toFixed(2)}</Typography>
             </div>
             <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <Typography>Current Invariant:</Typography>
-              <Typography>{currentInvariant.toFixed(2)}</Typography>
+              <Typography>Initial Invariant:</Typography>
+              <Typography>
+                {stableInvariant(amplification, [
+                  initialBalanceA,
+                  initialBalanceB,
+                ]).toFixed(2)}
+              </Typography>
+            </div>
+          </Paper>
+          <Paper style={{ padding: 16, marginTop: 16 }}>
+            <Typography variant="h6">Collected Fees</Typography>
+            <div style={{ display: "flex", justifyContent: "space-between" }}>
+              <Typography>Token A:</Typography>
+              <Typography>{totalFeesTokenA.toFixed(2)}</Typography>
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between" }}>
+              <Typography>Token B:</Typography>
+              <Typography>{totalFeesTokenB.toFixed(2)}</Typography>
             </div>
           </Paper>
         </Grid>
