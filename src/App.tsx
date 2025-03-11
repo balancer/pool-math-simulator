@@ -8,6 +8,7 @@ import {
   Navigate,
 } from "react-router-dom";
 import AclAmm from "./pool-types/aclamm/AclAmm";
+import StableSurge from "./pool-types/stable-surge/StableSurge";
 import styled from "styled-components";
 
 // Styled components for the menus
@@ -72,9 +73,6 @@ const Home = () => (
     <Link to="/stable-surge">Stable Surge</Link>
   </CenterMenu>
 );
-
-// Placeholder for Stable Surge component
-const StableSurge = () => <div>Stable Surge Component</div>;
 
 // Navigation component
 const Navigation = () => {

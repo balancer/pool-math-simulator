@@ -37,7 +37,7 @@ export default function AclAmm() {
   const [outOfRangeTime, setOutOfRangeTime] = useState<number>(0);
   const [lastRangeCheckTime, setLastRangeCheckTime] = useState<number>(0);
   const [priceUpdateMode, setPriceUpdateMode] = useState<
-    "price" | "centeredness"
+    "price" | "centeredness" | "slow-increase"
   >("price");
 
   const [initialBalanceA, setInitialBalanceA] = useState<number>(
@@ -307,17 +307,20 @@ export default function AclAmm() {
         (endTime - startTime);
       setPriceRange(newPriceRange);
 
-      if (poolCenteredness > margin / 100) {
+      if (
+        poolCenteredness > margin / 100 &&
+        priceUpdateMode !== "slow-increase"
+      ) {
         if (priceUpdateMode === "price") {
           const currentPrice =
             (currentBalanceB + virtualBalances.virtualBalanceB) /
             (currentBalanceA + virtualBalances.virtualBalanceA);
           const b = currentBalanceB - currentBalanceA * currentPrice;
-          const c = (currentPrice * invariant) / Math.sqrt(priceRange);
+          const c = (currentPrice * invariant) / Math.sqrt(newPriceRange);
           const newVirtualBalanceB =
             (-b + Math.sqrt(Math.pow(b, 2) + 4 * c)) / 2;
           const newVirtualBalanceA =
-            invariant / (Math.sqrt(priceRange) * newVirtualBalanceB);
+            invariant / (Math.sqrt(newPriceRange) * newVirtualBalanceB);
 
           setVirtualBalances({
             virtualBalanceA: newVirtualBalanceA,
@@ -327,10 +330,10 @@ export default function AclAmm() {
           // Update price range when pool is in range and maintain pool centeredness
           const centerBalanceA =
             virtualBalances.virtualBalanceA *
-            (Math.sqrt(Math.sqrt(priceRange)) - 1);
+            (Math.sqrt(Math.sqrt(newPriceRange)) - 1);
           const centerBalanceB =
             virtualBalances.virtualBalanceB *
-            (Math.sqrt(Math.sqrt(priceRange)) - 1);
+            (Math.sqrt(Math.sqrt(newPriceRange)) - 1);
 
           const newDenominator = Math.sqrt(Math.sqrt(newPriceRange)) - 1;
 
@@ -344,7 +347,8 @@ export default function AclAmm() {
       }
     }
 
-    if (poolCenteredness > margin / 100) return;
+    if (poolCenteredness > margin / 100 && priceUpdateMode !== "slow-increase")
+      return;
 
     const tau = priceShiftDailyRate / timeFix;
 
@@ -596,7 +600,10 @@ export default function AclAmm() {
                     checked={priceUpdateMode === "price"}
                     onChange={(e) =>
                       setPriceUpdateMode(
-                        e.target.value as "price" | "centeredness"
+                        e.target.value as
+                          | "price"
+                          | "centeredness"
+                          | "slow-increase"
                       )
                     }
                   />
@@ -613,7 +620,10 @@ export default function AclAmm() {
                     checked={priceUpdateMode === "centeredness"}
                     onChange={(e) =>
                       setPriceUpdateMode(
-                        e.target.value as "price" | "centeredness"
+                        e.target.value as
+                          | "price"
+                          | "centeredness"
+                          | "slow-increase"
                       )
                     }
                   />
@@ -622,6 +632,26 @@ export default function AclAmm() {
                     style={{ marginLeft: 8 }}
                   >
                     Centeredness constant
+                  </label>
+                </div>
+                <div>
+                  <input
+                    type="radio"
+                    id="slow-increase"
+                    name="update-mode"
+                    value="slow-increase"
+                    checked={priceUpdateMode === "slow-increase"}
+                    onChange={(e) =>
+                      setPriceUpdateMode(
+                        e.target.value as
+                          | "price"
+                          | "centeredness"
+                          | "slow-increase"
+                      )
+                    }
+                  />
+                  <label htmlFor="slow-increase" style={{ marginLeft: 8 }}>
+                    Same as "Out Of Range"
                   </label>
                 </div>
               </div>
