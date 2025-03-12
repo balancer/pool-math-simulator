@@ -13,7 +13,7 @@ import {
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import PauseIcon from "@mui/icons-material/Pause";
-import { D3Chart } from "./Chart";
+import { AclAmmChart } from "./AclAmmChart";
 import {
   calculateLowerMargin,
   calculateOutGivenIn,
@@ -38,8 +38,9 @@ const secondsPerBlock = 12;
 export default function AclAmm() {
   // Simulation variables
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
-  const [counter, setCounter] = useState<number>(0);
-  const [counterLastTick, setCounterLastTick] = useState<number>(1);
+  const [simulationSeconds, setSimulationSeconds] = useState<number>(0);
+  const [simulationSecondsLastTick, setSimulationSecondsLastTick] =
+    useState<number>(1);
   const [blockNumber, setBlockNumber] = useState<number>(0);
   const [speedMultiplier, setSpeedMultiplier] = useState<number>(1);
   const [isPoolInRange, setIsPoolInRange] = useState<boolean>(true);
@@ -145,90 +146,6 @@ export default function AclAmm() {
     });
   }, [margin, virtualBalances, invariant]);
 
-  const chartData = useMemo(() => {
-    if (priceRange <= 1) return [];
-
-    const xForPointB = invariant / virtualBalances.virtualBalanceB;
-
-    // Create regular curve points
-    const curvePoints = Array.from({ length: 100 }, (_, i) => {
-      const x =
-        0.7 * virtualBalances.virtualBalanceA +
-        (i * (1.3 * xForPointB - 0.7 * virtualBalances.virtualBalanceA)) / 100;
-      const y = invariant / x;
-
-      return { x, y };
-    });
-
-    return curvePoints;
-  }, [
-    currentBalanceA,
-    currentBalanceB,
-    priceRange,
-    virtualBalances,
-    invariant,
-  ]);
-
-  const charInitialData = useMemo(() => {
-    if (priceRange <= 1) return [];
-
-    const xForPointB = initialInvariant / virtualBalances.virtualBalanceB;
-
-    // Create regular curve points
-    const curvePoints = Array.from({ length: 100 }, (_, i) => {
-      const x =
-        0.7 * virtualBalances.virtualBalanceA +
-        (i * (1.3 * xForPointB - 0.7 * virtualBalances.virtualBalanceA)) / 100;
-      const y = initialInvariant / x;
-
-      return { x, y };
-    });
-
-    return curvePoints;
-  }, [initialInvariant]);
-
-  const specialPoints = useMemo(() => {
-    // Add special points
-    const pointA = {
-      x: virtualBalances.virtualBalanceA,
-      y: invariant / virtualBalances.virtualBalanceA,
-    };
-
-    const xForPointB = invariant / virtualBalances.virtualBalanceB;
-    const pointB = {
-      x: xForPointB,
-      y: virtualBalances.virtualBalanceB,
-    };
-
-    const lowerMarginPoint = {
-      x: lowerMargin,
-      y: invariant / lowerMargin,
-      pointType: "margin",
-    };
-
-    const higherMarginPoint = {
-      x: higherMargin,
-      y: invariant / higherMargin,
-      pointType: "margin",
-    };
-
-    // Add current point
-    const currentPoint = {
-      x: currentBalanceA + virtualBalances.virtualBalanceA,
-      y: currentBalanceB + virtualBalances.virtualBalanceB,
-      pointType: "current",
-    };
-
-    return [pointA, pointB, currentPoint, lowerMarginPoint, higherMarginPoint];
-  }, [
-    currentBalanceA,
-    currentBalanceB,
-    priceRange,
-    margin,
-    virtualBalances,
-    invariant,
-  ]);
-
   const calculatedSwapAmountOut = useMemo(() => {
     return calculateOutGivenIn({
       balanceA: currentBalanceA,
@@ -257,7 +174,7 @@ export default function AclAmm() {
 
     if (isPlaying) {
       intervalId = setInterval(() => {
-        setCounter(
+        setSimulationSeconds(
           (prev) => prev + speedMultiplier / (1000 / tickMilliseconds)
         );
       }, tickMilliseconds);
@@ -273,26 +190,27 @@ export default function AclAmm() {
   useEffect(() => {
     // Update values once every block.
     if (
-      counterLastTick % simulationSecondsPerBlock <
-        counter % simulationSecondsPerBlock ||
+      simulationSecondsLastTick % simulationSecondsPerBlock <
+        simulationSeconds % simulationSecondsPerBlock ||
       !isPlaying
     ) {
-      setCounterLastTick(counter);
+      setSimulationSecondsLastTick(simulationSeconds);
       return;
     }
-    setCounterLastTick(counter);
+    setSimulationSecondsLastTick(simulationSeconds);
     setBlockNumber((prev) => prev + 1);
 
     let newPriceRange = priceRange;
 
-    const isPriceRangeUpdating = counter >= startTime && counter <= endTime;
+    const isPriceRangeUpdating =
+      simulationSeconds >= startTime && simulationSeconds <= endTime;
 
     // Price range update logic
     if (isPriceRangeUpdating) {
       // Q0 is updating.
       newPriceRange =
-        ((counter - startTime) * targetPriceRange +
-          (endTime - counter) * startPriceRange) /
+        ((simulationSeconds - startTime) * targetPriceRange +
+          (endTime - simulationSeconds) * startPriceRange) /
         (endTime - startTime);
       setPriceRange(newPriceRange);
 
@@ -371,7 +289,7 @@ export default function AclAmm() {
         virtualBalanceB: newVirtualBalanceB,
       });
     }
-  }, [counter]);
+  }, [simulationSeconds]);
 
   useEffect(() => {
     if (poolCenteredness <= margin / 100) {
@@ -379,13 +297,15 @@ export default function AclAmm() {
         setIsPoolInRange(false);
         setOutOfRangeTime(0);
       } else {
-        setOutOfRangeTime((prev) => prev + (counter - lastRangeCheckTime));
+        setOutOfRangeTime(
+          (prev) => prev + (simulationSeconds - lastRangeCheckTime)
+        );
       }
     } else {
       setIsPoolInRange(true);
     }
-    setLastRangeCheckTime(counter);
-  }, [counter, poolCenteredness, margin]);
+    setLastRangeCheckTime(simulationSeconds);
+  }, [simulationSeconds, poolCenteredness, margin]);
 
   const handleUpdate = () => {
     setInitialBalanceA(Number(inputBalanceA));
@@ -620,7 +540,9 @@ export default function AclAmm() {
                   setInputTargetPriceRange(Number(e.target.value))
                 }
               />
-              <Typography>Current Time: {counter.toFixed(0)}</Typography>
+              <Typography>
+                Current Time: {simulationSeconds.toFixed(0)}
+              </Typography>
               <TextField
                 label="Start Time (in seconds)"
                 type="number"
@@ -678,11 +600,14 @@ export default function AclAmm() {
         <Grid item xs={6}>
           <Paper style={{ padding: 16, textAlign: "center" }}>
             <div style={{ width: "100%", height: 600 }}>
-              <D3Chart
-                data={chartData}
-                initialData={charInitialData}
-                specialPoints={specialPoints}
+              <AclAmmChart
+                currentBalanceA={currentBalanceA}
+                currentBalanceB={currentBalanceB}
+                priceRange={priceRange}
+                margin={margin}
                 virtualBalances={virtualBalances}
+                invariant={invariant}
+                initialInvariant={initialInvariant}
               />
             </div>
           </Paper>
@@ -709,7 +634,7 @@ export default function AclAmm() {
                 }}
               >
                 {isPlaying ? "Running" : "Paused"} - Simulation time:{" "}
-                {formatTime(counter)} - Block: {blockNumber}
+                {formatTime(simulationSeconds)} - Block: {blockNumber}
               </Typography>
             </div>
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
@@ -812,7 +737,7 @@ export default function AclAmm() {
             <Typography variant="h6" style={{ marginTop: 16 }}>
               Price Range
             </Typography>
-            {counter < endTime ? (
+            {simulationSeconds < endTime ? (
               <>
                 <Typography style={{ color: "green", fontWeight: "bold" }}>
                   UPDATING RANGE
@@ -865,7 +790,7 @@ export default function AclAmm() {
                   }}
                 >
                   <Typography>Current Time (s):</Typography>
-                  <Typography>{counter.toFixed(0)}</Typography>
+                  <Typography>{simulationSeconds.toFixed(0)}</Typography>
                 </div>
                 <div
                   style={{
