@@ -14,6 +14,15 @@ import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import PauseIcon from "@mui/icons-material/Pause";
 import { D3Chart } from "./Chart";
+import {
+  calculateLowerMargin,
+  calculateOutGivenIn,
+  calculatePoolCenteredness,
+  calculateUpperMargin,
+  calculateInitialVirtualBalances,
+  calculateBalancesAfterSwapIn,
+} from "./AclAmmMath";
+import { formatTime } from "../../utils/Time";
 
 const defaultInitialBalanceA = 1000;
 const defaultInitialBalanceB = 2000;
@@ -27,11 +36,11 @@ const tickMilliseconds = 10;
 const secondsPerBlock = 12;
 
 export default function AclAmm() {
+  // Simulation variables
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [counter, setCounter] = useState<number>(0);
   const [counterLastTick, setCounterLastTick] = useState<number>(1);
   const [blockNumber, setBlockNumber] = useState<number>(0);
-  const [lastSwapCounter, setLastSwapCounter] = useState<number>(0);
   const [speedMultiplier, setSpeedMultiplier] = useState<number>(1);
   const [isPoolInRange, setIsPoolInRange] = useState<boolean>(true);
   const [outOfRangeTime, setOutOfRangeTime] = useState<number>(0);
@@ -40,6 +49,7 @@ export default function AclAmm() {
     "price" | "centeredness" | "slow-increase"
   >("price");
 
+  // Initial Variables
   const [initialBalanceA, setInitialBalanceA] = useState<number>(
     defaultInitialBalanceA
   );
@@ -47,12 +57,15 @@ export default function AclAmm() {
     defaultInitialBalanceB
   );
   const [initialInvariant, setInitialInvariant] = useState<number>(0);
+
+  // Pool Variables
   const [priceRange, setPriceRange] = useState<number>(defaultPriceRange);
   const [margin, setMargin] = useState<number>(defaultMargin);
   const [priceShiftDailyRate, setPriceShiftDailyRate] = useState<number>(
     defaultPriceShiftDailyRate
   );
 
+  // Input Variables
   const [inputBalanceA, setInputBalanceA] = useState<number>(
     defaultInitialBalanceA
   );
@@ -74,9 +87,11 @@ export default function AclAmm() {
     virtualBalanceB: 0,
   });
 
+  // Swap variables
   const [swapTokenIn, setSwapTokenIn] = useState("Token A");
   const [swapAmountIn, setSwapAmountIn] = useState<number>(defaultSwapAmountIn);
 
+  // Price Range Variables
   const [startPriceRange, setStartPriceRange] =
     useState<number>(defaultPriceRange);
   const [targetPriceRange, setTargetPriceRange] =
@@ -89,6 +104,13 @@ export default function AclAmm() {
   const [inputStartTime, setInputStartTime] = useState<number>(0);
   const [inputEndTime, setInputEndTime] = useState<number>(0);
 
+  // Add new state variables for inputs
+  const [inputSecondsPerBlock, setInputSecondsPerBlock] = useState<number>(12);
+
+  // Replace the constants with state variables
+  const [simulationSecondsPerBlock, setSimulationSecondsPerBlock] =
+    useState<number>(12);
+
   const invariant = useMemo(() => {
     return (
       (currentBalanceA + virtualBalances.virtualBalanceA) *
@@ -97,55 +119,31 @@ export default function AclAmm() {
   }, [currentBalanceA, currentBalanceB, virtualBalances]);
 
   const poolCenteredness = useMemo(() => {
-    if (currentBalanceA === 0 || currentBalanceB === 0) return 0;
-    if (
-      currentBalanceA / currentBalanceB >
-      virtualBalances.virtualBalanceA / virtualBalances.virtualBalanceB
-    ) {
-      return (
-        (currentBalanceB * virtualBalances.virtualBalanceA) /
-        (currentBalanceA * virtualBalances.virtualBalanceB)
-      );
-    }
-    return (
-      (currentBalanceA * virtualBalances.virtualBalanceB) /
-      (currentBalanceB * virtualBalances.virtualBalanceA)
-    );
+    return calculatePoolCenteredness({
+      balanceA: currentBalanceA,
+      balanceB: currentBalanceB,
+      virtualBalanceA: virtualBalances.virtualBalanceA,
+      virtualBalanceB: virtualBalances.virtualBalanceB,
+    });
   }, [currentBalanceA, currentBalanceB, virtualBalances]);
 
   const lowerMargin = useMemo(() => {
-    const marginPercentage = margin / 100;
-    const b =
-      virtualBalances.virtualBalanceA +
-      marginPercentage * virtualBalances.virtualBalanceA;
-    const c =
-      marginPercentage *
-      (Math.pow(virtualBalances.virtualBalanceA, 2) -
-        (invariant * virtualBalances.virtualBalanceA) /
-          virtualBalances.virtualBalanceB);
-    return (
-      virtualBalances.virtualBalanceA +
-      (-b + Math.sqrt(Math.pow(b, 2) - 4 * c)) / 2
-    );
-  }, [currentBalanceA, currentBalanceB, margin, virtualBalances, invariant]);
+    return calculateLowerMargin({
+      margin: margin,
+      invariant: invariant,
+      virtualBalanceA: virtualBalances.virtualBalanceA,
+      virtualBalanceB: virtualBalances.virtualBalanceB,
+    });
+  }, [margin, virtualBalances, invariant]);
 
   const higherMargin = useMemo(() => {
-    const marginPercentage = margin / 100;
-    const b =
-      (virtualBalances.virtualBalanceA +
-        marginPercentage * virtualBalances.virtualBalanceA) /
-      marginPercentage;
-    const c =
-      (Math.pow(virtualBalances.virtualBalanceA, 2) -
-        (virtualBalances.virtualBalanceA * invariant) /
-          virtualBalances.virtualBalanceB) /
-      marginPercentage;
-
-    return (
-      virtualBalances.virtualBalanceA +
-      (-b + Math.sqrt(Math.pow(b, 2) - 4 * c)) / 2
-    );
-  }, [currentBalanceA, currentBalanceB, margin, virtualBalances, invariant]);
+    return calculateUpperMargin({
+      margin: margin,
+      invariant: invariant,
+      virtualBalanceA: virtualBalances.virtualBalanceA,
+      virtualBalanceB: virtualBalances.virtualBalanceB,
+    });
+  }, [margin, virtualBalances, invariant]);
 
   const chartData = useMemo(() => {
     if (priceRange <= 1) return [];
@@ -232,32 +230,20 @@ export default function AclAmm() {
   ]);
 
   const calculatedSwapAmountOut = useMemo(() => {
-    if (!swapAmountIn) return 0;
-
-    if (swapTokenIn === "Token A") {
-      // Swapping Token A for Token B
-      const newBalanceA = currentBalanceA + swapAmountIn;
-      return (
-        currentBalanceB +
-        virtualBalances.virtualBalanceB -
-        invariant / (newBalanceA + virtualBalances.virtualBalanceA)
-      );
-    } else {
-      // Swapping Token B for Token A
-      const newBalanceB = currentBalanceB + swapAmountIn;
-      return (
-        currentBalanceA +
-        virtualBalances.virtualBalanceA -
-        invariant / (newBalanceB + virtualBalances.virtualBalanceB)
-      );
-    }
+    return calculateOutGivenIn({
+      balanceA: currentBalanceA,
+      balanceB: currentBalanceB,
+      virtualBalanceA: virtualBalances.virtualBalanceA,
+      virtualBalanceB: virtualBalances.virtualBalanceB,
+      swapAmountIn: swapAmountIn,
+      swapTokenIn: swapTokenIn,
+    });
   }, [
     swapAmountIn,
     swapTokenIn,
     currentBalanceA,
     currentBalanceB,
     virtualBalances,
-    invariant,
   ]);
 
   useEffect(() => {
@@ -282,12 +268,13 @@ export default function AclAmm() {
         clearInterval(intervalId);
       }
     };
-  }, [isPlaying, speedMultiplier]);
+  }, [isPlaying, speedMultiplier, tickMilliseconds]);
 
   useEffect(() => {
     // Update values once every block.
     if (
-      counterLastTick % secondsPerBlock < counter % secondsPerBlock ||
+      counterLastTick % simulationSecondsPerBlock <
+        counter % simulationSecondsPerBlock ||
       !isPlaying
     ) {
       setCounterLastTick(counter);
@@ -410,6 +397,19 @@ export default function AclAmm() {
     initializeVirtualBalances();
   };
 
+  const initializeVirtualBalances = () => {
+    const initialVirtualBalances = calculateInitialVirtualBalances({
+      priceRange: inputPriceRange,
+      balanceA: inputBalanceA,
+      balanceB: inputBalanceB,
+    });
+    setVirtualBalances(initialVirtualBalances);
+    setInitialInvariant(
+      (inputBalanceA + initialVirtualBalances.virtualBalanceA) *
+        (inputBalanceB + initialVirtualBalances.virtualBalanceB)
+    );
+  };
+
   const handleUpdatePriceRange = () => {
     setStartPriceRange(priceRange);
     setTargetPriceRange(inputTargetPriceRange);
@@ -417,73 +417,23 @@ export default function AclAmm() {
     setEndTime(inputEndTime);
   };
 
-  const initializeVirtualBalances = () => {
-    const priceRangeNum = Number(inputPriceRange);
-    let virtualBalancesLocal = { virtualBalanceA: 0, virtualBalanceB: 0 };
-    if (priceRangeNum > 1) {
-      const denominator = Math.sqrt(Math.sqrt(priceRangeNum)) - 1;
-      virtualBalancesLocal = {
-        virtualBalanceA: Number(inputBalanceA) / denominator,
-        virtualBalanceB: Number(inputBalanceB) / denominator,
-      };
-    }
-    setVirtualBalances(virtualBalancesLocal);
-
-    setInitialInvariant(
-      (inputBalanceA + virtualBalancesLocal.virtualBalanceA) *
-        (inputBalanceB + virtualBalancesLocal.virtualBalanceB)
-    );
-  };
-
   const handleSwap = () => {
-    const amountIn = Number(swapAmountIn);
-
-    if (poolCenteredness > margin / 100) {
-      setLastSwapCounter(counter);
-    }
-
-    let newBalanceA: number;
-    let newBalanceB: number;
-    if (swapTokenIn === "Token A") {
-      // Swapping Token A for Token B
-      newBalanceA = currentBalanceA + amountIn;
-      newBalanceB =
-        invariant / (newBalanceA + virtualBalances.virtualBalanceA) -
-        virtualBalances.virtualBalanceB;
-
-      if (newBalanceB < 0) {
-        newBalanceB = 0;
-        newBalanceA =
-          invariant / virtualBalances.virtualBalanceB -
-          virtualBalances.virtualBalanceA;
-      }
-    } else {
-      // Swapping Token B for Token A
-      newBalanceB = currentBalanceB + amountIn;
-      newBalanceA =
-        invariant / (newBalanceB + virtualBalances.virtualBalanceB) -
-        virtualBalances.virtualBalanceA;
-
-      if (newBalanceA < 0) {
-        newBalanceA = 0;
-        newBalanceB =
-          invariant / virtualBalances.virtualBalanceA -
-          virtualBalances.virtualBalanceB;
-      }
-    }
+    const { newBalanceA, newBalanceB } = calculateBalancesAfterSwapIn({
+      balanceA: currentBalanceA,
+      balanceB: currentBalanceB,
+      virtualBalanceA: virtualBalances.virtualBalanceA,
+      virtualBalanceB: virtualBalances.virtualBalanceB,
+      swapAmountIn: swapAmountIn,
+      swapTokenIn: swapTokenIn,
+    });
 
     setCurrentBalanceA(newBalanceA);
     setCurrentBalanceB(newBalanceB);
   };
 
-  const formatTime = (totalSeconds: number) => {
-    const hours = Math.floor(totalSeconds / 3600);
-    const minutes = Math.floor((totalSeconds % 3600) / 60);
-    const seconds = totalSeconds % 60;
-    return `${hours}:${minutes.toString().padStart(2, "0")}:${seconds
-      .toFixed(0)
-      .toString()
-      .padStart(2, "0")}`;
+  // Add handler for saving simulation config
+  const handleSaveSimulationConfig = () => {
+    setSimulationSecondsPerBlock(inputSecondsPerBlock);
   };
 
   return (
@@ -694,6 +644,32 @@ export default function AclAmm() {
                 style={{ marginTop: 16 }}
               >
                 Update Price Range
+              </Button>
+            </AccordionDetails>
+          </Accordion>
+
+          <Accordion>
+            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+              <Typography variant="h6">Simulation Parameters</Typography>
+            </AccordionSummary>
+            <AccordionDetails>
+              <TextField
+                label="Seconds Per Block"
+                type="number"
+                fullWidth
+                margin="normal"
+                value={inputSecondsPerBlock}
+                onChange={(e) =>
+                  setInputSecondsPerBlock(Number(e.target.value))
+                }
+              />
+              <Button
+                variant="contained"
+                fullWidth
+                onClick={handleSaveSimulationConfig}
+                style={{ marginTop: 16 }}
+              >
+                Save Config
               </Button>
             </AccordionDetails>
           </Accordion>
