@@ -6,6 +6,7 @@ import * as d3 from "d3";
 // Add this new component
 export const StableSurgeChart: React.FC<{
   curvePoints: { x: number; y: number }[];
+  curvePointsWithFees: { x: number; y: number }[];
   currentPoint?: { x: number; y: number };
   initialCurvePoints?: { x: number; y: number }[];
   previewPoint?: { x: number; y: number };
@@ -13,6 +14,7 @@ export const StableSurgeChart: React.FC<{
   upperImbalanceThreshold?: { x: number; y: number };
 }> = ({
   curvePoints,
+  curvePointsWithFees,
   currentPoint,
   initialCurvePoints,
   previewPoint,
@@ -123,6 +125,20 @@ export const StableSurgeChart: React.FC<{
         .attr("stroke-width", 2)
         .attr("d", line);
 
+      // Add curve with fees
+      const lineWithFees = d3
+        .line<any>()
+        .x((d) => xScale(d.x))
+        .y((d) => yScale(d.y));
+
+      svg
+        .append("path")
+        .datum(curvePointsWithFees)
+        .attr("fill", "none")
+        .attr("stroke", "#000000")
+        .attr("stroke-width", 2)
+        .attr("d", lineWithFees);
+
       // Add axis labels
       svg
         .append("text")
@@ -189,6 +205,7 @@ export const StableSurgeChart: React.FC<{
       // Add legend
       const legendItems = [
         { color: "#8884d8", text: "Current Invariant" },
+        { color: "#000000", text: "Invariant with Fees" },
         { color: "#ff0000", text: "Initial Invariant", isDashed: true },
         { color: "#4CAF50", text: "Current Balances" },
         { color: "#006400", text: "Post-Swap Balances" },
@@ -268,6 +285,7 @@ export const StableSurgeChart: React.FC<{
     };
   }, [
     curvePoints,
+    curvePointsWithFees,
     currentPoint,
     initialCurvePoints,
     previewPoint,
