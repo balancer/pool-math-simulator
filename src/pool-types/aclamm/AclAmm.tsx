@@ -46,9 +46,6 @@ export default function AclAmm() {
   const [isPoolInRange, setIsPoolInRange] = useState<boolean>(true);
   const [outOfRangeTime, setOutOfRangeTime] = useState<number>(0);
   const [lastRangeCheckTime, setLastRangeCheckTime] = useState<number>(0);
-  const [priceUpdateMode, setPriceUpdateMode] = useState<
-    "price" | "centeredness" | "slow-increase"
-  >("price");
 
   // Initial Variables
   const [initialBalanceA, setInitialBalanceA] = useState<number>(
@@ -201,6 +198,10 @@ export default function AclAmm() {
     setBlockNumber((prev) => prev + 1);
 
     let newPriceRange = priceRange;
+    let newVirtualBalances = {
+      virtualBalanceA: virtualBalances.virtualBalanceA,
+      virtualBalanceB: virtualBalances.virtualBalanceB,
+    };
 
     const isPriceRangeUpdating =
       simulationSeconds >= startTime && simulationSeconds <= endTime;
@@ -209,86 +210,68 @@ export default function AclAmm() {
     if (isPriceRangeUpdating) {
       // Q0 is updating.
       newPriceRange =
-        ((simulationSeconds - startTime) * targetPriceRange +
-          (endTime - simulationSeconds) * startPriceRange) /
-        (endTime - startTime);
+        startPriceRange *
+        Math.pow(
+          targetPriceRange / startPriceRange,
+          (simulationSeconds - startTime) / (endTime - startTime)
+        );
+
+      // Update price range when pool is in range and maintain pool centeredness
+      const centerBalanceA =
+        virtualBalances.virtualBalanceA *
+        (Math.sqrt(Math.sqrt(priceRange)) - 1);
+
+      const newDenominator = Math.sqrt(Math.sqrt(newPriceRange)) - 1;
+
+      const newVirtualBalanceA = centerBalanceA / newDenominator;
+      const newVirtualBalanceB =
+        invariant / (Math.sqrt(newPriceRange) * newVirtualBalanceA);
+
+      newVirtualBalances = {
+        virtualBalanceA: newVirtualBalanceA,
+        virtualBalanceB: newVirtualBalanceB,
+      };
+
       setPriceRange(newPriceRange);
+    }
+
+    if (poolCenteredness <= margin / 100) {
+      const tau = priceShiftDailyRate / timeFix;
 
       if (
-        poolCenteredness > margin / 100 &&
-        priceUpdateMode !== "slow-increase"
+        currentBalanceB === 0 ||
+        currentBalanceA / currentBalanceB >
+          newVirtualBalances.virtualBalanceA /
+            newVirtualBalances.virtualBalanceB
       ) {
-        if (priceUpdateMode === "price") {
-          const currentPrice =
-            (currentBalanceB + virtualBalances.virtualBalanceB) /
-            (currentBalanceA + virtualBalances.virtualBalanceA);
-          const b = currentBalanceB - currentBalanceA * currentPrice;
-          const c = (currentPrice * invariant) / Math.sqrt(newPriceRange);
-          const newVirtualBalanceB =
-            (-b + Math.sqrt(Math.pow(b, 2) + 4 * c)) / 2;
-          const newVirtualBalanceA =
-            invariant / (Math.sqrt(newPriceRange) * newVirtualBalanceB);
+        const newVirtualBalanceB =
+          newVirtualBalances.virtualBalanceB *
+          Math.pow(1 - tau, secondsPerBlock);
+        const newVirtualBalanceA =
+          (currentBalanceA * (newVirtualBalanceB + currentBalanceB)) /
+          (newVirtualBalanceB * (Math.sqrt(newPriceRange) - 1) -
+            currentBalanceB);
 
-          setVirtualBalances({
-            virtualBalanceA: newVirtualBalanceA,
-            virtualBalanceB: newVirtualBalanceB,
-          });
-        } else {
-          // Update price range when pool is in range and maintain pool centeredness
-          const centerBalanceA =
-            virtualBalances.virtualBalanceA *
-            (Math.sqrt(Math.sqrt(newPriceRange)) - 1);
-          const centerBalanceB =
-            virtualBalances.virtualBalanceB *
-            (Math.sqrt(Math.sqrt(newPriceRange)) - 1);
+        newVirtualBalances = {
+          virtualBalanceA: newVirtualBalanceA,
+          virtualBalanceB: newVirtualBalanceB,
+        };
+      } else {
+        const newVirtualBalanceA =
+          newVirtualBalances.virtualBalanceA *
+          Math.pow(1 - tau, secondsPerBlock);
+        const newVirtualBalanceB =
+          (currentBalanceB * (newVirtualBalanceA + currentBalanceA)) /
+          (newVirtualBalanceA * (Math.sqrt(newPriceRange) - 1) -
+            currentBalanceA);
 
-          const newDenominator = Math.sqrt(Math.sqrt(newPriceRange)) - 1;
-
-          setVirtualBalances({
-            virtualBalanceA: centerBalanceA / newDenominator,
-            virtualBalanceB: centerBalanceB / newDenominator,
-          });
-        }
+        newVirtualBalances = {
+          virtualBalanceA: newVirtualBalanceA,
+          virtualBalanceB: newVirtualBalanceB,
+        };
       }
     }
-
-    if (
-      poolCenteredness > margin / 100 &&
-      (priceUpdateMode !== "slow-increase" ||
-        (priceUpdateMode === "slow-increase" && !isPriceRangeUpdating))
-    ) {
-      return;
-    }
-
-    const tau = priceShiftDailyRate / timeFix;
-
-    if (
-      currentBalanceB === 0 ||
-      currentBalanceA / currentBalanceB >
-        virtualBalances.virtualBalanceA / virtualBalances.virtualBalanceB
-    ) {
-      const newVirtualBalanceB =
-        virtualBalances.virtualBalanceB * Math.pow(1 - tau, secondsPerBlock);
-      const newVirtualBalanceA =
-        (currentBalanceA * (newVirtualBalanceB + currentBalanceB)) /
-        (newVirtualBalanceB * (Math.sqrt(newPriceRange) - 1) - currentBalanceB);
-
-      setVirtualBalances({
-        virtualBalanceA: newVirtualBalanceA,
-        virtualBalanceB: newVirtualBalanceB,
-      });
-    } else {
-      const newVirtualBalanceA =
-        virtualBalances.virtualBalanceA * Math.pow(1 - tau, secondsPerBlock);
-      const newVirtualBalanceB =
-        (currentBalanceB * (newVirtualBalanceA + currentBalanceA)) /
-        (newVirtualBalanceA * (Math.sqrt(newPriceRange) - 1) - currentBalanceA);
-
-      setVirtualBalances({
-        virtualBalanceA: newVirtualBalanceA,
-        virtualBalanceB: newVirtualBalanceB,
-      });
-    }
+    setVirtualBalances(newVirtualBalances);
   }, [simulationSeconds]);
 
   useEffect(() => {
@@ -464,72 +447,6 @@ export default function AclAmm() {
               <Typography variant="h6">Update Price Range</Typography>
             </AccordionSummary>
             <AccordionDetails>
-              <div style={{ marginBottom: 16 }}>
-                <Typography component="div">Update Mode:</Typography>
-                <div>
-                  <input
-                    type="radio"
-                    id="price-constant"
-                    name="update-mode"
-                    value="price"
-                    checked={priceUpdateMode === "price"}
-                    onChange={(e) =>
-                      setPriceUpdateMode(
-                        e.target.value as
-                          | "price"
-                          | "centeredness"
-                          | "slow-increase"
-                      )
-                    }
-                  />
-                  <label htmlFor="price-constant" style={{ marginLeft: 8 }}>
-                    Price constant
-                  </label>
-                </div>
-                <div>
-                  <input
-                    type="radio"
-                    id="centeredness-constant"
-                    name="update-mode"
-                    value="centeredness"
-                    checked={priceUpdateMode === "centeredness"}
-                    onChange={(e) =>
-                      setPriceUpdateMode(
-                        e.target.value as
-                          | "price"
-                          | "centeredness"
-                          | "slow-increase"
-                      )
-                    }
-                  />
-                  <label
-                    htmlFor="centeredness-constant"
-                    style={{ marginLeft: 8 }}
-                  >
-                    Centeredness constant
-                  </label>
-                </div>
-                <div>
-                  <input
-                    type="radio"
-                    id="slow-increase"
-                    name="update-mode"
-                    value="slow-increase"
-                    checked={priceUpdateMode === "slow-increase"}
-                    onChange={(e) =>
-                      setPriceUpdateMode(
-                        e.target.value as
-                          | "price"
-                          | "centeredness"
-                          | "slow-increase"
-                      )
-                    }
-                  />
-                  <label htmlFor="slow-increase" style={{ marginLeft: 8 }}>
-                    Same as "Out Of Range"
-                  </label>
-                </div>
-              </div>
               <TextField
                 label="Target Price Range"
                 type="number"
