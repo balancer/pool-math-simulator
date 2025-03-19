@@ -22,6 +22,8 @@ import {
   calculateInitialVirtualBalances,
   calculateBalancesAfterSwapIn,
   isAboveCenter,
+  recalculateVirtualBalances,
+  calculateInvariant,
 } from "./AclAmmMath";
 import { formatTime } from "../../utils/Time";
 
@@ -31,7 +33,6 @@ const defaultPriceRange = 16;
 const defaultMargin = 10;
 const defaultPriceShiftDailyRate = 100;
 const defaultSwapAmountIn = 100;
-const timeFix = 12464900; // Using the same constant as the Contract. The full value is 12464935.015039.
 
 const tickMilliseconds = 10;
 
@@ -110,6 +111,19 @@ export default function AclAmm() {
 
   // Add new state for error message
   const [endTimeError, setEndTimeError] = useState<string>("");
+
+  const [currentBalanceA, setCurrentBalanceA] = useState<number>(
+    defaultInitialBalanceA
+  );
+  const [currentBalanceB, setCurrentBalanceB] = useState<number>(
+    defaultInitialBalanceB
+  );
+  const [currentVirtualBalances, setCurrentVirtualBalances] = useState({
+    virtualBalanceA: 0,
+    virtualBalanceB: 0,
+  });
+  const [currentInvariant, setCurrentInvariant] = useState<number>(0);
+  const [lastSwapTime, setLastSwapTime] = useState<number>(0);
 
   const realTimeInvariant = useMemo(() => {
     return (
@@ -207,87 +221,30 @@ export default function AclAmm() {
     setSimulationSecondsLastTick(simulationSeconds);
     setBlockNumber((prev) => prev + 1);
 
-    let newPriceRange = priceRange;
-    let newVirtualBalances = {
-      virtualBalanceA: realTimeVirtualBalances.virtualBalanceA,
-      virtualBalanceB: realTimeVirtualBalances.virtualBalanceB,
-    };
-
-    const isPoolAboveCenter = isAboveCenter({
+    const { newVirtualBalances, newPriceRange } = recalculateVirtualBalances({
       balanceA: realTimeBalanceA,
       balanceB: realTimeBalanceB,
-      virtualBalanceA: realTimeVirtualBalances.virtualBalanceA,
-      virtualBalanceB: realTimeVirtualBalances.virtualBalanceB,
+      oldVirtualBalanceA: realTimeVirtualBalances.virtualBalanceA,
+      oldVirtualBalanceB: realTimeVirtualBalances.virtualBalanceB,
+      currentPriceRange: priceRange,
+      poolParams: {
+        margin: margin,
+        priceShiftDailyRate: priceShiftDailyRate,
+      },
+      updateQ0Params: {
+        startTime: startTime,
+        endTime: endTime,
+        startPriceRange: startPriceRange,
+        targetPriceRange: targetPriceRange,
+      },
+      simulationParams: {
+        simulationSeconds: simulationSeconds,
+        secondsSinceLastInteraction: simulationSecondsPerBlock,
+      },
     });
 
-    const isPriceRangeUpdating =
-      simulationSeconds >= startTime &&
-      (simulationSeconds <= endTime ||
-        simulationSeconds - simulationSecondsPerBlock <= endTime);
-
-    // Price range update logic
-    if (isPriceRangeUpdating) {
-      // Q0 is updating.
-      newPriceRange =
-        startPriceRange *
-        Math.pow(
-          targetPriceRange / startPriceRange,
-          Math.min(endTime - startTime, simulationSeconds - startTime) /
-            (endTime - startTime)
-        );
-
-      const centerednessFix = isPoolAboveCenter
-        ? 1 / poolCenteredness
-        : poolCenteredness;
-
-      const newVirtualBalanceA = Math.sqrt(
-        (realTimeBalanceA * realTimeInvariant) /
-          (Math.sqrt(newPriceRange) * realTimeBalanceB * centerednessFix)
-      );
-      const newVirtualBalanceB =
-        (realTimeBalanceB * newVirtualBalanceA * centerednessFix) /
-        realTimeBalanceA;
-
-      newVirtualBalances = {
-        virtualBalanceA: newVirtualBalanceA,
-        virtualBalanceB: newVirtualBalanceB,
-      };
-
-      setPriceRange(newPriceRange);
-    }
-
-    if (poolCenteredness <= margin / 100) {
-      const tau = priceShiftDailyRate / timeFix;
-
-      if (isPoolAboveCenter) {
-        const newVirtualBalanceB =
-          newVirtualBalances.virtualBalanceB *
-          Math.pow(1 - tau, simulationSecondsPerBlock);
-        const newVirtualBalanceA =
-          (realTimeBalanceA * (newVirtualBalanceB + realTimeBalanceB)) /
-          (newVirtualBalanceB * (Math.sqrt(newPriceRange) - 1) -
-            realTimeBalanceB);
-
-        newVirtualBalances = {
-          virtualBalanceA: newVirtualBalanceA,
-          virtualBalanceB: newVirtualBalanceB,
-        };
-      } else {
-        const newVirtualBalanceA =
-          newVirtualBalances.virtualBalanceA *
-          Math.pow(1 - tau, simulationSecondsPerBlock);
-        const newVirtualBalanceB =
-          (realTimeBalanceB * (newVirtualBalanceA + realTimeBalanceA)) /
-          (newVirtualBalanceA * (Math.sqrt(newPriceRange) - 1) -
-            realTimeBalanceA);
-
-        newVirtualBalances = {
-          virtualBalanceA: newVirtualBalanceA,
-          virtualBalanceB: newVirtualBalanceB,
-        };
-      }
-    }
     setRealTimeVirtualBalances(newVirtualBalances);
+    setPriceRange(newPriceRange);
   }, [simulationSeconds]);
 
   useEffect(() => {
@@ -314,6 +271,7 @@ export default function AclAmm() {
     setPriceRange(Number(inputPriceRange));
     setMargin(Number(inputMargin));
     initializeVirtualBalances();
+    setSimulationSeconds(0);
   };
 
   const initializeVirtualBalances = () => {
@@ -323,7 +281,12 @@ export default function AclAmm() {
       balanceB: inputBalanceB,
     });
     setRealTimeVirtualBalances(initialVirtualBalances);
+    setCurrentVirtualBalances(initialVirtualBalances);
     setInitialInvariant(
+      (inputBalanceA + initialVirtualBalances.virtualBalanceA) *
+        (inputBalanceB + initialVirtualBalances.virtualBalanceB)
+    );
+    setCurrentInvariant(
       (inputBalanceA + initialVirtualBalances.virtualBalanceA) *
         (inputBalanceB + initialVirtualBalances.virtualBalanceB)
     );
@@ -343,6 +306,11 @@ export default function AclAmm() {
   };
 
   const handleSwap = () => {
+    handleRealTimeSwap();
+    handleCurrentSwap();
+  };
+
+  const handleRealTimeSwap = () => {
     const { newBalanceA, newBalanceB } = calculateBalancesAfterSwapIn({
       balanceA: realTimeBalanceA,
       balanceB: realTimeBalanceB,
@@ -354,6 +322,52 @@ export default function AclAmm() {
 
     setRealTimeBalanceA(newBalanceA);
     setRealTimeBalanceB(newBalanceB);
+  };
+
+  const handleCurrentSwap = () => {
+    const { newVirtualBalances } = recalculateVirtualBalances({
+      balanceA: currentBalanceA,
+      balanceB: currentBalanceB,
+      oldVirtualBalanceA: currentVirtualBalances.virtualBalanceA,
+      oldVirtualBalanceB: currentVirtualBalances.virtualBalanceB,
+      currentPriceRange: priceRange,
+      poolParams: {
+        margin: margin,
+        priceShiftDailyRate: priceShiftDailyRate,
+      },
+      updateQ0Params: {
+        startTime: startTime,
+        endTime: endTime,
+        startPriceRange: startPriceRange,
+        targetPriceRange: targetPriceRange,
+      },
+      simulationParams: {
+        simulationSeconds: simulationSeconds,
+        secondsSinceLastInteraction: simulationSeconds - lastSwapTime,
+      },
+    });
+    setLastSwapTime(simulationSeconds);
+    setCurrentVirtualBalances(newVirtualBalances);
+
+    const { newBalanceA, newBalanceB } = calculateBalancesAfterSwapIn({
+      balanceA: currentBalanceA,
+      balanceB: currentBalanceB,
+      virtualBalanceA: newVirtualBalances.virtualBalanceA,
+      virtualBalanceB: newVirtualBalances.virtualBalanceB,
+      swapAmountIn: swapAmountIn,
+      swapTokenIn: swapTokenIn,
+    });
+
+    setCurrentBalanceA(newBalanceA);
+    setCurrentBalanceB(newBalanceB);
+    setCurrentInvariant(
+      calculateInvariant({
+        balanceA: newBalanceA,
+        balanceB: newBalanceB,
+        virtualBalanceA: newVirtualBalances.virtualBalanceA,
+        virtualBalanceB: newVirtualBalances.virtualBalanceB,
+      })
+    );
   };
 
   // Add handler for saving simulation config
@@ -555,6 +569,10 @@ export default function AclAmm() {
                 realTimeInvariant={realTimeInvariant}
                 initialInvariant={initialInvariant}
                 margin={margin}
+                currentBalanceA={currentBalanceA}
+                currentBalanceB={currentBalanceB}
+                currentVirtualBalances={currentVirtualBalances}
+                currentInvariant={currentInvariant}
               />
             </div>
           </Paper>
@@ -605,187 +623,317 @@ export default function AclAmm() {
 
         {/* Current Values Column */}
         <Grid item xs={3}>
-          <Paper style={{ padding: 16 }}>
-            <Typography variant="h6">Initial Values</Typography>
-            <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <Typography>Initial Balance A:</Typography>
-              <Typography>{initialBalanceA.toFixed(2)}</Typography>
-            </div>
-            <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <Typography>Initial Balance B:</Typography>
-              <Typography>{initialBalanceB.toFixed(2)}</Typography>
-            </div>
-            <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <Typography>Price Range:</Typography>
-              <Typography>{priceRange.toFixed(2)}</Typography>
-            </div>
-            <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <Typography>Margin:</Typography>
-              <Typography>{margin.toFixed(2)}%</Typography>
-            </div>
-
-            <Typography variant="h6" style={{ marginTop: 16 }}>
-              Token Price
-            </Typography>
-            <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <Typography>Rate Max/Min:</Typography>
-              <Typography>
-                {(
-                  Math.pow(realTimeInvariant, 2) /
-                  (Math.pow(realTimeVirtualBalances.virtualBalanceA, 2) *
-                    Math.pow(realTimeVirtualBalances.virtualBalanceB, 2))
-                ).toFixed(2)}
-              </Typography>
-            </div>
-            <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <Typography style={{ color: "red" }}>Min Price A:</Typography>
-              <Typography style={{ color: "red" }}>
-                {(
-                  Math.pow(realTimeVirtualBalances.virtualBalanceB, 2) /
-                  realTimeInvariant
-                ).toFixed(4)}
-              </Typography>
-            </div>
-            <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <Typography style={{ color: "blue" }}>
-                Lower Margin Price A:
-              </Typography>
-              <Typography style={{ color: "blue" }}>
-                {(realTimeInvariant / Math.pow(higherMargin, 2)).toFixed(4)}
-              </Typography>
-            </div>
-            <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <Typography style={{ color: "green" }}>
-                Current Price A:
-              </Typography>
-              <Typography style={{ color: "green" }}>
-                {(
-                  (realTimeBalanceB + realTimeVirtualBalances.virtualBalanceB) /
-                  (realTimeBalanceA + realTimeVirtualBalances.virtualBalanceA)
-                ).toFixed(4)}
-              </Typography>
-            </div>
-            <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <Typography style={{ color: "blue" }}>
-                Upper Margin Price A:
-              </Typography>
-              <Typography style={{ color: "blue" }}>
-                {(realTimeInvariant / Math.pow(lowerMargin, 2)).toFixed(4)}
-              </Typography>
-            </div>
-            <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <Typography style={{ color: "red" }}>Max Price A:</Typography>
-              <Typography style={{ color: "red" }}>
-                {(
-                  realTimeInvariant /
-                  Math.pow(realTimeVirtualBalances.virtualBalanceA, 2)
-                ).toFixed(4)}
-              </Typography>
-            </div>
-
-            <Typography variant="h6" style={{ marginTop: 16 }}>
-              Price Range
-            </Typography>
-            {simulationSeconds < endTime ? (
-              <>
-                <Typography style={{ color: "green", fontWeight: "bold" }}>
-                  UPDATING RANGE
+          <Accordion defaultExpanded>
+            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+              <Typography variant="h6">Current Pool State</Typography>
+            </AccordionSummary>
+            <AccordionDetails>
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <Typography>Invariant:</Typography>
+                <Typography>{currentInvariant.toFixed(2)}</Typography>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <Typography>Current Balance A:</Typography>
+                <Typography>{currentBalanceA.toFixed(2)}</Typography>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <Typography>Current Balance B:</Typography>
+                <Typography>{currentBalanceB.toFixed(2)}</Typography>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <Typography>Virtual Balance A:</Typography>
+                <Typography>
+                  {currentVirtualBalances.virtualBalanceA.toFixed(2)}
                 </Typography>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <Typography>Virtual Balance B:</Typography>
+                <Typography>
+                  {currentVirtualBalances.virtualBalanceB.toFixed(2)}
+                </Typography>
+              </div>
+              <div style={{ marginTop: 16 }}>
                 <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    marginLeft: 10,
-                  }}
+                  style={{ display: "flex", justifyContent: "space-between" }}
                 >
-                  <Typography>Start Price Range:</Typography>
-                  <Typography>{startPriceRange.toFixed(2)}</Typography>
+                  <Typography>Rate Max/Min:</Typography>
+                  <Typography>
+                    {(
+                      Math.pow(currentInvariant, 2) /
+                      (Math.pow(currentVirtualBalances.virtualBalanceA, 2) *
+                        Math.pow(currentVirtualBalances.virtualBalanceB, 2))
+                    ).toFixed(2)}
+                  </Typography>
                 </div>
                 <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    marginLeft: 10,
-                  }}
+                  style={{ display: "flex", justifyContent: "space-between" }}
+                >
+                  <Typography style={{ color: "red" }}>Min Price A:</Typography>
+                  <Typography style={{ color: "red" }}>
+                    {(
+                      Math.pow(currentVirtualBalances.virtualBalanceB, 2) /
+                      currentInvariant
+                    ).toFixed(4)}
+                  </Typography>
+                </div>
+                <div
+                  style={{ display: "flex", justifyContent: "space-between" }}
+                >
+                  <Typography style={{ color: "blue" }}>
+                    Lower Margin Price A:
+                  </Typography>
+                  <Typography style={{ color: "blue" }}>
+                    {(currentInvariant / Math.pow(higherMargin, 2)).toFixed(4)}
+                  </Typography>
+                </div>
+                <div
+                  style={{ display: "flex", justifyContent: "space-between" }}
+                >
+                  <Typography style={{ color: "green" }}>
+                    Current Price A:
+                  </Typography>
+                  <Typography style={{ color: "green" }}>
+                    {(
+                      (currentBalanceB +
+                        currentVirtualBalances.virtualBalanceB) /
+                      (currentBalanceA + currentVirtualBalances.virtualBalanceA)
+                    ).toFixed(4)}
+                  </Typography>
+                </div>
+                <div
+                  style={{ display: "flex", justifyContent: "space-between" }}
+                >
+                  <Typography style={{ color: "blue" }}>
+                    Upper Margin Price A:
+                  </Typography>
+                  <Typography style={{ color: "blue" }}>
+                    {(currentInvariant / Math.pow(lowerMargin, 2)).toFixed(4)}
+                  </Typography>
+                </div>
+                <div
+                  style={{ display: "flex", justifyContent: "space-between" }}
+                >
+                  <Typography style={{ color: "red" }}>Max Price A:</Typography>
+                  <Typography style={{ color: "red" }}>
+                    {(
+                      currentInvariant /
+                      Math.pow(currentVirtualBalances.virtualBalanceA, 2)
+                    ).toFixed(4)}
+                  </Typography>
+                </div>
+              </div>
+            </AccordionDetails>
+          </Accordion>
+
+          <Accordion defaultExpanded>
+            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+              <Typography variant="h6">Real-Time Pool State</Typography>
+            </AccordionSummary>
+            <AccordionDetails>
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <Typography>Invariant:</Typography>
+                <Typography>{realTimeInvariant.toFixed(2)}</Typography>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <Typography>Current Balance A:</Typography>
+                <Typography>{realTimeBalanceA.toFixed(2)}</Typography>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <Typography>Current Balance B:</Typography>
+                <Typography>{realTimeBalanceB.toFixed(2)}</Typography>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <Typography>Virtual Balance A:</Typography>
+                <Typography>
+                  {realTimeVirtualBalances.virtualBalanceA.toFixed(2)}
+                </Typography>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <Typography>Virtual Balance B:</Typography>
+                <Typography>
+                  {realTimeVirtualBalances.virtualBalanceB.toFixed(2)}
+                </Typography>
+              </div>
+              <div style={{ marginTop: 16 }}>
+                <div
+                  style={{ display: "flex", justifyContent: "space-between" }}
+                >
+                  <Typography>Rate Max/Min:</Typography>
+                  <Typography>
+                    {(
+                      Math.pow(realTimeInvariant, 2) /
+                      (Math.pow(realTimeVirtualBalances.virtualBalanceA, 2) *
+                        Math.pow(realTimeVirtualBalances.virtualBalanceB, 2))
+                    ).toFixed(2)}
+                  </Typography>
+                </div>
+                <div
+                  style={{ display: "flex", justifyContent: "space-between" }}
+                >
+                  <Typography style={{ color: "red" }}>Min Price A:</Typography>
+                  <Typography style={{ color: "red" }}>
+                    {(
+                      Math.pow(realTimeVirtualBalances.virtualBalanceB, 2) /
+                      realTimeInvariant
+                    ).toFixed(4)}
+                  </Typography>
+                </div>
+                <div
+                  style={{ display: "flex", justifyContent: "space-between" }}
+                >
+                  <Typography style={{ color: "blue" }}>
+                    Lower Margin Price A:
+                  </Typography>
+                  <Typography style={{ color: "blue" }}>
+                    {(realTimeInvariant / Math.pow(higherMargin, 2)).toFixed(4)}
+                  </Typography>
+                </div>
+                <div
+                  style={{ display: "flex", justifyContent: "space-between" }}
+                >
+                  <Typography style={{ color: "green" }}>
+                    Current Price A:
+                  </Typography>
+                  <Typography style={{ color: "green" }}>
+                    {(
+                      (realTimeBalanceB +
+                        realTimeVirtualBalances.virtualBalanceB) /
+                      (realTimeBalanceA +
+                        realTimeVirtualBalances.virtualBalanceA)
+                    ).toFixed(4)}
+                  </Typography>
+                </div>
+                <div
+                  style={{ display: "flex", justifyContent: "space-between" }}
+                >
+                  <Typography style={{ color: "blue" }}>
+                    Upper Margin Price A:
+                  </Typography>
+                  <Typography style={{ color: "blue" }}>
+                    {(realTimeInvariant / Math.pow(lowerMargin, 2)).toFixed(4)}
+                  </Typography>
+                </div>
+                <div
+                  style={{ display: "flex", justifyContent: "space-between" }}
+                >
+                  <Typography style={{ color: "red" }}>Max Price A:</Typography>
+                  <Typography style={{ color: "red" }}>
+                    {(
+                      realTimeInvariant /
+                      Math.pow(realTimeVirtualBalances.virtualBalanceA, 2)
+                    ).toFixed(4)}
+                  </Typography>
+                </div>
+              </div>
+            </AccordionDetails>
+          </Accordion>
+
+          <Accordion defaultExpanded>
+            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+              <Typography variant="h6">Price Range</Typography>
+            </AccordionSummary>
+            <AccordionDetails>
+              {simulationSeconds < endTime ? (
+                <>
+                  <Typography style={{ color: "green", fontWeight: "bold" }}>
+                    UPDATING RANGE
+                  </Typography>
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      marginLeft: 10,
+                    }}
+                  >
+                    <Typography>Start Price Range:</Typography>
+                    <Typography>{startPriceRange.toFixed(2)}</Typography>
+                  </div>
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      marginLeft: 10,
+                    }}
+                  >
+                    <Typography>Current Price Range:</Typography>
+                    <Typography>{priceRange.toFixed(2)}</Typography>
+                  </div>
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      marginLeft: 10,
+                    }}
+                  >
+                    <Typography>Target Price Range:</Typography>
+                    <Typography>{targetPriceRange.toFixed(2)}</Typography>
+                  </div>
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      marginLeft: 10,
+                    }}
+                  >
+                    <Typography>End Time (s):</Typography>
+                    <Typography>{endTime}</Typography>
+                  </div>
+                </>
+              ) : (
+                <div
+                  style={{ display: "flex", justifyContent: "space-between" }}
                 >
                   <Typography>Current Price Range:</Typography>
                   <Typography>{priceRange.toFixed(2)}</Typography>
                 </div>
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    marginLeft: 10,
-                  }}
-                >
-                  <Typography>Target Price Range:</Typography>
-                  <Typography>{targetPriceRange.toFixed(2)}</Typography>
-                </div>
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    marginLeft: 10,
-                  }}
-                >
-                  <Typography>End Time (s):</Typography>
-                  <Typography>{endTime}</Typography>
-                </div>
-              </>
-            ) : (
+              )}
               <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <Typography>Current Price Range:</Typography>
+                <Typography>Pool Centeredness:</Typography>
+                <Typography>{poolCenteredness.toFixed(2)}</Typography>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <Typography>Status:</Typography>
+                <Typography
+                  style={{
+                    color: poolCenteredness > margin / 100 ? "green" : "red",
+                    fontWeight: "bold",
+                  }}
+                >
+                  {poolCenteredness > margin / 100
+                    ? "IN RANGE"
+                    : "OUT OF RANGE"}
+                </Typography>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <Typography>Out of Range time:</Typography>
+                <Typography>{formatTime(outOfRangeTime)}</Typography>
+              </div>
+            </AccordionDetails>
+          </Accordion>
+
+          <Accordion defaultExpanded>
+            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+              <Typography variant="h6">Initial Values</Typography>
+            </AccordionSummary>
+            <AccordionDetails>
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <Typography>Initial Balance A:</Typography>
+                <Typography>{initialBalanceA.toFixed(2)}</Typography>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <Typography>Initial Balance B:</Typography>
+                <Typography>{initialBalanceB.toFixed(2)}</Typography>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <Typography>Price Range:</Typography>
                 <Typography>{priceRange.toFixed(2)}</Typography>
               </div>
-            )}
-            <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <Typography>Pool Centeredness:</Typography>
-              <Typography>{poolCenteredness.toFixed(2)}</Typography>
-            </div>
-            <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <Typography>Status:</Typography>
-              <Typography
-                style={{
-                  color: poolCenteredness > margin / 100 ? "green" : "red",
-                  fontWeight: "bold",
-                }}
-              >
-                {poolCenteredness > margin / 100 ? "IN RANGE" : "OUT OF RANGE"}
-              </Typography>
-            </div>
-            <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <Typography>Out of Range time:</Typography>
-              <Typography>{formatTime(outOfRangeTime)}</Typography>
-            </div>
-
-            <Typography variant="h6" style={{ marginTop: 16 }}>
-              Balances
-            </Typography>
-            <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <Typography>Invariant:</Typography>
-              <Typography>{realTimeInvariant.toFixed(2)}</Typography>
-            </div>
-            <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <Typography>Current Balance A:</Typography>
-              <Typography>{realTimeBalanceA.toFixed(2)}</Typography>
-            </div>
-            <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <Typography>Current Balance B:</Typography>
-              <Typography>{realTimeBalanceB.toFixed(2)}</Typography>
-            </div>
-            <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <Typography>Virtual Balance A:</Typography>
-              <Typography>
-                {realTimeVirtualBalances.virtualBalanceA.toFixed(2)}
-              </Typography>
-            </div>
-            <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <Typography>Virtual Balance B:</Typography>
-              <Typography>
-                {realTimeVirtualBalances.virtualBalanceB.toFixed(2)}
-              </Typography>
-            </div>
-          </Paper>
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <Typography>Margin:</Typography>
+                <Typography>{margin.toFixed(2)}%</Typography>
+              </div>
+            </AccordionDetails>
+          </Accordion>
         </Grid>
       </Grid>
     </Container>

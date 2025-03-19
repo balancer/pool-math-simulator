@@ -1,5 +1,7 @@
 import * as WeightedMath from "../weighted-pool/WeightedMath";
 
+const timeFix = 12464900; // Using the same constant as the Contract. The full value is 12464935.015039.
+
 export function calculatePoolCenteredness(params: {
   balanceA: number;
   balanceB: number;
@@ -170,11 +172,136 @@ export function calculateInvariant(params: {
   virtualBalanceA: number;
   virtualBalanceB: number;
 }) {
-  return WeightedMath.calculateInvariant({
-    balances: [
-      params.balanceA + params.virtualBalanceA,
-      params.balanceB + params.virtualBalanceB,
-    ],
-    weights: [0.5, 0.5],
-  });
+  return (
+    (params.balanceA + params.virtualBalanceA) *
+    (params.balanceB + params.virtualBalanceB)
+  );
 }
+
+export const recalculateVirtualBalances = (params: {
+  balanceA: number;
+  balanceB: number;
+  oldVirtualBalanceA: number;
+  oldVirtualBalanceB: number;
+  currentPriceRange: number;
+  poolParams: {
+    margin: number;
+    priceShiftDailyRate: number;
+  };
+  updateQ0Params: {
+    startTime: number;
+    endTime: number;
+    startPriceRange: number;
+    targetPriceRange: number;
+  };
+  simulationParams: {
+    simulationSeconds: number;
+    secondsSinceLastInteraction: number;
+  };
+}): {
+  newVirtualBalances: {
+    virtualBalanceA: number;
+    virtualBalanceB: number;
+  };
+  newPriceRange: number;
+} => {
+  if (params.simulationParams.secondsSinceLastInteraction <= 0.01) {
+    return {
+      newVirtualBalances: {
+        virtualBalanceA: params.oldVirtualBalanceA,
+        virtualBalanceB: params.oldVirtualBalanceB,
+      },
+      newPriceRange: params.currentPriceRange,
+    };
+  }
+
+  const invariant = calculateInvariant({
+    balanceA: params.balanceA,
+    balanceB: params.balanceB,
+    virtualBalanceA: params.oldVirtualBalanceA,
+    virtualBalanceB: params.oldVirtualBalanceB,
+  });
+
+  const poolCenteredness = calculatePoolCenteredness({
+    balanceA: params.balanceA,
+    balanceB: params.balanceB,
+    virtualBalanceA: params.oldVirtualBalanceA,
+    virtualBalanceB: params.oldVirtualBalanceB,
+  });
+
+  let newVirtualBalanceA = params.oldVirtualBalanceA;
+  let newVirtualBalanceB = params.oldVirtualBalanceB;
+  let newPriceRange = params.currentPriceRange;
+  const isPoolAboveCenter = isAboveCenter({
+    balanceA: params.balanceA,
+    balanceB: params.balanceB,
+    virtualBalanceA: params.oldVirtualBalanceA,
+    virtualBalanceB: params.oldVirtualBalanceB,
+  });
+
+  const isPriceRangeUpdating =
+    params.simulationParams.simulationSeconds >=
+      params.updateQ0Params.startTime &&
+    (params.simulationParams.simulationSeconds <=
+      params.updateQ0Params.endTime ||
+      params.simulationParams.simulationSeconds -
+        params.simulationParams.secondsSinceLastInteraction <=
+        params.updateQ0Params.endTime);
+
+  // Price range update logic
+  if (isPriceRangeUpdating) {
+    // Q0 is updating.
+    newPriceRange =
+      params.updateQ0Params.startPriceRange *
+      Math.pow(
+        params.updateQ0Params.targetPriceRange /
+          params.updateQ0Params.startPriceRange,
+        Math.min(
+          params.updateQ0Params.endTime - params.updateQ0Params.startTime,
+          params.simulationParams.simulationSeconds -
+            params.updateQ0Params.startTime
+        ) /
+          (params.updateQ0Params.endTime - params.updateQ0Params.startTime)
+      );
+
+    const centerednessFix = isPoolAboveCenter
+      ? 1 / poolCenteredness
+      : poolCenteredness;
+
+    newVirtualBalanceA = Math.sqrt(
+      (params.balanceA * invariant) /
+        (Math.sqrt(newPriceRange) * params.balanceB * centerednessFix)
+    );
+    newVirtualBalanceB =
+      (params.balanceB * newVirtualBalanceA * centerednessFix) /
+      params.balanceA;
+  }
+
+  if (poolCenteredness <= params.poolParams.margin / 100) {
+    const tau = params.poolParams.priceShiftDailyRate / timeFix;
+
+    if (isPoolAboveCenter) {
+      newVirtualBalanceB =
+        newVirtualBalanceB *
+        Math.pow(1 - tau, params.simulationParams.secondsSinceLastInteraction);
+      newVirtualBalanceA =
+        (params.balanceA * (newVirtualBalanceB + params.balanceB)) /
+        (newVirtualBalanceB * (Math.sqrt(newPriceRange) - 1) - params.balanceB);
+    } else {
+      newVirtualBalanceA =
+        newVirtualBalanceA *
+        Math.pow(1 - tau, params.simulationParams.secondsSinceLastInteraction);
+      newVirtualBalanceB =
+        (params.balanceB * (newVirtualBalanceA + params.balanceA)) /
+        (newVirtualBalanceA * (Math.sqrt(newPriceRange) - 1) - params.balanceA);
+    }
+  }
+
+  return {
+    newVirtualBalances: {
+      virtualBalanceA: newVirtualBalanceA,
+      virtualBalanceB: newVirtualBalanceB,
+    },
+    newPriceRange: newPriceRange,
+  };
+};
