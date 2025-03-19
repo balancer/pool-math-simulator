@@ -88,10 +88,10 @@ const Navigation = () => {
       </Logo>
       <NavLinks>
         <Link
-          to="/acl-amm"
-          className={location.pathname === "/acl-amm" ? "active" : ""}
+          to="/reclamm"
+          className={location.pathname === "/reclamm" ? "active" : ""}
         >
-          ACL-AMM
+          ReClamm
         </Link>
         <Link
           to="/stable-surge"
@@ -110,7 +110,8 @@ function App() {
       <Navigation />
       <Routes>
         <Route path="/" element={<Home />} />
-        <Route path="/acl-amm" element={<AclAmm />} />
+        <Route path="/reclamm" element={<AclAmm />} />
+        <Route path="/acl-amm" element={<Navigate to="/reclamm" />} />
         <Route path="/stable-surge" element={<StableSurge />} />
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
