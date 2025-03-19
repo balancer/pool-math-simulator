@@ -21,6 +21,7 @@ import {
   calculateUpperMargin,
   calculateInitialVirtualBalances,
   calculateBalancesAfterSwapIn,
+  isAboveCenter,
 } from "./AclAmmMath";
 import { formatTime } from "../../utils/Time";
 
@@ -30,10 +31,9 @@ const defaultPriceRange = 16;
 const defaultMargin = 10;
 const defaultPriceShiftDailyRate = 100;
 const defaultSwapAmountIn = 100;
-const timeFix = 12464935.015039;
+const timeFix = 12464900; // Using the same constant as the Contract. The full value is 12464935.015039.
 
 const tickMilliseconds = 10;
-const secondsPerBlock = 12;
 
 export default function AclAmm() {
   // Simulation variables
@@ -203,8 +203,17 @@ export default function AclAmm() {
       virtualBalanceB: virtualBalances.virtualBalanceB,
     };
 
+    const isPoolAboveCenter = isAboveCenter({
+      balanceA: currentBalanceA,
+      balanceB: currentBalanceB,
+      virtualBalanceA: virtualBalances.virtualBalanceA,
+      virtualBalanceB: virtualBalances.virtualBalanceB,
+    });
+
     const isPriceRangeUpdating =
-      simulationSeconds >= startTime && simulationSeconds <= endTime;
+      simulationSeconds >= startTime &&
+      (simulationSeconds <= endTime ||
+        simulationSeconds - simulationSecondsPerBlock <= endTime);
 
     // Price range update logic
     if (isPriceRangeUpdating) {
@@ -213,7 +222,8 @@ export default function AclAmm() {
         startPriceRange *
         Math.pow(
           targetPriceRange / startPriceRange,
-          (simulationSeconds - startTime) / (endTime - startTime)
+          Math.min(endTime - startTime, simulationSeconds - startTime) /
+            (endTime - startTime)
         );
 
       // Update price range when pool is in range and maintain pool centeredness
@@ -238,15 +248,10 @@ export default function AclAmm() {
     if (poolCenteredness <= margin / 100) {
       const tau = priceShiftDailyRate / timeFix;
 
-      if (
-        currentBalanceB === 0 ||
-        currentBalanceA / currentBalanceB >
-          newVirtualBalances.virtualBalanceA /
-            newVirtualBalances.virtualBalanceB
-      ) {
+      if (isPoolAboveCenter) {
         const newVirtualBalanceB =
           newVirtualBalances.virtualBalanceB *
-          Math.pow(1 - tau, secondsPerBlock);
+          Math.pow(1 - tau, simulationSecondsPerBlock);
         const newVirtualBalanceA =
           (currentBalanceA * (newVirtualBalanceB + currentBalanceB)) /
           (newVirtualBalanceB * (Math.sqrt(newPriceRange) - 1) -
@@ -259,7 +264,7 @@ export default function AclAmm() {
       } else {
         const newVirtualBalanceA =
           newVirtualBalances.virtualBalanceA *
-          Math.pow(1 - tau, secondsPerBlock);
+          Math.pow(1 - tau, simulationSecondsPerBlock);
         const newVirtualBalanceB =
           (currentBalanceB * (newVirtualBalanceA + currentBalanceA)) /
           (newVirtualBalanceA * (Math.sqrt(newPriceRange) - 1) -

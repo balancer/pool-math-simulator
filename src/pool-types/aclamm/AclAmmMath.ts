@@ -7,10 +7,7 @@ export function calculatePoolCenteredness(params: {
   virtualBalanceB: number;
 }) {
   if (params.balanceA === 0 || params.balanceB === 0) return 0;
-  if (
-    params.balanceA / params.balanceB >
-    params.virtualBalanceA / params.virtualBalanceB
-  ) {
+  if (isAboveCenter(params)) {
     return (
       (params.balanceB * params.virtualBalanceA) /
       (params.balanceA * params.virtualBalanceB)
@@ -19,6 +16,19 @@ export function calculatePoolCenteredness(params: {
   return (
     (params.balanceA * params.virtualBalanceB) /
     (params.balanceB * params.virtualBalanceA)
+  );
+}
+
+export function isAboveCenter(params: {
+  balanceA: number;
+  balanceB: number;
+  virtualBalanceA: number;
+  virtualBalanceB: number;
+}) {
+  if (params.balanceB === 0) return true;
+  return (
+    params.balanceA / params.balanceB >
+    params.virtualBalanceA / params.virtualBalanceB
   );
 }
 
