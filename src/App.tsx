@@ -72,7 +72,7 @@ const CenterMenu = styled.div`
 // Home component for the start menu
 const Home = () => (
   <CenterMenu>
-    <Link to="/acl-amm">ACL-AMM</Link>
+    <Link to="/reclamm">ReClamm</Link>
     <Link to="/stable-surge">Stable Surge</Link>
   </CenterMenu>
 );
