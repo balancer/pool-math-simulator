@@ -5,7 +5,6 @@ import { calculateLowerMargin, calculateUpperMargin } from "./AclAmmMath";
 interface AclAmmChartProps {
   realTimeBalanceA: number;
   realTimeBalanceB: number;
-  priceRange: number;
   margin: number;
   realTimeVirtualBalances: {
     virtualBalanceA: number;
@@ -18,7 +17,6 @@ interface AclAmmChartProps {
 export const AclAmmChart: React.FC<AclAmmChartProps> = ({
   realTimeBalanceA,
   realTimeBalanceB,
-  priceRange,
   margin,
   realTimeVirtualBalances,
   realTimeInvariant,
@@ -27,8 +25,6 @@ export const AclAmmChart: React.FC<AclAmmChartProps> = ({
   const svgRef = useRef<SVGSVGElement>(null);
 
   const realTimeChartData = useMemo(() => {
-    if (priceRange <= 1) return [];
-
     const xForPointB =
       realTimeInvariant / realTimeVirtualBalances.virtualBalanceB;
 
@@ -45,11 +41,9 @@ export const AclAmmChart: React.FC<AclAmmChartProps> = ({
     });
 
     return curvePoints;
-  }, [priceRange, realTimeVirtualBalances, realTimeInvariant]);
+  }, [realTimeVirtualBalances, realTimeInvariant]);
 
   const chartInitialData = useMemo(() => {
-    if (priceRange <= 1) return [];
-
     const xForPointB =
       initialInvariant / realTimeVirtualBalances.virtualBalanceB;
 
@@ -66,7 +60,7 @@ export const AclAmmChart: React.FC<AclAmmChartProps> = ({
     });
 
     return curvePoints;
-  }, [initialInvariant, realTimeVirtualBalances, priceRange]);
+  }, [initialInvariant, realTimeVirtualBalances]);
 
   const specialPoints = useMemo(() => {
     // Add special points
@@ -119,7 +113,6 @@ export const AclAmmChart: React.FC<AclAmmChartProps> = ({
   }, [
     realTimeBalanceA,
     realTimeBalanceB,
-    priceRange,
     margin,
     realTimeVirtualBalances,
     realTimeInvariant,

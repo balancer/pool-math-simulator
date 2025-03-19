@@ -551,11 +551,10 @@ export default function AclAmm() {
               <AclAmmChart
                 realTimeBalanceA={realTimeBalanceA}
                 realTimeBalanceB={realTimeBalanceB}
-                priceRange={priceRange}
-                margin={margin}
                 realTimeVirtualBalances={realTimeVirtualBalances}
                 realTimeInvariant={realTimeInvariant}
                 initialInvariant={initialInvariant}
+                margin={margin}
               />
             </div>
           </Paper>
