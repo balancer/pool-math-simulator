@@ -99,7 +99,6 @@ export default function AclAmm() {
 
   const [inputTargetPriceRange, setInputTargetPriceRange] =
     useState<number>(defaultPriceRange);
-  const [inputStartTime, setInputStartTime] = useState<number>(0);
   const [inputEndTime, setInputEndTime] = useState<number>(0);
 
   // Add new state variables for inputs
@@ -108,6 +107,9 @@ export default function AclAmm() {
   // Replace the constants with state variables
   const [simulationSecondsPerBlock, setSimulationSecondsPerBlock] =
     useState<number>(12);
+
+  // Add new state for error message
+  const [endTimeError, setEndTimeError] = useState<string>("");
 
   const invariant = useMemo(() => {
     return (
@@ -144,7 +146,7 @@ export default function AclAmm() {
   }, [margin, virtualBalances, invariant]);
 
   const calculatedSwapAmountOut = useMemo(() => {
-    return calculateOutGivenIn({
+    const amountOut = calculateOutGivenIn({
       balanceA: currentBalanceA,
       balanceB: currentBalanceB,
       virtualBalanceA: virtualBalances.virtualBalanceA,
@@ -152,6 +154,14 @@ export default function AclAmm() {
       swapAmountIn: swapAmountIn,
       swapTokenIn: swapTokenIn,
     });
+
+    // Check if amount out exceeds available balance
+    const relevantBalance =
+      swapTokenIn === "Token A" ? currentBalanceB : currentBalanceA;
+    return {
+      amount: amountOut,
+      exceedsBalance: amountOut > relevantBalance,
+    };
   }, [
     swapAmountIn,
     swapTokenIn,
@@ -319,10 +329,16 @@ export default function AclAmm() {
     );
   };
 
-  const handleUpdatePriceRange = () => {
+  const handleUpdatePriceRange = async () => {
+    if (inputEndTime < simulationSeconds) {
+      setEndTimeError("End time >= Simulation Time");
+      return;
+    }
+
+    setEndTimeError("");
     setStartPriceRange(priceRange);
     setTargetPriceRange(inputTargetPriceRange);
-    setStartTime(inputStartTime);
+    setStartTime(simulationSeconds);
     setEndTime(inputEndTime);
   };
 
@@ -432,16 +448,31 @@ export default function AclAmm() {
                 value={swapAmountIn}
                 onChange={(e) => setSwapAmountIn(Number(e.target.value))}
               />
-              <Typography style={{ marginTop: 8, marginBottom: 8 }}>
+              <Typography
+                style={{
+                  marginTop: 8,
+                  marginBottom: 8,
+                  color: calculatedSwapAmountOut.exceedsBalance
+                    ? "red"
+                    : "inherit",
+                }}
+              >
                 Amount Out {swapTokenIn === "Token A" ? "B" : "A"}:{" "}
-                {calculatedSwapAmountOut > 0
-                  ? calculatedSwapAmountOut.toFixed(2)
+                {calculatedSwapAmountOut.amount > 0
+                  ? calculatedSwapAmountOut.amount.toFixed(2)
                   : "0"}
+                {calculatedSwapAmountOut.exceedsBalance && (
+                  <div style={{ fontSize: "0.8em" }}>
+                    Token {swapTokenIn === "Token A" ? "B" : "A"} Out Amount
+                    must be smaller than balance
+                  </div>
+                )}
               </Typography>
               <Button
                 variant="contained"
                 fullWidth
                 onClick={handleSwap}
+                disabled={calculatedSwapAmountOut.exceedsBalance}
                 style={{ marginTop: 16 }}
               >
                 Swap
@@ -467,20 +498,14 @@ export default function AclAmm() {
                 Current Time: {simulationSeconds.toFixed(0)}
               </Typography>
               <TextField
-                label="Start Time (in seconds)"
-                type="number"
-                fullWidth
-                margin="normal"
-                value={inputStartTime}
-                onChange={(e) => setInputStartTime(Number(e.target.value))}
-              />
-              <TextField
                 label="End Time (in seconds)"
                 type="number"
                 fullWidth
                 margin="normal"
                 value={inputEndTime}
                 onChange={(e) => setInputEndTime(Number(e.target.value))}
+                error={!!endTimeError}
+                helperText={endTimeError}
               />
               <Button
                 variant="contained"
@@ -694,26 +719,6 @@ export default function AclAmm() {
                 >
                   <Typography>Target Price Range:</Typography>
                   <Typography>{targetPriceRange.toFixed(2)}</Typography>
-                </div>
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    marginLeft: 10,
-                  }}
-                >
-                  <Typography>Start Time (s):</Typography>
-                  <Typography>{startTime}</Typography>
-                </div>
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    marginLeft: 10,
-                  }}
-                >
-                  <Typography>Current Time (s):</Typography>
-                  <Typography>{simulationSeconds.toFixed(0)}</Typography>
                 </div>
                 <div
                   style={{
