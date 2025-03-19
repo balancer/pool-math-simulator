@@ -226,16 +226,17 @@ export default function AclAmm() {
             (endTime - startTime)
         );
 
-      // Update price range when pool is in range and maintain pool centeredness
-      const centerBalanceA =
-        virtualBalances.virtualBalanceA *
-        (Math.sqrt(Math.sqrt(priceRange)) - 1);
+      const centerednessFix = isPoolAboveCenter
+        ? 1 / poolCenteredness
+        : poolCenteredness;
 
-      const newDenominator = Math.sqrt(Math.sqrt(newPriceRange)) - 1;
-
-      const newVirtualBalanceA = centerBalanceA / newDenominator;
+      const newVirtualBalanceA = Math.sqrt(
+        (currentBalanceA * invariant) /
+          (Math.sqrt(newPriceRange) * currentBalanceB * centerednessFix)
+      );
       const newVirtualBalanceB =
-        invariant / (Math.sqrt(newPriceRange) * newVirtualBalanceA);
+        (currentBalanceB * newVirtualBalanceA * centerednessFix) /
+        currentBalanceA;
 
       newVirtualBalances = {
         virtualBalanceA: newVirtualBalanceA,
