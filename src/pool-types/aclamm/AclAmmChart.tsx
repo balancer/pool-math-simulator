@@ -3,123 +3,130 @@ import * as d3 from "d3";
 import { calculateLowerMargin, calculateUpperMargin } from "./AclAmmMath";
 
 interface AclAmmChartProps {
-  currentBalanceA: number;
-  currentBalanceB: number;
+  realTimeBalanceA: number;
+  realTimeBalanceB: number;
   priceRange: number;
   margin: number;
-  virtualBalances: {
+  realTimeVirtualBalances: {
     virtualBalanceA: number;
     virtualBalanceB: number;
   };
-  invariant: number;
+  realTimeInvariant: number;
   initialInvariant: number;
 }
 
 export const AclAmmChart: React.FC<AclAmmChartProps> = ({
-  currentBalanceA,
-  currentBalanceB,
+  realTimeBalanceA,
+  realTimeBalanceB,
   priceRange,
   margin,
-  virtualBalances,
-  invariant,
+  realTimeVirtualBalances,
+  realTimeInvariant,
   initialInvariant,
 }) => {
   const svgRef = useRef<SVGSVGElement>(null);
 
-  const chartData = useMemo(() => {
+  const realTimeChartData = useMemo(() => {
     if (priceRange <= 1) return [];
 
-    const xForPointB = invariant / virtualBalances.virtualBalanceB;
+    const xForPointB =
+      realTimeInvariant / realTimeVirtualBalances.virtualBalanceB;
 
     // Create regular curve points
     const curvePoints = Array.from({ length: 100 }, (_, i) => {
       const x =
-        0.7 * virtualBalances.virtualBalanceA +
-        (i * (1.3 * xForPointB - 0.7 * virtualBalances.virtualBalanceA)) / 100;
-      const y = invariant / x;
+        0.7 * realTimeVirtualBalances.virtualBalanceA +
+        (i *
+          (1.3 * xForPointB - 0.7 * realTimeVirtualBalances.virtualBalanceA)) /
+          100;
+      const y = realTimeInvariant / x;
 
       return { x, y };
     });
 
     return curvePoints;
-  }, [priceRange, virtualBalances, invariant]);
+  }, [priceRange, realTimeVirtualBalances, realTimeInvariant]);
 
   const chartInitialData = useMemo(() => {
     if (priceRange <= 1) return [];
 
-    const xForPointB = initialInvariant / virtualBalances.virtualBalanceB;
+    const xForPointB =
+      initialInvariant / realTimeVirtualBalances.virtualBalanceB;
 
     // Create regular curve points
     const curvePoints = Array.from({ length: 100 }, (_, i) => {
       const x =
-        0.7 * virtualBalances.virtualBalanceA +
-        (i * (1.3 * xForPointB - 0.7 * virtualBalances.virtualBalanceA)) / 100;
+        0.7 * realTimeVirtualBalances.virtualBalanceA +
+        (i *
+          (1.3 * xForPointB - 0.7 * realTimeVirtualBalances.virtualBalanceA)) /
+          100;
       const y = initialInvariant / x;
 
       return { x, y };
     });
 
     return curvePoints;
-  }, [initialInvariant, virtualBalances, priceRange]);
+  }, [initialInvariant, realTimeVirtualBalances, priceRange]);
 
   const specialPoints = useMemo(() => {
     // Add special points
     const pointA = {
-      x: virtualBalances.virtualBalanceA,
-      y: invariant / virtualBalances.virtualBalanceA,
+      x: realTimeVirtualBalances.virtualBalanceA,
+      y: realTimeInvariant / realTimeVirtualBalances.virtualBalanceA,
     };
 
-    const xForPointB = invariant / virtualBalances.virtualBalanceB;
+    const xForPointB =
+      realTimeInvariant / realTimeVirtualBalances.virtualBalanceB;
     const pointB = {
       x: xForPointB,
-      y: virtualBalances.virtualBalanceB,
+      y: realTimeVirtualBalances.virtualBalanceB,
     };
 
     const lowerMargin = calculateLowerMargin({
       margin,
-      invariant,
-      virtualBalanceA: virtualBalances.virtualBalanceA,
-      virtualBalanceB: virtualBalances.virtualBalanceB,
+      invariant: realTimeInvariant,
+      virtualBalanceA: realTimeVirtualBalances.virtualBalanceA,
+      virtualBalanceB: realTimeVirtualBalances.virtualBalanceB,
     });
 
     const higherMargin = calculateUpperMargin({
       margin,
-      invariant,
-      virtualBalanceA: virtualBalances.virtualBalanceA,
-      virtualBalanceB: virtualBalances.virtualBalanceB,
+      invariant: realTimeInvariant,
+      virtualBalanceA: realTimeVirtualBalances.virtualBalanceA,
+      virtualBalanceB: realTimeVirtualBalances.virtualBalanceB,
     });
 
     const lowerMarginPoint = {
       x: lowerMargin,
-      y: invariant / lowerMargin,
+      y: realTimeInvariant / lowerMargin,
       pointType: "margin",
     };
 
     const higherMarginPoint = {
       x: higherMargin,
-      y: invariant / higherMargin,
+      y: realTimeInvariant / higherMargin,
       pointType: "margin",
     };
 
     // Add current point
     const currentPoint = {
-      x: currentBalanceA + virtualBalances.virtualBalanceA,
-      y: currentBalanceB + virtualBalances.virtualBalanceB,
+      x: realTimeBalanceA + realTimeVirtualBalances.virtualBalanceA,
+      y: realTimeBalanceB + realTimeVirtualBalances.virtualBalanceB,
       pointType: "current",
     };
 
     return [pointA, pointB, currentPoint, lowerMarginPoint, higherMarginPoint];
   }, [
-    currentBalanceA,
-    currentBalanceB,
+    realTimeBalanceA,
+    realTimeBalanceB,
     priceRange,
     margin,
-    virtualBalances,
-    invariant,
+    realTimeVirtualBalances,
+    realTimeInvariant,
   ]);
 
   useEffect(() => {
-    if (!svgRef.current || !chartData.length) return;
+    if (!svgRef.current || !realTimeChartData.length) return;
 
     const renderChart = () => {
       // Clear previous chart
@@ -138,16 +145,16 @@ export const AclAmmChart: React.FC<AclAmmChartProps> = ({
       const xScale = d3
         .scaleLinear()
         .domain([
-          d3.min(chartData, (d) => d.x)!,
-          d3.max(chartData, (d) => d.x)!,
+          d3.min(realTimeChartData, (d) => d.x)!,
+          d3.max(realTimeChartData, (d) => d.x)!,
         ])
         .range([0, innerWidth]);
 
       const yScale = d3
         .scaleLinear()
         .domain([
-          d3.min(chartData, (d) => d.y)!,
-          d3.max(chartData, (d) => d.y)!,
+          d3.min(realTimeChartData, (d) => d.y)!,
+          d3.max(realTimeChartData, (d) => d.y)!,
         ])
         .range([innerHeight, 0]);
 
@@ -195,8 +202,8 @@ export const AclAmmChart: React.FC<AclAmmChartProps> = ({
       // Add reference lines
       svg
         .append("line")
-        .attr("x1", xScale(virtualBalances.virtualBalanceA))
-        .attr("x2", xScale(virtualBalances.virtualBalanceA))
+        .attr("x1", xScale(realTimeVirtualBalances.virtualBalanceA))
+        .attr("x2", xScale(realTimeVirtualBalances.virtualBalanceA))
         .attr("y1", 0)
         .attr("y2", innerHeight)
         .attr("stroke", "#BBBBBB")
@@ -206,8 +213,8 @@ export const AclAmmChart: React.FC<AclAmmChartProps> = ({
         .append("line")
         .attr("x1", 0)
         .attr("x2", innerWidth)
-        .attr("y1", yScale(virtualBalances.virtualBalanceB))
-        .attr("y2", yScale(virtualBalances.virtualBalanceB))
+        .attr("y1", yScale(realTimeVirtualBalances.virtualBalanceB))
+        .attr("y2", yScale(realTimeVirtualBalances.virtualBalanceB))
         .attr("stroke", "#BBBBBB")
         .attr("stroke-width", 2);
 
@@ -234,9 +241,9 @@ export const AclAmmChart: React.FC<AclAmmChartProps> = ({
 
       svg
         .append("path")
-        .datum(chartData)
+        .datum(realTimeChartData)
         .attr("fill", "none")
-        .attr("stroke", "#8884d8")
+        .attr("stroke", "#4CAF50")
         .attr("stroke-width", 2)
         .attr("d", line);
 
@@ -288,6 +295,78 @@ export const AclAmmChart: React.FC<AclAmmChartProps> = ({
         .attr("y", -40)
         .attr("text-anchor", "middle")
         .text("Total Balance B");
+
+      // Add legend
+      const legendData = [
+        { color: "red", text: "Min/Max Price", type: "circle" },
+        { color: "blue", text: "Margin", type: "circle" },
+        { color: "green", text: "Current Real Balances", type: "circle" },
+        { color: "#4CAF50", text: "Real Time Invariant", type: "line" },
+        { color: "red", text: "Initial Invariant", type: "dashed-line" },
+      ];
+
+      const legend = svg
+        .append("g")
+        .attr("class", "legend")
+        .attr("transform", `translate(${innerWidth - 200}, 20)`);
+
+      // Add white background to legend
+      const legendPadding = 10;
+      const legendWidth = 180; // Adjust based on your text length
+      const legendHeight = legendData.length * 20 + legendPadding * 2;
+
+      legend
+        .append("rect")
+        .attr("x", -2 * legendPadding)
+        .attr("y", -2 * legendPadding)
+        .attr("width", legendWidth)
+        .attr("height", legendHeight)
+        .attr("fill", "white")
+        .attr("stroke", "#ccc")
+        .attr("stroke-width", 1);
+
+      // Add legend items
+      const legendItems = legend
+        .selectAll(".legend-item")
+        .data(legendData)
+        .enter()
+        .append("g")
+        .attr("class", "legend-item")
+        .attr("transform", (d, i) => `translate(0, ${i * 20})`);
+
+      // Add symbols
+      legendItems.each(function (d) {
+        const item = d3.select(this);
+        if (d.type === "circle") {
+          item
+            .append("circle")
+            .attr("cx", 0)
+            .attr("cy", 0)
+            .attr("r", 5)
+            .attr("fill", d.color);
+        } else if (d.type === "line" || d.type === "dashed-line") {
+          item
+            .append("line")
+            .attr("x1", -10)
+            .attr("x2", 10)
+            .attr("y1", 0)
+            .attr("y2", 0)
+            .attr("stroke", d.color)
+            .attr("stroke-width", 2)
+            .attr(
+              "stroke-dasharray",
+              d.type === "dashed-line" ? "5,5" : "none"
+            );
+        }
+      });
+
+      // Add text labels
+      legendItems
+        .append("text")
+        .attr("x", 15)
+        .attr("y", 4)
+        .text((d) => d.text)
+        .style("font-size", "12px");
     };
 
     renderChart();
@@ -305,7 +384,7 @@ export const AclAmmChart: React.FC<AclAmmChartProps> = ({
     return () => {
       resizeObserver.disconnect();
     };
-  }, [chartData, specialPoints, virtualBalances]);
+  }, [realTimeChartData, specialPoints, realTimeVirtualBalances]);
 
   return <svg ref={svgRef}></svg>;
 };

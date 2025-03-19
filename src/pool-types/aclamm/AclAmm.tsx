@@ -74,13 +74,13 @@ export default function AclAmm() {
     useState<number>(defaultPriceRange);
   const [inputMargin, setInputMargin] = useState<number>(defaultMargin);
 
-  const [currentBalanceA, setCurrentBalanceA] = useState<number>(
+  const [realTimeBalanceA, setRealTimeBalanceA] = useState<number>(
     defaultInitialBalanceA
   );
-  const [currentBalanceB, setCurrentBalanceB] = useState<number>(
+  const [realTimeBalanceB, setRealTimeBalanceB] = useState<number>(
     defaultInitialBalanceB
   );
-  const [virtualBalances, setVirtualBalances] = useState({
+  const [realTimeVirtualBalances, setRealTimeVirtualBalances] = useState({
     virtualBalanceA: 0,
     virtualBalanceB: 0,
   });
@@ -111,53 +111,53 @@ export default function AclAmm() {
   // Add new state for error message
   const [endTimeError, setEndTimeError] = useState<string>("");
 
-  const invariant = useMemo(() => {
+  const realTimeInvariant = useMemo(() => {
     return (
-      (currentBalanceA + virtualBalances.virtualBalanceA) *
-      (currentBalanceB + virtualBalances.virtualBalanceB)
+      (realTimeBalanceA + realTimeVirtualBalances.virtualBalanceA) *
+      (realTimeBalanceB + realTimeVirtualBalances.virtualBalanceB)
     );
-  }, [currentBalanceA, currentBalanceB, virtualBalances]);
+  }, [realTimeBalanceA, realTimeBalanceB, realTimeVirtualBalances]);
 
   const poolCenteredness = useMemo(() => {
     return calculatePoolCenteredness({
-      balanceA: currentBalanceA,
-      balanceB: currentBalanceB,
-      virtualBalanceA: virtualBalances.virtualBalanceA,
-      virtualBalanceB: virtualBalances.virtualBalanceB,
+      balanceA: realTimeBalanceA,
+      balanceB: realTimeBalanceB,
+      virtualBalanceA: realTimeVirtualBalances.virtualBalanceA,
+      virtualBalanceB: realTimeVirtualBalances.virtualBalanceB,
     });
-  }, [currentBalanceA, currentBalanceB, virtualBalances]);
+  }, [realTimeBalanceA, realTimeBalanceB, realTimeVirtualBalances]);
 
   const lowerMargin = useMemo(() => {
     return calculateLowerMargin({
       margin: margin,
-      invariant: invariant,
-      virtualBalanceA: virtualBalances.virtualBalanceA,
-      virtualBalanceB: virtualBalances.virtualBalanceB,
+      invariant: realTimeInvariant,
+      virtualBalanceA: realTimeVirtualBalances.virtualBalanceA,
+      virtualBalanceB: realTimeVirtualBalances.virtualBalanceB,
     });
-  }, [margin, virtualBalances, invariant]);
+  }, [margin, realTimeVirtualBalances, realTimeInvariant]);
 
   const higherMargin = useMemo(() => {
     return calculateUpperMargin({
       margin: margin,
-      invariant: invariant,
-      virtualBalanceA: virtualBalances.virtualBalanceA,
-      virtualBalanceB: virtualBalances.virtualBalanceB,
+      invariant: realTimeInvariant,
+      virtualBalanceA: realTimeVirtualBalances.virtualBalanceA,
+      virtualBalanceB: realTimeVirtualBalances.virtualBalanceB,
     });
-  }, [margin, virtualBalances, invariant]);
+  }, [margin, realTimeVirtualBalances, realTimeInvariant]);
 
   const calculatedSwapAmountOut = useMemo(() => {
     const amountOut = calculateOutGivenIn({
-      balanceA: currentBalanceA,
-      balanceB: currentBalanceB,
-      virtualBalanceA: virtualBalances.virtualBalanceA,
-      virtualBalanceB: virtualBalances.virtualBalanceB,
+      balanceA: realTimeBalanceA,
+      balanceB: realTimeBalanceB,
+      virtualBalanceA: realTimeVirtualBalances.virtualBalanceA,
+      virtualBalanceB: realTimeVirtualBalances.virtualBalanceB,
       swapAmountIn: swapAmountIn,
       swapTokenIn: swapTokenIn,
     });
 
     // Check if amount out exceeds available balance
     const relevantBalance =
-      swapTokenIn === "Token A" ? currentBalanceB : currentBalanceA;
+      swapTokenIn === "Token A" ? realTimeBalanceB : realTimeBalanceA;
     return {
       amount: amountOut,
       exceedsBalance: amountOut > relevantBalance,
@@ -165,9 +165,9 @@ export default function AclAmm() {
   }, [
     swapAmountIn,
     swapTokenIn,
-    currentBalanceA,
-    currentBalanceB,
-    virtualBalances,
+    realTimeBalanceA,
+    realTimeBalanceB,
+    realTimeVirtualBalances,
   ]);
 
   useEffect(() => {
@@ -209,15 +209,15 @@ export default function AclAmm() {
 
     let newPriceRange = priceRange;
     let newVirtualBalances = {
-      virtualBalanceA: virtualBalances.virtualBalanceA,
-      virtualBalanceB: virtualBalances.virtualBalanceB,
+      virtualBalanceA: realTimeVirtualBalances.virtualBalanceA,
+      virtualBalanceB: realTimeVirtualBalances.virtualBalanceB,
     };
 
     const isPoolAboveCenter = isAboveCenter({
-      balanceA: currentBalanceA,
-      balanceB: currentBalanceB,
-      virtualBalanceA: virtualBalances.virtualBalanceA,
-      virtualBalanceB: virtualBalances.virtualBalanceB,
+      balanceA: realTimeBalanceA,
+      balanceB: realTimeBalanceB,
+      virtualBalanceA: realTimeVirtualBalances.virtualBalanceA,
+      virtualBalanceB: realTimeVirtualBalances.virtualBalanceB,
     });
 
     const isPriceRangeUpdating =
@@ -241,12 +241,12 @@ export default function AclAmm() {
         : poolCenteredness;
 
       const newVirtualBalanceA = Math.sqrt(
-        (currentBalanceA * invariant) /
-          (Math.sqrt(newPriceRange) * currentBalanceB * centerednessFix)
+        (realTimeBalanceA * realTimeInvariant) /
+          (Math.sqrt(newPriceRange) * realTimeBalanceB * centerednessFix)
       );
       const newVirtualBalanceB =
-        (currentBalanceB * newVirtualBalanceA * centerednessFix) /
-        currentBalanceA;
+        (realTimeBalanceB * newVirtualBalanceA * centerednessFix) /
+        realTimeBalanceA;
 
       newVirtualBalances = {
         virtualBalanceA: newVirtualBalanceA,
@@ -264,9 +264,9 @@ export default function AclAmm() {
           newVirtualBalances.virtualBalanceB *
           Math.pow(1 - tau, simulationSecondsPerBlock);
         const newVirtualBalanceA =
-          (currentBalanceA * (newVirtualBalanceB + currentBalanceB)) /
+          (realTimeBalanceA * (newVirtualBalanceB + realTimeBalanceB)) /
           (newVirtualBalanceB * (Math.sqrt(newPriceRange) - 1) -
-            currentBalanceB);
+            realTimeBalanceB);
 
         newVirtualBalances = {
           virtualBalanceA: newVirtualBalanceA,
@@ -277,9 +277,9 @@ export default function AclAmm() {
           newVirtualBalances.virtualBalanceA *
           Math.pow(1 - tau, simulationSecondsPerBlock);
         const newVirtualBalanceB =
-          (currentBalanceB * (newVirtualBalanceA + currentBalanceA)) /
+          (realTimeBalanceB * (newVirtualBalanceA + realTimeBalanceA)) /
           (newVirtualBalanceA * (Math.sqrt(newPriceRange) - 1) -
-            currentBalanceA);
+            realTimeBalanceA);
 
         newVirtualBalances = {
           virtualBalanceA: newVirtualBalanceA,
@@ -287,7 +287,7 @@ export default function AclAmm() {
         };
       }
     }
-    setVirtualBalances(newVirtualBalances);
+    setRealTimeVirtualBalances(newVirtualBalances);
   }, [simulationSeconds]);
 
   useEffect(() => {
@@ -309,8 +309,8 @@ export default function AclAmm() {
   const handleUpdate = () => {
     setInitialBalanceA(Number(inputBalanceA));
     setInitialBalanceB(Number(inputBalanceB));
-    setCurrentBalanceA(Number(inputBalanceA));
-    setCurrentBalanceB(Number(inputBalanceB));
+    setRealTimeBalanceA(Number(inputBalanceA));
+    setRealTimeBalanceB(Number(inputBalanceB));
     setPriceRange(Number(inputPriceRange));
     setMargin(Number(inputMargin));
     initializeVirtualBalances();
@@ -322,7 +322,7 @@ export default function AclAmm() {
       balanceA: inputBalanceA,
       balanceB: inputBalanceB,
     });
-    setVirtualBalances(initialVirtualBalances);
+    setRealTimeVirtualBalances(initialVirtualBalances);
     setInitialInvariant(
       (inputBalanceA + initialVirtualBalances.virtualBalanceA) *
         (inputBalanceB + initialVirtualBalances.virtualBalanceB)
@@ -344,16 +344,16 @@ export default function AclAmm() {
 
   const handleSwap = () => {
     const { newBalanceA, newBalanceB } = calculateBalancesAfterSwapIn({
-      balanceA: currentBalanceA,
-      balanceB: currentBalanceB,
-      virtualBalanceA: virtualBalances.virtualBalanceA,
-      virtualBalanceB: virtualBalances.virtualBalanceB,
+      balanceA: realTimeBalanceA,
+      balanceB: realTimeBalanceB,
+      virtualBalanceA: realTimeVirtualBalances.virtualBalanceA,
+      virtualBalanceB: realTimeVirtualBalances.virtualBalanceB,
       swapAmountIn: swapAmountIn,
       swapTokenIn: swapTokenIn,
     });
 
-    setCurrentBalanceA(newBalanceA);
-    setCurrentBalanceB(newBalanceB);
+    setRealTimeBalanceA(newBalanceA);
+    setRealTimeBalanceB(newBalanceB);
   };
 
   // Add handler for saving simulation config
@@ -549,12 +549,12 @@ export default function AclAmm() {
           <Paper style={{ padding: 16, textAlign: "center" }}>
             <div style={{ width: "100%", height: 600 }}>
               <AclAmmChart
-                currentBalanceA={currentBalanceA}
-                currentBalanceB={currentBalanceB}
+                realTimeBalanceA={realTimeBalanceA}
+                realTimeBalanceB={realTimeBalanceB}
                 priceRange={priceRange}
                 margin={margin}
-                virtualBalances={virtualBalances}
-                invariant={invariant}
+                realTimeVirtualBalances={realTimeVirtualBalances}
+                realTimeInvariant={realTimeInvariant}
                 initialInvariant={initialInvariant}
               />
             </div>
@@ -632,9 +632,9 @@ export default function AclAmm() {
               <Typography>Rate Max/Min:</Typography>
               <Typography>
                 {(
-                  Math.pow(invariant, 2) /
-                  (Math.pow(virtualBalances.virtualBalanceA, 2) *
-                    Math.pow(virtualBalances.virtualBalanceB, 2))
+                  Math.pow(realTimeInvariant, 2) /
+                  (Math.pow(realTimeVirtualBalances.virtualBalanceA, 2) *
+                    Math.pow(realTimeVirtualBalances.virtualBalanceB, 2))
                 ).toFixed(2)}
               </Typography>
             </div>
@@ -642,7 +642,8 @@ export default function AclAmm() {
               <Typography style={{ color: "red" }}>Min Price A:</Typography>
               <Typography style={{ color: "red" }}>
                 {(
-                  Math.pow(virtualBalances.virtualBalanceB, 2) / invariant
+                  Math.pow(realTimeVirtualBalances.virtualBalanceB, 2) /
+                  realTimeInvariant
                 ).toFixed(4)}
               </Typography>
             </div>
@@ -651,7 +652,7 @@ export default function AclAmm() {
                 Lower Margin Price A:
               </Typography>
               <Typography style={{ color: "blue" }}>
-                {(invariant / Math.pow(higherMargin, 2)).toFixed(4)}
+                {(realTimeInvariant / Math.pow(higherMargin, 2)).toFixed(4)}
               </Typography>
             </div>
             <div style={{ display: "flex", justifyContent: "space-between" }}>
@@ -660,8 +661,8 @@ export default function AclAmm() {
               </Typography>
               <Typography style={{ color: "green" }}>
                 {(
-                  (currentBalanceB + virtualBalances.virtualBalanceB) /
-                  (currentBalanceA + virtualBalances.virtualBalanceA)
+                  (realTimeBalanceB + realTimeVirtualBalances.virtualBalanceB) /
+                  (realTimeBalanceA + realTimeVirtualBalances.virtualBalanceA)
                 ).toFixed(4)}
               </Typography>
             </div>
@@ -670,14 +671,15 @@ export default function AclAmm() {
                 Upper Margin Price A:
               </Typography>
               <Typography style={{ color: "blue" }}>
-                {(invariant / Math.pow(lowerMargin, 2)).toFixed(4)}
+                {(realTimeInvariant / Math.pow(lowerMargin, 2)).toFixed(4)}
               </Typography>
             </div>
             <div style={{ display: "flex", justifyContent: "space-between" }}>
               <Typography style={{ color: "red" }}>Max Price A:</Typography>
               <Typography style={{ color: "red" }}>
                 {(
-                  invariant / Math.pow(virtualBalances.virtualBalanceA, 2)
+                  realTimeInvariant /
+                  Math.pow(realTimeVirtualBalances.virtualBalanceA, 2)
                 ).toFixed(4)}
               </Typography>
             </div>
@@ -762,26 +764,26 @@ export default function AclAmm() {
             </Typography>
             <div style={{ display: "flex", justifyContent: "space-between" }}>
               <Typography>Invariant:</Typography>
-              <Typography>{invariant.toFixed(2)}</Typography>
+              <Typography>{realTimeInvariant.toFixed(2)}</Typography>
             </div>
             <div style={{ display: "flex", justifyContent: "space-between" }}>
               <Typography>Current Balance A:</Typography>
-              <Typography>{currentBalanceA.toFixed(2)}</Typography>
+              <Typography>{realTimeBalanceA.toFixed(2)}</Typography>
             </div>
             <div style={{ display: "flex", justifyContent: "space-between" }}>
               <Typography>Current Balance B:</Typography>
-              <Typography>{currentBalanceB.toFixed(2)}</Typography>
+              <Typography>{realTimeBalanceB.toFixed(2)}</Typography>
             </div>
             <div style={{ display: "flex", justifyContent: "space-between" }}>
               <Typography>Virtual Balance A:</Typography>
               <Typography>
-                {virtualBalances.virtualBalanceA.toFixed(2)}
+                {realTimeVirtualBalances.virtualBalanceA.toFixed(2)}
               </Typography>
             </div>
             <div style={{ display: "flex", justifyContent: "space-between" }}>
               <Typography>Virtual Balance B:</Typography>
               <Typography>
-                {virtualBalances.virtualBalanceB.toFixed(2)}
+                {realTimeVirtualBalances.virtualBalanceB.toFixed(2)}
               </Typography>
             </div>
           </Paper>
