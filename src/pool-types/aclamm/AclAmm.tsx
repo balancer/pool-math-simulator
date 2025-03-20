@@ -263,7 +263,7 @@ export default function AclAmm() {
     setLastRangeCheckTime(simulationSeconds);
   }, [simulationSeconds, poolCenteredness, margin]);
 
-  const handleUpdate = () => {
+  const handleInitialization = () => {
     setInitialBalanceA(Number(inputBalanceA));
     setInitialBalanceB(Number(inputBalanceB));
     setRealTimeBalanceA(Number(inputBalanceA));
@@ -325,10 +325,6 @@ export default function AclAmm() {
   };
 
   const handleCurrentSwap = () => {
-    console.log("currentBalanceA", currentBalanceA);
-    console.log("currentBalanceB", currentBalanceB);
-    console.log("currentVirtualBalances", currentVirtualBalances);
-
     const { newVirtualBalances } = recalculateVirtualBalances({
       balanceA: currentBalanceA,
       balanceB: currentBalanceB,
@@ -362,10 +358,6 @@ export default function AclAmm() {
       swapAmountIn: swapAmountIn,
       swapTokenIn: swapTokenIn,
     });
-
-    console.log("newBalanceA", newBalanceA);
-    console.log("newBalanceB", newBalanceB);
-    console.log("newVirtualBalances", newVirtualBalances);
 
     setCurrentBalanceA(newBalanceA);
     setCurrentBalanceB(newBalanceB);
@@ -436,7 +428,7 @@ export default function AclAmm() {
               <Button
                 variant="contained"
                 fullWidth
-                onClick={handleUpdate}
+                onClick={handleInitialization}
                 style={{ marginTop: 16 }}
               >
                 Initialize Pool

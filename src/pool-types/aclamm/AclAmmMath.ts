@@ -231,6 +231,7 @@ export const recalculateVirtualBalances = (params: {
   let newVirtualBalanceA = params.oldVirtualBalanceA;
   let newVirtualBalanceB = params.oldVirtualBalanceB;
   let newPriceRange = params.currentPriceRange;
+
   const isPoolAboveCenter = isAboveCenter({
     balanceA: params.balanceA,
     balanceB: params.balanceB,
@@ -264,8 +265,8 @@ export const recalculateVirtualBalances = (params: {
       );
 
     const centerednessFix = isPoolAboveCenter
-      ? poolCenteredness
-      : 1 / poolCenteredness;
+      ? 1 / poolCenteredness
+      : poolCenteredness;
 
     const a = Math.sqrt(newPriceRange) - 1;
     const b = -params.balanceB * (1 + centerednessFix);
@@ -273,8 +274,8 @@ export const recalculateVirtualBalances = (params: {
 
     newVirtualBalanceB = (-b + Math.sqrt(Math.pow(b, 2) - 4 * a * c)) / (2 * a);
     newVirtualBalanceA =
-      (params.balanceA * newVirtualBalanceB * centerednessFix) /
-      params.balanceB;
+      (params.balanceA * newVirtualBalanceB) /
+      (params.balanceB * centerednessFix);
   }
 
   if (poolCenteredness <= params.poolParams.margin / 100) {
