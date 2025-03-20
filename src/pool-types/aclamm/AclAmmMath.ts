@@ -196,6 +196,7 @@ export const recalculateVirtualBalances = (params: {
   };
   simulationParams: {
     simulationSeconds: number;
+    simulationSecondsPerBlock: number;
     secondsSinceLastInteraction: number;
   };
 }): {
@@ -205,7 +206,12 @@ export const recalculateVirtualBalances = (params: {
   };
   newPriceRange: number;
 } => {
-  if (params.simulationParams.secondsSinceLastInteraction <= 0.01) {
+  const fixedSecondsSinceLastInteraction =
+    params.simulationParams.secondsSinceLastInteraction -
+    (params.simulationParams.secondsSinceLastInteraction %
+      params.simulationParams.simulationSecondsPerBlock);
+
+  if (fixedSecondsSinceLastInteraction <= 0.01) {
     return {
       newVirtualBalances: {
         virtualBalanceA: params.oldVirtualBalanceA,
@@ -214,13 +220,6 @@ export const recalculateVirtualBalances = (params: {
       newPriceRange: params.currentPriceRange,
     };
   }
-
-  const invariant = calculateInvariant({
-    balanceA: params.balanceA,
-    balanceB: params.balanceB,
-    virtualBalanceA: params.oldVirtualBalanceA,
-    virtualBalanceB: params.oldVirtualBalanceB,
-  });
 
   const poolCenteredness = calculatePoolCenteredness({
     balanceA: params.balanceA,
@@ -245,7 +244,7 @@ export const recalculateVirtualBalances = (params: {
     (params.simulationParams.simulationSeconds <=
       params.updateQ0Params.endTime ||
       params.simulationParams.simulationSeconds -
-        params.simulationParams.secondsSinceLastInteraction <=
+        fixedSecondsSinceLastInteraction <=
         params.updateQ0Params.endTime);
 
   // Price range update logic
@@ -284,14 +283,14 @@ export const recalculateVirtualBalances = (params: {
     if (isPoolAboveCenter) {
       newVirtualBalanceB =
         newVirtualBalanceB *
-        Math.pow(1 - tau, params.simulationParams.secondsSinceLastInteraction);
+        Math.pow(1 - tau, fixedSecondsSinceLastInteraction);
       newVirtualBalanceA =
         (params.balanceA * (newVirtualBalanceB + params.balanceB)) /
         (newVirtualBalanceB * (Math.sqrt(newPriceRange) - 1) - params.balanceB);
     } else {
       newVirtualBalanceA =
         newVirtualBalanceA *
-        Math.pow(1 - tau, params.simulationParams.secondsSinceLastInteraction);
+        Math.pow(1 - tau, fixedSecondsSinceLastInteraction);
       newVirtualBalanceB =
         (params.balanceB * (newVirtualBalanceA + params.balanceA)) /
         (newVirtualBalanceA * (Math.sqrt(newPriceRange) - 1) - params.balanceA);

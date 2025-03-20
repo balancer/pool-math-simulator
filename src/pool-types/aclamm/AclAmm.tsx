@@ -21,7 +21,6 @@ import {
   calculateUpperMargin,
   calculateInitialVirtualBalances,
   calculateBalancesAfterSwapIn,
-  isAboveCenter,
   recalculateVirtualBalances,
   calculateInvariant,
 } from "./AclAmmMath";
@@ -239,6 +238,7 @@ export default function AclAmm() {
       },
       simulationParams: {
         simulationSeconds: simulationSeconds,
+        simulationSecondsPerBlock: simulationSecondsPerBlock,
         secondsSinceLastInteraction: simulationSecondsPerBlock,
       },
     });
@@ -325,6 +325,10 @@ export default function AclAmm() {
   };
 
   const handleCurrentSwap = () => {
+    console.log("currentBalanceA", currentBalanceA);
+    console.log("currentBalanceB", currentBalanceB);
+    console.log("currentVirtualBalances", currentVirtualBalances);
+
     const { newVirtualBalances } = recalculateVirtualBalances({
       balanceA: currentBalanceA,
       balanceB: currentBalanceB,
@@ -343,6 +347,7 @@ export default function AclAmm() {
       },
       simulationParams: {
         simulationSeconds: simulationSeconds,
+        simulationSecondsPerBlock: simulationSecondsPerBlock,
         secondsSinceLastInteraction: simulationSeconds - lastSwapTime,
       },
     });
@@ -357,6 +362,10 @@ export default function AclAmm() {
       swapAmountIn: swapAmountIn,
       swapTokenIn: swapTokenIn,
     });
+
+    console.log("newBalanceA", newBalanceA);
+    console.log("newBalanceB", newBalanceB);
+    console.log("newVirtualBalances", newVirtualBalances);
 
     setCurrentBalanceA(newBalanceA);
     setCurrentBalanceB(newBalanceB);
