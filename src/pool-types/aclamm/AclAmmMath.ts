@@ -264,18 +264,27 @@ export const recalculateVirtualBalances = (params: {
           (params.updateQ0Params.endTime - params.updateQ0Params.startTime)
       );
 
-    const centerednessFix = isPoolAboveCenter
-      ? 1 / poolCenteredness
-      : poolCenteredness;
+    if (isPoolAboveCenter) {
+      const a = Math.sqrt(newPriceRange) - 1;
+      const b = -params.balanceA * (1 + poolCenteredness);
+      const c = -params.balanceA * params.balanceA * poolCenteredness;
 
-    const a = Math.sqrt(newPriceRange) - 1;
-    const b = -params.balanceB * (1 + centerednessFix);
-    const c = -params.balanceB * params.balanceB * centerednessFix;
+      newVirtualBalanceA =
+        (-b + Math.sqrt(Math.pow(b, 2) - 4 * a * c)) / (2 * a);
+      newVirtualBalanceB =
+        (params.balanceB * newVirtualBalanceA) /
+        (params.balanceA * poolCenteredness);
+    } else {
+      const a = Math.sqrt(newPriceRange) - 1;
+      const b = -params.balanceB * (1 + poolCenteredness);
+      const c = -params.balanceB * params.balanceB * poolCenteredness;
 
-    newVirtualBalanceB = (-b + Math.sqrt(Math.pow(b, 2) - 4 * a * c)) / (2 * a);
-    newVirtualBalanceA =
-      (params.balanceA * newVirtualBalanceB) /
-      (params.balanceB * centerednessFix);
+      newVirtualBalanceB =
+        (-b + Math.sqrt(Math.pow(b, 2) - 4 * a * c)) / (2 * a);
+      newVirtualBalanceA =
+        (params.balanceA * newVirtualBalanceB) /
+        (params.balanceB * poolCenteredness);
+    }
   }
 
   if (poolCenteredness <= params.poolParams.margin / 100) {

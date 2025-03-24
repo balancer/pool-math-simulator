@@ -124,6 +124,9 @@ export default function AclAmm() {
   const [currentInvariant, setCurrentInvariant] = useState<number>(0);
   const [lastSwapTime, setLastSwapTime] = useState<number>(0);
 
+  const [targetPriceRangeError, setTargetPriceRangeError] =
+    useState<string>("");
+
   const realTimeInvariant = useMemo(() => {
     return (
       (realTimeBalanceA + realTimeVirtualBalances.virtualBalanceA) *
@@ -170,7 +173,7 @@ export default function AclAmm() {
 
     // Check if amount out exceeds available balance
     const relevantBalance =
-      swapTokenIn === "Token A" ? realTimeBalanceB : realTimeBalanceA;
+      swapTokenIn === "Token A" ? realTimeBalanceB - 1 : realTimeBalanceA - 1;
     return {
       amount: amountOut,
       exceedsBalance: amountOut > relevantBalance,
@@ -298,7 +301,15 @@ export default function AclAmm() {
       return;
     }
 
+    if (inputTargetPriceRange < 1.1 || inputTargetPriceRange > 1000) {
+      setTargetPriceRangeError(
+        "Target price range must be between 1.1 and 1000"
+      );
+      return;
+    }
+
     setEndTimeError("");
+    setTargetPriceRangeError("");
     setStartPriceRange(priceRange);
     setTargetPriceRange(inputTargetPriceRange);
     setStartTime(simulationSeconds);
@@ -478,8 +489,8 @@ export default function AclAmm() {
                   : "0"}
                 {calculatedSwapAmountOut.exceedsBalance && (
                   <div style={{ fontSize: "0.8em" }}>
-                    Token {swapTokenIn === "Token A" ? "B" : "A"} Out Amount
-                    must be smaller than balance
+                    Token {swapTokenIn === "Token A" ? "B" : "A"} Amount in the
+                    pool must be at least 1.
                   </div>
                 )}
               </Typography>
@@ -508,6 +519,8 @@ export default function AclAmm() {
                 onChange={(e) =>
                   setInputTargetPriceRange(Number(e.target.value))
                 }
+                error={!!targetPriceRangeError}
+                helperText={targetPriceRangeError}
               />
               <Typography>
                 Current Time: {simulationSeconds.toFixed(0)}
