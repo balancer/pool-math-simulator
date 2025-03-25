@@ -269,6 +269,8 @@ export default function AclAmm() {
   const handleInitialization = () => {
     setInitialBalanceA(Number(inputBalanceA));
     setInitialBalanceB(Number(inputBalanceB));
+    setCurrentBalanceA(Number(inputBalanceA));
+    setCurrentBalanceB(Number(inputBalanceB));
     setRealTimeBalanceA(Number(inputBalanceA));
     setRealTimeBalanceB(Number(inputBalanceB));
     setPriceRange(Number(inputPriceRange));
