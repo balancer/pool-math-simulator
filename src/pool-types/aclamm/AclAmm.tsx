@@ -19,7 +19,6 @@ import {
   calculateOutGivenIn,
   calculatePoolCenteredness,
   calculateUpperMargin,
-  calculateInitialVirtualBalances,
   calculateBalancesAfterSwapIn,
   recalculateVirtualBalances,
   calculateInvariant,
@@ -28,10 +27,13 @@ import { formatTime } from "../../utils/Time";
 
 const defaultInitialBalanceA = 1000;
 const defaultInitialBalanceB = 2000;
-const defaultPriceRatio = 16;
 const defaultMargin = 10;
 const defaultPriceShiftDailyRate = 100;
 const defaultSwapAmountIn = 100;
+const defaultMinPrice = 0.5;
+const defaultMaxPrice = 8;
+const defaultTargetPrice = 2;
+const defaultMaxBalanceA = 3000;
 
 const tickMilliseconds = 10;
 
@@ -55,9 +57,15 @@ export default function AclAmm() {
     defaultInitialBalanceB
   );
   const [initialInvariant, setInitialInvariant] = useState<number>(0);
+  const [minPrice, setMinPrice] = useState<number>(defaultMinPrice);
+  const [maxPrice, setMaxPrice] = useState<number>(defaultMaxPrice);
+  const [targetPrice, setTargetPrice] = useState<number>(defaultTargetPrice);
+  const [maxBalanceA, setMaxBalanceA] = useState<number>(defaultMaxBalanceA);
 
   // Pool Variables
-  const [priceRatio, setPriceRatio] = useState<number>(defaultPriceRatio);
+  const [priceRatio, setPriceRatio] = useState<number>(
+    defaultMaxPrice / defaultMinPrice
+  );
   const [margin, setMargin] = useState<number>(defaultMargin);
   const [priceShiftDailyRate, setPriceShiftDailyRate] = useState<number>(
     defaultPriceShiftDailyRate
@@ -70,9 +78,13 @@ export default function AclAmm() {
   const [inputBalanceB, setInputBalanceB] = useState<number>(
     defaultInitialBalanceB
   );
-  const [inputPriceRatio, setInputPriceRatio] =
-    useState<number>(defaultPriceRatio);
   const [inputMargin, setInputMargin] = useState<number>(defaultMargin);
+  const [inputMinPrice, setInputMinPrice] = useState<number>(defaultMinPrice);
+  const [inputMaxPrice, setInputMaxPrice] = useState<number>(defaultMaxPrice);
+  const [inputTargetPrice, setInputTargetPrice] =
+    useState<number>(defaultTargetPrice);
+  const [inputMaxBalanceA, setInputMaxBalanceA] =
+    useState<number>(defaultMaxBalanceA);
 
   const [realTimeBalanceA, setRealTimeBalanceA] = useState<number>(
     defaultInitialBalanceA
@@ -90,15 +102,15 @@ export default function AclAmm() {
   const [swapAmountIn, setSwapAmountIn] = useState<number>(defaultSwapAmountIn);
 
   // Price Ratio Variables
-  const [startPriceRatio, setStartPriceRatio] =
-    useState<number>(defaultPriceRatio);
-  const [targetPriceRatio, setTargetPriceRatio] =
-    useState<number>(defaultPriceRatio);
+  const [startPriceRatio, setStartPriceRatio] = useState<number>(
+    defaultMaxPrice / defaultMinPrice
+  );
+  const [targetPriceRatio, setTargetPriceRatio] = useState<number>(
+    defaultMaxPrice / defaultMinPrice
+  );
   const [startTime, setStartTime] = useState<number>(0);
   const [endTime, setEndTime] = useState<number>(0);
 
-  const [inputTargetPriceRatio, setInputTargetPriceRatio] =
-    useState<number>(defaultPriceRatio);
   const [inputEndTime, setInputEndTime] = useState<number>(0);
 
   // Add new state variables for inputs
@@ -186,9 +198,29 @@ export default function AclAmm() {
     realTimeVirtualBalances,
   ]);
 
+  const inputPriceRatio = useMemo(() => {
+    return inputMaxPrice / inputMinPrice;
+  }, [inputMaxPrice, inputMinPrice]);
+
+  const inputVirtualBalanceA = useMemo(() => {
+    return inputMaxBalanceA / (Math.sqrt(inputPriceRatio) - 1);
+  }, [inputMaxBalanceA, inputPriceRatio]);
+
+  const inputVirtualBalanceB = useMemo(() => {
+    return inputMinPrice * (inputMaxBalanceA + inputVirtualBalanceA);
+  }, [inputVirtualBalanceA, inputMinPrice, inputMaxBalanceA]);
+
   useEffect(() => {
     setTimeout(() => {
-      initializeVirtualBalances();
+      setCurrentVirtualBalances({
+        virtualBalanceA: inputVirtualBalanceA,
+        virtualBalanceB: inputVirtualBalanceB,
+      });
+      setRealTimeVirtualBalances({
+        virtualBalanceA: inputVirtualBalanceA,
+        virtualBalanceB: inputVirtualBalanceB,
+      });
+      initializeInvariants();
     }, 1);
   }, []);
 
@@ -266,6 +298,22 @@ export default function AclAmm() {
     setLastRangeCheckTime(simulationSeconds);
   }, [simulationSeconds, poolCenteredness, margin]);
 
+  const handleRecalculateBalances = () => {
+    const newInitialBalanceB =
+      Math.sqrt(
+        inputTargetPrice *
+          (inputMaxBalanceA + inputVirtualBalanceA) *
+          inputVirtualBalanceB
+      ) - inputVirtualBalanceB;
+    setInputBalanceB(newInitialBalanceB);
+    setInputBalanceA(
+      (newInitialBalanceB +
+        inputVirtualBalanceB -
+        inputVirtualBalanceA * inputTargetPrice) /
+        inputTargetPrice
+    );
+  };
+
   const handleInitialization = () => {
     setInitialBalanceA(Number(inputBalanceA));
     setInitialBalanceB(Number(inputBalanceB));
@@ -273,27 +321,32 @@ export default function AclAmm() {
     setCurrentBalanceB(Number(inputBalanceB));
     setRealTimeBalanceA(Number(inputBalanceA));
     setRealTimeBalanceB(Number(inputBalanceB));
+    setCurrentVirtualBalances({
+      virtualBalanceA: Number(inputVirtualBalanceA),
+      virtualBalanceB: Number(inputVirtualBalanceB),
+    });
+    setRealTimeVirtualBalances({
+      virtualBalanceA: Number(inputVirtualBalanceA),
+      virtualBalanceB: Number(inputVirtualBalanceB),
+    });
     setPriceRatio(Number(inputPriceRatio));
     setMargin(Number(inputMargin));
-    initializeVirtualBalances();
+    setMinPrice(Number(inputMinPrice));
+    setMaxPrice(Number(inputMaxPrice));
+    setTargetPrice(Number(inputTargetPrice));
+    setMaxBalanceA(Number(inputMaxBalanceA));
+    initializeInvariants();
     setSimulationSeconds(0);
   };
 
-  const initializeVirtualBalances = () => {
-    const initialVirtualBalances = calculateInitialVirtualBalances({
-      priceRatio: inputPriceRatio,
-      balanceA: inputBalanceA,
-      balanceB: inputBalanceB,
-    });
-    setRealTimeVirtualBalances(initialVirtualBalances);
-    setCurrentVirtualBalances(initialVirtualBalances);
+  const initializeInvariants = () => {
     setInitialInvariant(
-      (inputBalanceA + initialVirtualBalances.virtualBalanceA) *
-        (inputBalanceB + initialVirtualBalances.virtualBalanceB)
+      (inputBalanceA + inputVirtualBalanceA) *
+        (inputBalanceB + inputVirtualBalanceB)
     );
     setCurrentInvariant(
-      (inputBalanceA + initialVirtualBalances.virtualBalanceA) *
-        (inputBalanceB + initialVirtualBalances.virtualBalanceB)
+      (inputBalanceA + inputVirtualBalanceA) *
+        (inputBalanceB + inputVirtualBalanceB)
     );
   };
 
@@ -303,7 +356,7 @@ export default function AclAmm() {
       return;
     }
 
-    if (inputTargetPriceRatio < 1.1 || inputTargetPriceRatio > 1000) {
+    if (inputTargetPrice < 1.1 || inputTargetPrice > 1000) {
       setTargetPriceRatioError(
         "Target price ratio must be between 1.1 and 1000"
       );
@@ -313,7 +366,7 @@ export default function AclAmm() {
     setEndTimeError("");
     setTargetPriceRatioError("");
     setStartPriceRatio(priceRatio);
-    setTargetPriceRatio(inputTargetPriceRatio);
+    setTargetPriceRatio(inputTargetPrice);
     setStartTime(simulationSeconds);
     setEndTime(inputEndTime);
   };
@@ -395,56 +448,143 @@ export default function AclAmm() {
         <Grid item xs={3}>
           <Accordion>
             <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-              <Typography variant="h6">Initialize Pool</Typography>
+              <Typography variant="h6">Create and Initialize</Typography>
             </AccordionSummary>
             <AccordionDetails>
-              <TextField
-                label="Real Initial Balance A"
-                type="number"
+              <Typography
+                variant="subtitle1"
+                style={{
+                  fontWeight: "bold",
+                }}
+              >
+                Create Parameters
+              </Typography>
+              <Grid container spacing={1}>
+                <Grid item xs={6}>
+                  <TextField
+                    label="Minimum Price"
+                    type="number"
+                    fullWidth
+                    margin="normal"
+                    value={inputMinPrice}
+                    onChange={(e) => setInputMinPrice(Number(e.target.value))}
+                  />
+                </Grid>
+                <Grid item xs={6}>
+                  <TextField
+                    label="Maximum Price"
+                    type="number"
+                    fullWidth
+                    margin="normal"
+                    value={inputMaxPrice}
+                    onChange={(e) => setInputMaxPrice(Number(e.target.value))}
+                  />
+                </Grid>
+                <Grid item xs={6}>
+                  <TextField
+                    label="Target Price"
+                    type="number"
+                    fullWidth
+                    margin="normal"
+                    value={inputTargetPrice}
+                    onChange={(e) =>
+                      setInputTargetPrice(Number(e.target.value))
+                    }
+                  />
+                </Grid>
+                <Grid item xs={6}>
+                  <TextField
+                    label="Maximum Balance A"
+                    type="number"
+                    fullWidth
+                    margin="normal"
+                    value={inputMaxBalanceA}
+                    onChange={(e) =>
+                      setInputMaxBalanceA(Number(e.target.value))
+                    }
+                  />
+                </Grid>
+                <Grid item xs={6}>
+                  <TextField
+                    label="Margin (%)"
+                    type="number"
+                    fullWidth
+                    margin="normal"
+                    value={inputMargin}
+                    onChange={(e) => setInputMargin(Number(e.target.value))}
+                  />
+                </Grid>
+                <Grid item xs={6}>
+                  <TextField
+                    label="Price Shift Daily Rate (%)"
+                    type="number"
+                    fullWidth
+                    margin="normal"
+                    value={priceShiftDailyRate}
+                    onChange={(e) =>
+                      setPriceShiftDailyRate(Number(e.target.value))
+                    }
+                  />
+                </Grid>
+              </Grid>
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <Typography>Price Ratio:</Typography>
+                <Typography>{inputPriceRatio.toFixed(2)}</Typography>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <Typography>Virtual Balance A:</Typography>
+                <Typography>{inputVirtualBalanceA.toFixed(2)}</Typography>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <Typography>Virtual Balance B:</Typography>
+                <Typography>{inputVirtualBalanceB.toFixed(2)}</Typography>
+              </div>
+              <Typography
+                variant="subtitle1"
+                style={{
+                  marginTop: 8,
+                  fontWeight: "bold",
+                }}
+              >
+                Initial Balances
+              </Typography>
+              <Button
+                variant="outlined"
                 fullWidth
-                margin="normal"
-                value={inputBalanceA}
-                onChange={(e) => setInputBalanceA(Number(e.target.value))}
-              />
-              <TextField
-                label="Real Initial Balance B"
-                type="number"
-                fullWidth
-                margin="normal"
-                value={inputBalanceB}
-                onChange={(e) => setInputBalanceB(Number(e.target.value))}
-              />
-              <TextField
-                label="Price Ratio"
-                type="number"
-                fullWidth
-                margin="normal"
-                value={inputPriceRatio}
-                onChange={(e) => setInputPriceRatio(Number(e.target.value))}
-              />
-              <TextField
-                label="Margin (%)"
-                type="number"
-                fullWidth
-                margin="normal"
-                value={inputMargin}
-                onChange={(e) => setInputMargin(Number(e.target.value))}
-              />
-              <TextField
-                label="Price Shift Daily Rate (%)"
-                type="number"
-                fullWidth
-                margin="normal"
-                value={priceShiftDailyRate}
-                onChange={(e) => setPriceShiftDailyRate(Number(e.target.value))}
-              />
+                onClick={handleRecalculateBalances}
+                style={{ marginTop: 16, marginBottom: 16 }}
+              >
+                Recalculate Balances
+              </Button>
+              <Grid container spacing={1}>
+                <Grid item xs={6}>
+                  <TextField
+                    label="Initial Balance A"
+                    type="number"
+                    fullWidth
+                    margin="normal"
+                    value={inputBalanceA}
+                    onChange={(e) => setInputBalanceA(Number(e.target.value))}
+                  />
+                </Grid>
+                <Grid item xs={6}>
+                  <TextField
+                    label="Initial Balance B"
+                    type="number"
+                    fullWidth
+                    margin="normal"
+                    value={inputBalanceB}
+                    onChange={(e) => setInputBalanceB(Number(e.target.value))}
+                  />
+                </Grid>
+              </Grid>
               <Button
                 variant="contained"
                 fullWidth
                 onClick={handleInitialization}
                 style={{ marginTop: 16 }}
               >
-                Initialize Pool
+                Create and Initialize
               </Button>
             </AccordionDetails>
           </Accordion>
@@ -517,10 +657,8 @@ export default function AclAmm() {
                 type="number"
                 fullWidth
                 margin="normal"
-                value={inputTargetPriceRatio}
-                onChange={(e) =>
-                  setInputTargetPriceRatio(Number(e.target.value))
-                }
+                value={inputTargetPrice}
+                onChange={(e) => setInputTargetPrice(Number(e.target.value))}
                 error={!!targetPriceRatioError}
                 helperText={targetPriceRatioError}
               />
@@ -939,6 +1077,22 @@ export default function AclAmm() {
               <div style={{ display: "flex", justifyContent: "space-between" }}>
                 <Typography>Initial Balance B:</Typography>
                 <Typography>{initialBalanceB.toFixed(2)}</Typography>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <Typography>Maximum Balance A:</Typography>
+                <Typography>{maxBalanceA.toFixed(2)}</Typography>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <Typography>Min Price A:</Typography>
+                <Typography>{minPrice.toFixed(2)}</Typography>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <Typography>Target Price A:</Typography>
+                <Typography>{targetPrice.toFixed(2)}</Typography>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <Typography>Max Price A:</Typography>
+                <Typography>{maxPrice.toFixed(2)}</Typography>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between" }}>
                 <Typography>Price Ratio:</Typography>

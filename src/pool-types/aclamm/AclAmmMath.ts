@@ -101,23 +101,6 @@ export function calculateOutGivenIn(params: {
   }
 }
 
-export function calculateInitialVirtualBalances(params: {
-  priceRatio: number;
-  balanceA: number;
-  balanceB: number;
-}) {
-  const priceRatioNum = Number(params.priceRatio);
-  let virtualBalancesLocal = { virtualBalanceA: 0, virtualBalanceB: 0 };
-  if (priceRatioNum > 1) {
-    const denominator = Math.sqrt(Math.sqrt(priceRatioNum)) - 1;
-    virtualBalancesLocal = {
-      virtualBalanceA: params.balanceA / denominator,
-      virtualBalanceB: params.balanceB / denominator,
-    };
-  }
-  return virtualBalancesLocal;
-}
-
 export function calculateBalancesAfterSwapIn(params: {
   swapAmountIn: number;
   swapTokenIn: string;
