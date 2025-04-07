@@ -28,7 +28,7 @@ import { formatTime } from "../../utils/Time";
 
 const defaultInitialBalanceA = 1000;
 const defaultInitialBalanceB = 2000;
-const defaultPriceRange = 16;
+const defaultPriceRatio = 16;
 const defaultMargin = 10;
 const defaultPriceShiftDailyRate = 100;
 const defaultSwapAmountIn = 100;
@@ -57,7 +57,7 @@ export default function AclAmm() {
   const [initialInvariant, setInitialInvariant] = useState<number>(0);
 
   // Pool Variables
-  const [priceRange, setPriceRange] = useState<number>(defaultPriceRange);
+  const [priceRatio, setPriceRatio] = useState<number>(defaultPriceRatio);
   const [margin, setMargin] = useState<number>(defaultMargin);
   const [priceShiftDailyRate, setPriceShiftDailyRate] = useState<number>(
     defaultPriceShiftDailyRate
@@ -70,8 +70,8 @@ export default function AclAmm() {
   const [inputBalanceB, setInputBalanceB] = useState<number>(
     defaultInitialBalanceB
   );
-  const [inputPriceRange, setInputPriceRange] =
-    useState<number>(defaultPriceRange);
+  const [inputPriceRatio, setInputPriceRatio] =
+    useState<number>(defaultPriceRatio);
   const [inputMargin, setInputMargin] = useState<number>(defaultMargin);
 
   const [realTimeBalanceA, setRealTimeBalanceA] = useState<number>(
@@ -89,16 +89,16 @@ export default function AclAmm() {
   const [swapTokenIn, setSwapTokenIn] = useState("Token A");
   const [swapAmountIn, setSwapAmountIn] = useState<number>(defaultSwapAmountIn);
 
-  // Price Range Variables
-  const [startPriceRange, setStartPriceRange] =
-    useState<number>(defaultPriceRange);
-  const [targetPriceRange, setTargetPriceRange] =
-    useState<number>(defaultPriceRange);
+  // Price Ratio Variables
+  const [startPriceRatio, setStartPriceRatio] =
+    useState<number>(defaultPriceRatio);
+  const [targetPriceRatio, setTargetPriceRatio] =
+    useState<number>(defaultPriceRatio);
   const [startTime, setStartTime] = useState<number>(0);
   const [endTime, setEndTime] = useState<number>(0);
 
-  const [inputTargetPriceRange, setInputTargetPriceRange] =
-    useState<number>(defaultPriceRange);
+  const [inputTargetPriceRatio, setInputTargetPriceRatio] =
+    useState<number>(defaultPriceRatio);
   const [inputEndTime, setInputEndTime] = useState<number>(0);
 
   // Add new state variables for inputs
@@ -124,7 +124,7 @@ export default function AclAmm() {
   const [currentInvariant, setCurrentInvariant] = useState<number>(0);
   const [lastSwapTime, setLastSwapTime] = useState<number>(0);
 
-  const [targetPriceRangeError, setTargetPriceRangeError] =
+  const [targetPriceRatioError, setTargetPriceRatioError] =
     useState<string>("");
 
   const realTimeInvariant = useMemo(() => {
@@ -223,12 +223,12 @@ export default function AclAmm() {
     setSimulationSecondsLastTick(simulationSeconds);
     setBlockNumber((prev) => prev + 1);
 
-    const { newVirtualBalances, newPriceRange } = recalculateVirtualBalances({
+    const { newVirtualBalances, newPriceRatio } = recalculateVirtualBalances({
       balanceA: realTimeBalanceA,
       balanceB: realTimeBalanceB,
       oldVirtualBalanceA: realTimeVirtualBalances.virtualBalanceA,
       oldVirtualBalanceB: realTimeVirtualBalances.virtualBalanceB,
-      currentPriceRange: priceRange,
+      currentPriceRatio: priceRatio,
       poolParams: {
         margin: margin,
         priceShiftDailyRate: priceShiftDailyRate,
@@ -236,8 +236,8 @@ export default function AclAmm() {
       updateQ0Params: {
         startTime: startTime,
         endTime: endTime,
-        startPriceRange: startPriceRange,
-        targetPriceRange: targetPriceRange,
+        startPriceRatio: startPriceRatio,
+        targetPriceRatio: targetPriceRatio,
       },
       simulationParams: {
         simulationSeconds: simulationSeconds,
@@ -247,7 +247,7 @@ export default function AclAmm() {
     });
 
     setRealTimeVirtualBalances(newVirtualBalances);
-    setPriceRange(newPriceRange);
+    setPriceRatio(newPriceRatio);
   }, [simulationSeconds]);
 
   useEffect(() => {
@@ -273,7 +273,7 @@ export default function AclAmm() {
     setCurrentBalanceB(Number(inputBalanceB));
     setRealTimeBalanceA(Number(inputBalanceA));
     setRealTimeBalanceB(Number(inputBalanceB));
-    setPriceRange(Number(inputPriceRange));
+    setPriceRatio(Number(inputPriceRatio));
     setMargin(Number(inputMargin));
     initializeVirtualBalances();
     setSimulationSeconds(0);
@@ -281,7 +281,7 @@ export default function AclAmm() {
 
   const initializeVirtualBalances = () => {
     const initialVirtualBalances = calculateInitialVirtualBalances({
-      priceRange: inputPriceRange,
+      priceRatio: inputPriceRatio,
       balanceA: inputBalanceA,
       balanceB: inputBalanceB,
     });
@@ -297,23 +297,23 @@ export default function AclAmm() {
     );
   };
 
-  const handleUpdatePriceRange = async () => {
+  const handleUpdatePriceRatio = async () => {
     if (inputEndTime < simulationSeconds) {
       setEndTimeError("End time >= Simulation Time");
       return;
     }
 
-    if (inputTargetPriceRange < 1.1 || inputTargetPriceRange > 1000) {
-      setTargetPriceRangeError(
-        "Target price range must be between 1.1 and 1000"
+    if (inputTargetPriceRatio < 1.1 || inputTargetPriceRatio > 1000) {
+      setTargetPriceRatioError(
+        "Target price ratio must be between 1.1 and 1000"
       );
       return;
     }
 
     setEndTimeError("");
-    setTargetPriceRangeError("");
-    setStartPriceRange(priceRange);
-    setTargetPriceRange(inputTargetPriceRange);
+    setTargetPriceRatioError("");
+    setStartPriceRatio(priceRatio);
+    setTargetPriceRatio(inputTargetPriceRatio);
     setStartTime(simulationSeconds);
     setEndTime(inputEndTime);
   };
@@ -343,7 +343,7 @@ export default function AclAmm() {
       balanceB: currentBalanceB,
       oldVirtualBalanceA: currentVirtualBalances.virtualBalanceA,
       oldVirtualBalanceB: currentVirtualBalances.virtualBalanceB,
-      currentPriceRange: priceRange,
+      currentPriceRatio: priceRatio,
       poolParams: {
         margin: margin,
         priceShiftDailyRate: priceShiftDailyRate,
@@ -351,8 +351,8 @@ export default function AclAmm() {
       updateQ0Params: {
         startTime: startTime,
         endTime: endTime,
-        startPriceRange: startPriceRange,
-        targetPriceRange: targetPriceRange,
+        startPriceRatio: startPriceRatio,
+        targetPriceRatio: targetPriceRatio,
       },
       simulationParams: {
         simulationSeconds: simulationSeconds,
@@ -415,12 +415,12 @@ export default function AclAmm() {
                 onChange={(e) => setInputBalanceB(Number(e.target.value))}
               />
               <TextField
-                label="Price Range"
+                label="Price Ratio"
                 type="number"
                 fullWidth
                 margin="normal"
-                value={inputPriceRange}
-                onChange={(e) => setInputPriceRange(Number(e.target.value))}
+                value={inputPriceRatio}
+                onChange={(e) => setInputPriceRatio(Number(e.target.value))}
               />
               <TextField
                 label="Margin (%)"
@@ -509,20 +509,20 @@ export default function AclAmm() {
           </Accordion>
           <Accordion>
             <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-              <Typography variant="h6">Update Price Range</Typography>
+              <Typography variant="h6">Update Price Ratio</Typography>
             </AccordionSummary>
             <AccordionDetails>
               <TextField
-                label="Target Price Range"
+                label="Target Price Ratio"
                 type="number"
                 fullWidth
                 margin="normal"
-                value={inputTargetPriceRange}
+                value={inputTargetPriceRatio}
                 onChange={(e) =>
-                  setInputTargetPriceRange(Number(e.target.value))
+                  setInputTargetPriceRatio(Number(e.target.value))
                 }
-                error={!!targetPriceRangeError}
-                helperText={targetPriceRangeError}
+                error={!!targetPriceRatioError}
+                helperText={targetPriceRatioError}
               />
               <Typography>
                 Current Time: {simulationSeconds.toFixed(0)}
@@ -540,10 +540,10 @@ export default function AclAmm() {
               <Button
                 variant="contained"
                 fullWidth
-                onClick={handleUpdatePriceRange}
+                onClick={handleUpdatePriceRatio}
                 style={{ marginTop: 16 }}
               >
-                Update Price Range
+                Update Price Ratio
               </Button>
             </AccordionDetails>
           </Accordion>
@@ -846,7 +846,7 @@ export default function AclAmm() {
 
           <Accordion defaultExpanded>
             <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-              <Typography variant="h6">Price Range</Typography>
+              <Typography variant="h6">Price Ratio</Typography>
             </AccordionSummary>
             <AccordionDetails>
               {simulationSeconds < endTime ? (
@@ -861,8 +861,8 @@ export default function AclAmm() {
                       marginLeft: 10,
                     }}
                   >
-                    <Typography>Start Price Range:</Typography>
-                    <Typography>{startPriceRange.toFixed(2)}</Typography>
+                    <Typography>Start Price Ratio:</Typography>
+                    <Typography>{startPriceRatio.toFixed(2)}</Typography>
                   </div>
                   <div
                     style={{
@@ -871,8 +871,8 @@ export default function AclAmm() {
                       marginLeft: 10,
                     }}
                   >
-                    <Typography>Current Price Range:</Typography>
-                    <Typography>{priceRange.toFixed(2)}</Typography>
+                    <Typography>Current Price Ratio:</Typography>
+                    <Typography>{priceRatio.toFixed(2)}</Typography>
                   </div>
                   <div
                     style={{
@@ -881,8 +881,8 @@ export default function AclAmm() {
                       marginLeft: 10,
                     }}
                   >
-                    <Typography>Target Price Range:</Typography>
-                    <Typography>{targetPriceRange.toFixed(2)}</Typography>
+                    <Typography>Target Price Ratio:</Typography>
+                    <Typography>{targetPriceRatio.toFixed(2)}</Typography>
                   </div>
                   <div
                     style={{
@@ -899,8 +899,8 @@ export default function AclAmm() {
                 <div
                   style={{ display: "flex", justifyContent: "space-between" }}
                 >
-                  <Typography>Current Price Range:</Typography>
-                  <Typography>{priceRange.toFixed(2)}</Typography>
+                  <Typography>Current Price Ratio:</Typography>
+                  <Typography>{priceRatio.toFixed(2)}</Typography>
                 </div>
               )}
               <div style={{ display: "flex", justifyContent: "space-between" }}>
@@ -941,8 +941,8 @@ export default function AclAmm() {
                 <Typography>{initialBalanceB.toFixed(2)}</Typography>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <Typography>Price Range:</Typography>
-                <Typography>{priceRange.toFixed(2)}</Typography>
+                <Typography>Price Ratio:</Typography>
+                <Typography>{priceRatio.toFixed(2)}</Typography>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between" }}>
                 <Typography>Margin:</Typography>

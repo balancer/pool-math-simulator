@@ -102,14 +102,14 @@ export function calculateOutGivenIn(params: {
 }
 
 export function calculateInitialVirtualBalances(params: {
-  priceRange: number;
+  priceRatio: number;
   balanceA: number;
   balanceB: number;
 }) {
-  const priceRangeNum = Number(params.priceRange);
+  const priceRatioNum = Number(params.priceRatio);
   let virtualBalancesLocal = { virtualBalanceA: 0, virtualBalanceB: 0 };
-  if (priceRangeNum > 1) {
-    const denominator = Math.sqrt(Math.sqrt(priceRangeNum)) - 1;
+  if (priceRatioNum > 1) {
+    const denominator = Math.sqrt(Math.sqrt(priceRatioNum)) - 1;
     virtualBalancesLocal = {
       virtualBalanceA: params.balanceA / denominator,
       virtualBalanceB: params.balanceB / denominator,
@@ -183,7 +183,7 @@ export const recalculateVirtualBalances = (params: {
   balanceB: number;
   oldVirtualBalanceA: number;
   oldVirtualBalanceB: number;
-  currentPriceRange: number;
+  currentPriceRatio: number;
   poolParams: {
     margin: number;
     priceShiftDailyRate: number;
@@ -191,8 +191,8 @@ export const recalculateVirtualBalances = (params: {
   updateQ0Params: {
     startTime: number;
     endTime: number;
-    startPriceRange: number;
-    targetPriceRange: number;
+    startPriceRatio: number;
+    targetPriceRatio: number;
   };
   simulationParams: {
     simulationSeconds: number;
@@ -204,7 +204,7 @@ export const recalculateVirtualBalances = (params: {
     virtualBalanceA: number;
     virtualBalanceB: number;
   };
-  newPriceRange: number;
+  newPriceRatio: number;
 } => {
   const fixedSecondsSinceLastInteraction =
     params.simulationParams.secondsSinceLastInteraction -
@@ -217,7 +217,7 @@ export const recalculateVirtualBalances = (params: {
         virtualBalanceA: params.oldVirtualBalanceA,
         virtualBalanceB: params.oldVirtualBalanceB,
       },
-      newPriceRange: params.currentPriceRange,
+      newPriceRatio: params.currentPriceRatio,
     };
   }
 
@@ -230,7 +230,7 @@ export const recalculateVirtualBalances = (params: {
 
   let newVirtualBalanceA = params.oldVirtualBalanceA;
   let newVirtualBalanceB = params.oldVirtualBalanceB;
-  let newPriceRange = params.currentPriceRange;
+  let newPriceRatio = params.currentPriceRatio;
 
   const isPoolAboveCenter = isAboveCenter({
     balanceA: params.balanceA,
@@ -239,7 +239,7 @@ export const recalculateVirtualBalances = (params: {
     virtualBalanceB: params.oldVirtualBalanceB,
   });
 
-  const isPriceRangeUpdating =
+  const isPriceRatioUpdating =
     params.simulationParams.simulationSeconds >=
       params.updateQ0Params.startTime &&
     (params.simulationParams.simulationSeconds <=
@@ -248,14 +248,14 @@ export const recalculateVirtualBalances = (params: {
         fixedSecondsSinceLastInteraction <=
         params.updateQ0Params.endTime);
 
-  // Price range update logic
-  if (isPriceRangeUpdating) {
+  // Price ratio update logic
+  if (isPriceRatioUpdating) {
     // Q0 is updating.
-    newPriceRange =
-      params.updateQ0Params.startPriceRange *
+    newPriceRatio =
+      params.updateQ0Params.startPriceRatio *
       Math.pow(
-        params.updateQ0Params.targetPriceRange /
-          params.updateQ0Params.startPriceRange,
+        params.updateQ0Params.targetPriceRatio /
+          params.updateQ0Params.startPriceRatio,
         Math.min(
           params.updateQ0Params.endTime - params.updateQ0Params.startTime,
           params.simulationParams.simulationSeconds -
@@ -265,7 +265,7 @@ export const recalculateVirtualBalances = (params: {
       );
 
     if (isPoolAboveCenter) {
-      const a = Math.sqrt(newPriceRange) - 1;
+      const a = Math.sqrt(newPriceRatio) - 1;
       const b = -params.balanceA * (1 + poolCenteredness);
       const c = -params.balanceA * params.balanceA * poolCenteredness;
 
@@ -275,7 +275,7 @@ export const recalculateVirtualBalances = (params: {
         (params.balanceB * newVirtualBalanceA) /
         (params.balanceA * poolCenteredness);
     } else {
-      const a = Math.sqrt(newPriceRange) - 1;
+      const a = Math.sqrt(newPriceRatio) - 1;
       const b = -params.balanceB * (1 + poolCenteredness);
       const c = -params.balanceB * params.balanceB * poolCenteredness;
 
@@ -296,14 +296,14 @@ export const recalculateVirtualBalances = (params: {
         Math.pow(1 - tau, fixedSecondsSinceLastInteraction);
       newVirtualBalanceA =
         (params.balanceA * (newVirtualBalanceB + params.balanceB)) /
-        (newVirtualBalanceB * (Math.sqrt(newPriceRange) - 1) - params.balanceB);
+        (newVirtualBalanceB * (Math.sqrt(newPriceRatio) - 1) - params.balanceB);
     } else {
       newVirtualBalanceA =
         newVirtualBalanceA *
         Math.pow(1 - tau, fixedSecondsSinceLastInteraction);
       newVirtualBalanceB =
         (params.balanceB * (newVirtualBalanceA + params.balanceA)) /
-        (newVirtualBalanceA * (Math.sqrt(newPriceRange) - 1) - params.balanceA);
+        (newVirtualBalanceA * (Math.sqrt(newPriceRatio) - 1) - params.balanceA);
     }
   }
 
@@ -312,6 +312,6 @@ export const recalculateVirtualBalances = (params: {
       virtualBalanceA: newVirtualBalanceA,
       virtualBalanceB: newVirtualBalanceB,
     },
-    newPriceRange: newPriceRange,
+    newPriceRatio: newPriceRatio,
   };
 };
