@@ -21,6 +21,9 @@ interface AclAmmChartProps {
   currentInvariant: number;
 }
 
+const NUM_POINTS = 100;
+const MARGIN = 0.1;
+
 export const AclAmmChart: React.FC<AclAmmChartProps> = ({
   realTimeBalanceA,
   realTimeBalanceB,
@@ -40,12 +43,13 @@ export const AclAmmChart: React.FC<AclAmmChartProps> = ({
       realTimeInvariant / realTimeVirtualBalances.virtualBalanceB;
 
     // Create regular curve points
-    const curvePoints = Array.from({ length: 100 }, (_, i) => {
+    const curvePoints = Array.from({ length: NUM_POINTS }, (_, i) => {
       const x =
-        0.7 * realTimeVirtualBalances.virtualBalanceA +
+        (1 - MARGIN) * realTimeVirtualBalances.virtualBalanceA +
         (i *
-          (1.3 * xForPointB - 0.7 * realTimeVirtualBalances.virtualBalanceA)) /
-          100;
+          ((1 + MARGIN) * xForPointB -
+            (1 - MARGIN) * realTimeVirtualBalances.virtualBalanceA)) /
+          NUM_POINTS;
       const y = realTimeInvariant / x;
 
       return { x, y };
@@ -59,11 +63,12 @@ export const AclAmmChart: React.FC<AclAmmChartProps> = ({
       initialInvariant / realTimeVirtualBalances.virtualBalanceB;
 
     // Create regular curve points
-    const curvePoints = Array.from({ length: 100 }, (_, i) => {
+    const curvePoints = Array.from({ length: NUM_POINTS }, (_, i) => {
       const x =
-        0.7 * realTimeVirtualBalances.virtualBalanceA +
+        (1 - MARGIN) * realTimeVirtualBalances.virtualBalanceA +
         (i *
-          (1.3 * xForPointB - 0.7 * realTimeVirtualBalances.virtualBalanceA)) /
+          ((1 + MARGIN) * xForPointB -
+            (1 - MARGIN) * realTimeVirtualBalances.virtualBalanceA)) /
           100;
       const y = initialInvariant / x;
 

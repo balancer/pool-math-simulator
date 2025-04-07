@@ -60,7 +60,6 @@ export default function AclAmm() {
   const [minPrice, setMinPrice] = useState<number>(defaultMinPrice);
   const [maxPrice, setMaxPrice] = useState<number>(defaultMaxPrice);
   const [targetPrice, setTargetPrice] = useState<number>(defaultTargetPrice);
-  const [maxBalanceA, setMaxBalanceA] = useState<number>(defaultMaxBalanceA);
 
   // Pool Variables
   const [priceRatio, setPriceRatio] = useState<number>(
@@ -83,8 +82,6 @@ export default function AclAmm() {
   const [inputMaxPrice, setInputMaxPrice] = useState<number>(defaultMaxPrice);
   const [inputTargetPrice, setInputTargetPrice] =
     useState<number>(defaultTargetPrice);
-  const [inputMaxBalanceA, setInputMaxBalanceA] =
-    useState<number>(defaultMaxBalanceA);
 
   const [realTimeBalanceA, setRealTimeBalanceA] = useState<number>(
     defaultInitialBalanceA
@@ -202,6 +199,42 @@ export default function AclAmm() {
     return inputMaxPrice / inputMinPrice;
   }, [inputMaxPrice, inputMinPrice]);
 
+  const idealVirtualBalanceA = useMemo(() => {
+    return defaultMaxBalanceA / (Math.sqrt(inputPriceRatio) - 1);
+  }, [inputPriceRatio]);
+
+  const idealVirtualBalanceB = useMemo(() => {
+    return inputMinPrice * (defaultMaxBalanceA + idealVirtualBalanceA);
+  }, [idealVirtualBalanceA, inputMinPrice]);
+
+  const idealBalanceB = useMemo(() => {
+    return (
+      Math.sqrt(
+        inputTargetPrice *
+          (defaultMaxBalanceA + idealVirtualBalanceA) *
+          idealVirtualBalanceB
+      ) - idealVirtualBalanceB
+    );
+  }, [inputTargetPrice, idealVirtualBalanceA, idealVirtualBalanceB]);
+
+  const idealBalanceA = useMemo(() => {
+    return (
+      (idealBalanceB +
+        idealVirtualBalanceB -
+        idealVirtualBalanceA * inputTargetPrice) /
+      inputTargetPrice
+    );
+  }, [
+    idealBalanceB,
+    idealVirtualBalanceB,
+    idealVirtualBalanceA,
+    inputTargetPrice,
+  ]);
+
+  const inputMaxBalanceA = useMemo(() => {
+    return (inputBalanceA / idealBalanceA) * defaultMaxBalanceA;
+  }, [idealBalanceA, inputBalanceA]);
+
   const inputVirtualBalanceA = useMemo(() => {
     return inputMaxBalanceA / (Math.sqrt(inputPriceRatio) - 1);
   }, [inputMaxBalanceA, inputPriceRatio]);
@@ -210,6 +243,7 @@ export default function AclAmm() {
     return inputMinPrice * (inputMaxBalanceA + inputVirtualBalanceA);
   }, [inputVirtualBalanceA, inputMinPrice, inputMaxBalanceA]);
 
+  // Start default scenario and show chart.
   useEffect(() => {
     setTimeout(() => {
       setCurrentVirtualBalances({
@@ -298,22 +332,6 @@ export default function AclAmm() {
     setLastRangeCheckTime(simulationSeconds);
   }, [simulationSeconds, poolCenteredness, margin]);
 
-  const handleRecalculateBalances = () => {
-    const newInitialBalanceB =
-      Math.sqrt(
-        inputTargetPrice *
-          (inputMaxBalanceA + inputVirtualBalanceA) *
-          inputVirtualBalanceB
-      ) - inputVirtualBalanceB;
-    setInputBalanceB(newInitialBalanceB);
-    setInputBalanceA(
-      (newInitialBalanceB +
-        inputVirtualBalanceB -
-        inputVirtualBalanceA * inputTargetPrice) /
-        inputTargetPrice
-    );
-  };
-
   const handleInitialization = () => {
     setInitialBalanceA(Number(inputBalanceA));
     setInitialBalanceB(Number(inputBalanceB));
@@ -334,7 +352,6 @@ export default function AclAmm() {
     setMinPrice(Number(inputMinPrice));
     setMaxPrice(Number(inputMaxPrice));
     setTargetPrice(Number(inputTargetPrice));
-    setMaxBalanceA(Number(inputMaxBalanceA));
     initializeInvariants();
     setSimulationSeconds(0);
   };
@@ -494,18 +511,6 @@ export default function AclAmm() {
                 </Grid>
                 <Grid item xs={6}>
                   <TextField
-                    label="Maximum Balance A"
-                    type="number"
-                    fullWidth
-                    margin="normal"
-                    value={inputMaxBalanceA}
-                    onChange={(e) =>
-                      setInputMaxBalanceA(Number(e.target.value))
-                    }
-                  />
-                </Grid>
-                <Grid item xs={6}>
-                  <TextField
                     label="Margin (%)"
                     type="number"
                     fullWidth
@@ -514,7 +519,7 @@ export default function AclAmm() {
                     onChange={(e) => setInputMargin(Number(e.target.value))}
                   />
                 </Grid>
-                <Grid item xs={6}>
+                <Grid item xs={12}>
                   <TextField
                     label="Price Shift Daily Rate (%)"
                     type="number"
@@ -527,18 +532,6 @@ export default function AclAmm() {
                   />
                 </Grid>
               </Grid>
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <Typography>Price Ratio:</Typography>
-                <Typography>{inputPriceRatio.toFixed(2)}</Typography>
-              </div>
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <Typography>Virtual Balance A:</Typography>
-                <Typography>{inputVirtualBalanceA.toFixed(2)}</Typography>
-              </div>
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <Typography>Virtual Balance B:</Typography>
-                <Typography>{inputVirtualBalanceB.toFixed(2)}</Typography>
-              </div>
               <Typography
                 variant="subtitle1"
                 style={{
@@ -548,14 +541,6 @@ export default function AclAmm() {
               >
                 Initial Balances
               </Typography>
-              <Button
-                variant="outlined"
-                fullWidth
-                onClick={handleRecalculateBalances}
-                style={{ marginTop: 16, marginBottom: 16 }}
-              >
-                Recalculate Balances
-              </Button>
               <Grid container spacing={1}>
                 <Grid item xs={6}>
                   <TextField
@@ -578,10 +563,64 @@ export default function AclAmm() {
                   />
                 </Grid>
               </Grid>
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <Typography>Ideal Balance Proportion:</Typography>
+                <Typography>
+                  {(idealBalanceB / idealBalanceA).toFixed(2)}
+                </Typography>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <Typography
+                  style={{
+                    color:
+                      Math.abs(
+                        inputBalanceB /
+                          inputBalanceA /
+                          (idealBalanceB / idealBalanceA) -
+                          1
+                      ) >= 0.01
+                        ? "red"
+                        : "inherit",
+                  }}
+                >
+                  Actual Balance Proportion:
+                </Typography>
+                <Typography
+                  style={{
+                    color:
+                      Math.abs(
+                        inputBalanceB /
+                          inputBalanceA /
+                          (idealBalanceB / idealBalanceA) -
+                          1
+                      ) >= 0.01
+                        ? "red"
+                        : "inherit",
+                  }}
+                >
+                  {(inputBalanceB / inputBalanceA).toFixed(2)}
+                </Typography>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <Typography>Virtual Balance A:</Typography>
+                <Typography>{inputVirtualBalanceA.toFixed(2)}</Typography>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <Typography>Virtual Balance B:</Typography>
+                <Typography>{inputVirtualBalanceB.toFixed(2)}</Typography>
+              </div>
               <Button
                 variant="contained"
                 fullWidth
                 onClick={handleInitialization}
+                disabled={
+                  Math.abs(
+                    inputBalanceB /
+                      inputBalanceA /
+                      (idealBalanceB / idealBalanceA) -
+                      1
+                  ) >= 0.01
+                }
                 style={{ marginTop: 16 }}
               >
                 Create and Initialize
@@ -1077,10 +1116,6 @@ export default function AclAmm() {
               <div style={{ display: "flex", justifyContent: "space-between" }}>
                 <Typography>Initial Balance B:</Typography>
                 <Typography>{initialBalanceB.toFixed(2)}</Typography>
-              </div>
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <Typography>Maximum Balance A:</Typography>
-                <Typography>{maxBalanceA.toFixed(2)}</Typography>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between" }}>
                 <Typography>Min Price A:</Typography>
