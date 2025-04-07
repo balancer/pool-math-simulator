@@ -564,7 +564,7 @@ export default function AclAmm() {
                 </Grid>
               </Grid>
               <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <Typography>Ideal Balance Proportion:</Typography>
+                <Typography>Ideal Proportion:</Typography>
                 <Typography>
                   {(idealBalanceB / idealBalanceA).toFixed(2)}
                 </Typography>
@@ -583,7 +583,7 @@ export default function AclAmm() {
                         : "inherit",
                   }}
                 >
-                  Actual Balance Proportion:
+                  Actual Proportion:
                 </Typography>
                 <Typography
                   style={{
