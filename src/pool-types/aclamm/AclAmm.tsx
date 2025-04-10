@@ -74,9 +74,6 @@ export default function AclAmm() {
   const [inputBalanceA, setInputBalanceA] = useState<number>(
     defaultInitialBalanceA
   );
-  const [inputBalanceB, setInputBalanceB] = useState<number>(
-    defaultInitialBalanceB
-  );
   const [inputMargin, setInputMargin] = useState<number>(defaultMargin);
   const [inputMinPrice, setInputMinPrice] = useState<number>(defaultMinPrice);
   const [inputMaxPrice, setInputMaxPrice] = useState<number>(defaultMaxPrice);
@@ -242,6 +239,10 @@ export default function AclAmm() {
   const inputVirtualBalanceB = useMemo(() => {
     return inputMinPrice * (inputMaxBalanceA + inputVirtualBalanceA);
   }, [inputVirtualBalanceA, inputMinPrice, inputMaxBalanceA]);
+
+  const inputBalanceB = useMemo(() => {
+    return (inputBalanceA * idealBalanceB) / idealBalanceA;
+  }, [inputBalanceA, idealBalanceB, idealBalanceA]);
 
   // Start default scenario and show chart.
   useEffect(() => {
@@ -542,7 +543,7 @@ export default function AclAmm() {
                 Initial Balances
               </Typography>
               <Grid container spacing={1}>
-                <Grid item xs={6}>
+                <Grid item xs={12}>
                   <TextField
                     label="Initial Balance A"
                     type="number"
@@ -550,16 +551,6 @@ export default function AclAmm() {
                     margin="normal"
                     value={inputBalanceA}
                     onChange={(e) => setInputBalanceA(Number(e.target.value))}
-                  />
-                </Grid>
-                <Grid item xs={6}>
-                  <TextField
-                    label="Initial Balance B"
-                    type="number"
-                    fullWidth
-                    margin="normal"
-                    value={inputBalanceB}
-                    onChange={(e) => setInputBalanceB(Number(e.target.value))}
                   />
                 </Grid>
               </Grid>
@@ -570,36 +561,8 @@ export default function AclAmm() {
                 </Typography>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <Typography
-                  style={{
-                    color:
-                      Math.abs(
-                        inputBalanceB /
-                          inputBalanceA /
-                          (idealBalanceB / idealBalanceA) -
-                          1
-                      ) >= 0.01
-                        ? "red"
-                        : "inherit",
-                  }}
-                >
-                  Actual Proportion:
-                </Typography>
-                <Typography
-                  style={{
-                    color:
-                      Math.abs(
-                        inputBalanceB /
-                          inputBalanceA /
-                          (idealBalanceB / idealBalanceA) -
-                          1
-                      ) >= 0.01
-                        ? "red"
-                        : "inherit",
-                  }}
-                >
-                  {(inputBalanceB / inputBalanceA).toFixed(2)}
-                </Typography>
+                <Typography>Initial Balance B:</Typography>
+                <Typography>{inputBalanceB.toFixed(2)}</Typography>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between" }}>
                 <Typography>Virtual Balance A:</Typography>
