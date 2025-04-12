@@ -37,6 +37,8 @@ const defaultMaxBalanceA = 3000;
 
 const tickMilliseconds = 10;
 
+const MIN_SWAP = 0.000001;
+
 export default function AclAmm() {
   // Simulation variables
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
@@ -179,7 +181,9 @@ export default function AclAmm() {
 
     // Check if amount out exceeds available balance
     const relevantBalance =
-      swapTokenIn === "Token A" ? realTimeBalanceB - 1 : realTimeBalanceA - 1;
+      swapTokenIn === "Token A"
+        ? realTimeBalanceB - MIN_SWAP
+        : realTimeBalanceA - MIN_SWAP;
     return {
       amount: amountOut,
       exceedsBalance: amountOut > relevantBalance,
@@ -634,7 +638,7 @@ export default function AclAmm() {
                 {calculatedSwapAmountOut.exceedsBalance && (
                   <div style={{ fontSize: "0.8em" }}>
                     Token {swapTokenIn === "Token A" ? "B" : "A"} Amount in the
-                    pool must be at least 1.
+                    pool must be at least {MIN_SWAP}.
                   </div>
                 )}
               </Typography>
