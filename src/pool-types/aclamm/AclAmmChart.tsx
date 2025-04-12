@@ -360,7 +360,21 @@ export const AclAmmChart: React.FC<AclAmmChartProps> = ({
         .attr("r", 5)
         .attr("fill", "red");
 
-      // Add balance points for both real-time and current
+      // Add tooltip div
+      const tooltip = d3
+        .select("body")
+        .append("div")
+        .attr("class", "tooltip")
+        .style("opacity", 0)
+        .style("position", "absolute")
+        .style("background-color", "white")
+        .style("border", "1px solid #ddd")
+        .style("border-radius", "4px")
+        .style("padding", "8px")
+        .style("pointer-events", "none")
+        .style("font-size", "12px");
+
+      // Modify the balance points section
       svg
         .selectAll(".point-balance")
         .data(specialPoints.slice(4, 6)) // Real-time and current balances
@@ -370,7 +384,26 @@ export const AclAmmChart: React.FC<AclAmmChartProps> = ({
         .attr("cx", (d) => xScale(d.x))
         .attr("cy", (d) => yScale(d.y))
         .attr("r", 5)
-        .attr("fill", "green");
+        .attr("fill", "green")
+        .on("mouseover", (event, d) => {
+          tooltip
+            .style("opacity", 1)
+            .html(
+              `Real Balance A: ${realTimeBalanceA.toFixed(
+                2
+              )}<br/>Real Balance B: ${realTimeBalanceB.toFixed(2)}`
+            )
+            .style("left", event.pageX + 10 + "px")
+            .style("top", event.pageY - 10 + "px");
+        })
+        .on("mouseout", () => {
+          tooltip.style("opacity", 0);
+        })
+        .on("mousemove", (event) => {
+          tooltip
+            .style("left", event.pageX + 10 + "px")
+            .style("top", event.pageY - 10 + "px");
+        });
 
       // Add margin points for both real-time and current
       svg
@@ -488,8 +521,15 @@ export const AclAmmChart: React.FC<AclAmmChartProps> = ({
     // Cleanup
     return () => {
       resizeObserver.disconnect();
+      d3.select("body").selectAll(".tooltip").remove();
     };
-  }, [realTimeChartData, specialPoints, realTimeVirtualBalances]);
+  }, [
+    realTimeChartData,
+    specialPoints,
+    realTimeVirtualBalances,
+    realTimeBalanceA,
+    realTimeBalanceB,
+  ]);
 
   return <svg ref={svgRef}></svg>;
 };
