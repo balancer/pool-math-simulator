@@ -34,7 +34,7 @@ export default function StableSurge() {
   const [currentBalanceB, setCurrentBalanceB] = useState<number>(1000);
 
   const [swapTokenIn, setSwapTokenIn] = useState("Token A");
-  const [swapAmountIn, setSwapAmountIn] = useState<number>(100);
+  const [swapAmountIn, setSwapAmountIn] = useState<number>(0);
   const [totalFeesTokenA, setTotalFeesTokenA] = useState<number>(0);
   const [totalFeesTokenB, setTotalFeesTokenB] = useState<number>(0);
 
