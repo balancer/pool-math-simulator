@@ -251,7 +251,7 @@ export default function StableSurge() {
     let lowerImbalanceThreshold = { x: 0, y: 0 };
     let upperImbalanceThreshold = { x: 0, y: 0 };
     for (let i = 1; i <= 10000; i++) {
-      const balanceA = (i * initialBalanceA) / 100;
+      const balanceA = (i * (initialBalanceA + initialBalanceB)) / 2 / 100;
       const balanceB = getTokenBalanceGivenInvariantAndAllOtherBalances(
         amplification,
         [balanceA, initialBalanceB],

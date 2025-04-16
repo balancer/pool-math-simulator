@@ -37,8 +37,6 @@ export function getSurgeFeePercentage(
       (newImbalance - surgeThresholdPercentage)) /
       (100 - surgeThresholdPercentage);
 
-  console.log(`newFee: ${newFee}`);
-
   return newFee;
 }
 
@@ -94,8 +92,6 @@ export function isSurging(
   }
 
   const currentImbalance = calculateImbalance(poolCurrentBalances);
-  console.log(`currentImbalance: ${currentImbalance}`);
-  console.log(`newTotalImbalance: ${newTotalImbalance}`);
   // If the imbalance has worsened, and is above the threshold, we are surging.
   return (
     newTotalImbalance > currentImbalance &&
