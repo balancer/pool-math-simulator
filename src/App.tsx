@@ -9,6 +9,7 @@ import {
 } from "react-router-dom";
 import AclAmm from "./pool-types/aclamm/AclAmm";
 import StableSurge from "./pool-types/stable-surge/StableSurge";
+import WeightedStable from "./pool-types/weighted-stable/WeightedStable";
 import styled from "styled-components";
 
 // Styled components for the menus
@@ -74,6 +75,7 @@ const Home = () => (
   <CenterMenu>
     <Link to="/reclamm">ReClamm</Link>
     <Link to="/stable-surge">Stable Surge</Link>
+    <Link to="/weighted-stable">Weighted Stable Pool</Link>
   </CenterMenu>
 );
 
@@ -99,6 +101,12 @@ const Navigation = () => {
         >
           Stable Surge
         </Link>
+        <Link
+          to="/weighted-stable"
+          className={location.pathname === "/weighted-stable" ? "active" : ""}
+        >
+          Weighted Stable Pool
+        </Link>
       </NavLinks>
     </TopNav>
   );
@@ -113,6 +121,7 @@ function App() {
         <Route path="/reclamm" element={<AclAmm />} />
         <Route path="/acl-amm" element={<Navigate to="/reclamm" />} />
         <Route path="/stable-surge" element={<StableSurge />} />
+        <Route path="/weighted-stable" element={<WeightedStable />} />
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </Router>
