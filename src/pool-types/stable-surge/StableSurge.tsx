@@ -13,59 +13,63 @@ import {
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import { stableInvariant } from "../stable-pool/StableMath";
 import { StableSurgeChart } from "./StableSurgeChart";
-import * as d3 from "d3";
 import { getTokenBalanceGivenInvariantAndAllOtherBalances } from "../stable-pool/StableMath";
 import { calculateImbalance, getSurgeFeePercentage } from "./StableSurgeHook";
 export default function StableSurge() {
-  const [inputBalanceA, setInputBalanceA] = useState<number>(1000);
-  const [inputBalanceB, setInputBalanceB] = useState<number>(1000);
+  const [inputBalances, setInputBalances] = useState<number[]>([1000, 1000]);
+  const [initialBalances, setInitialBalances] = useState<number[]>([
+    1000, 1000,
+  ]);
+  const [currentBalances, setCurrentBalances] = useState<number[]>([
+    1000, 1000,
+  ]);
+  const [totalFees, setTotalFees] = useState<number[]>([0, 0]);
+  const [tokenNames, setTokenNames] = useState<string[]>(["A", "B", "C", "D"]);
+
+  const [inputTokenCount, setInputTokenCount] = useState<number>(2);
+  const [tokenCount, setTokenCount] = useState<number>(2);
   const [inputAmplification, setInputAmplification] = useState<number>(100);
   const [inputSwapFee, setInputSwapFee] = useState<number>(1);
   const [inputMaxSurgeFee, setInputMaxSurgeFee] = useState<number>(10);
   const [inputSurgeThreshold, setInputSurgeThreshold] = useState<number>(20);
 
-  const [initialBalanceA, setInitialBalanceA] = useState<number>(1000);
-  const [initialBalanceB, setInitialBalanceB] = useState<number>(1000);
   const [amplification, setAmplification] = useState<number>(100);
   const [swapFee, setSwapFee] = useState<number>(1);
   const [maxSurgeFee, setMaxSurgeFee] = useState<number>(10);
   const [surgeThreshold, setSurgeThreshold] = useState<number>(20);
-  const [currentBalanceA, setCurrentBalanceA] = useState<number>(1000);
-  const [currentBalanceB, setCurrentBalanceB] = useState<number>(1000);
 
-  const [swapTokenIn, setSwapTokenIn] = useState("Token A");
+  const [swapTokenInIndex, setSwapTokenInIndex] = useState(0);
+  const [swapTokenOutIndex, setSwapTokenOutIndex] = useState(1);
   const [swapAmountIn, setSwapAmountIn] = useState<number>(0);
-  const [totalFeesTokenA, setTotalFeesTokenA] = useState<number>(0);
-  const [totalFeesTokenB, setTotalFeesTokenB] = useState<number>(0);
 
   const currentInvariant = useMemo(() => {
-    return stableInvariant(amplification, [currentBalanceA, currentBalanceB]);
-  }, [amplification, currentBalanceA, currentBalanceB]);
+    return stableInvariant(amplification, currentBalances);
+  }, [amplification, currentBalances]);
 
   const curvePoints = useMemo(() => {
-    const lastBalanceB = currentBalanceB / 100;
-    let lastBalanceA = currentBalanceA;
+    const lastBalanceOut = currentBalances[swapTokenOutIndex] / 100;
+    let lastBalanceIn = currentBalances[swapTokenInIndex];
 
     for (let i = 0; i < 1000; i++) {
-      const currentA = (i * currentBalanceB) / 10;
-      const balances = [currentA, currentBalanceB];
-      const currentB = getTokenBalanceGivenInvariantAndAllOtherBalances(
+      const currentIn = (i * currentBalances[swapTokenOutIndex]) / 10;
+      const balances = [currentIn, currentBalances[swapTokenOutIndex]];
+      const currentOut = getTokenBalanceGivenInvariantAndAllOtherBalances(
         amplification,
         balances,
         currentInvariant,
         1
       );
-      if (currentB < lastBalanceB) {
-        lastBalanceA = currentA;
+      if (currentOut < lastBalanceOut) {
+        lastBalanceIn = currentIn;
         break;
       }
     }
 
-    const step = lastBalanceA / 1000;
+    const step = lastBalanceIn / 1000;
 
     return Array.from({ length: 1000 }, (_, i) => {
       const x = (i + 1) * step;
-      const balances = [x, currentBalanceB];
+      const balances = [x, currentBalances[swapTokenOutIndex]];
       const y = getTokenBalanceGivenInvariantAndAllOtherBalances(
         amplification,
         balances,
@@ -75,32 +79,32 @@ export default function StableSurge() {
 
       return { x, y };
     });
-  }, [currentBalanceA, currentBalanceB, amplification, currentInvariant]);
+  }, [currentBalances, amplification, currentInvariant]);
 
   const curvePointsWithFees = useMemo(() => {
-    const lastBalanceB = currentBalanceB / 100;
-    let lastBalanceA = currentBalanceA;
+    const lastBalanceOut = currentBalances[swapTokenOutIndex] / 100;
+    let lastBalanceIn = currentBalances[swapTokenInIndex];
 
     for (let i = 0; i < 1000; i++) {
-      const currentA = (i * currentBalanceB) / 10;
-      const balances = [currentA, currentBalanceB];
-      const currentB = getTokenBalanceGivenInvariantAndAllOtherBalances(
+      const currentIn = (i * currentBalances[swapTokenOutIndex]) / 10;
+      const balances = [currentIn, currentBalances[swapTokenOutIndex]];
+      const currentOut = getTokenBalanceGivenInvariantAndAllOtherBalances(
         amplification,
         balances,
         currentInvariant,
         1
       );
-      if (currentB < lastBalanceB) {
-        lastBalanceA = currentA;
+      if (currentOut < lastBalanceOut) {
+        lastBalanceIn = currentIn;
         break;
       }
     }
 
-    const step = lastBalanceA / 10000;
+    const step = lastBalanceIn / 10000;
 
     return Array.from({ length: 10000 }, (_, i) => {
       let x = (i + 1) * step;
-      const balances = [x, currentBalanceB];
+      const balances = [x, currentBalances[swapTokenOutIndex]];
       let y = getTokenBalanceGivenInvariantAndAllOtherBalances(
         amplification,
         balances,
@@ -112,16 +116,16 @@ export default function StableSurge() {
         surgeThreshold,
         swapFee,
         [x, y],
-        [currentBalanceA, currentBalanceB]
+        currentBalances
       );
-      if (x < currentBalanceA) {
+      if (x < currentBalances[swapTokenInIndex]) {
         // fee on B
-        const swapAmountIn = y - currentBalanceB;
+        const swapAmountIn = y - currentBalances[swapTokenOutIndex];
         const fee = (swapAmountIn * surgeFeePercentage) / 100;
         y = y + fee; // Give fees back to the pool.
       } else {
         // fee on A
-        const swapAmountIn = x - currentBalanceA;
+        const swapAmountIn = x - currentBalances[swapTokenInIndex];
         const fee = (swapAmountIn * surgeFeePercentage) / 100;
         x = x + fee; // Give fees back to the pool.
       }
@@ -129,8 +133,7 @@ export default function StableSurge() {
       return { x, y };
     });
   }, [
-    currentBalanceA,
-    currentBalanceB,
+    currentBalances,
     amplification,
     currentInvariant,
     maxSurgeFee,
@@ -138,34 +141,33 @@ export default function StableSurge() {
   ]);
 
   const initialCurvePoints = useMemo(() => {
-    const initialInvariant = stableInvariant(amplification, [
-      initialBalanceA,
-      initialBalanceB,
-    ]);
+    const initialInvariant = stableInvariant(amplification, initialBalances);
 
-    const lastBalanceB = initialBalanceB / 100;
-    let lastBalanceA = initialBalanceA;
+    const lastBalanceOut = initialBalances[swapTokenOutIndex] / 100;
+    let lastBalanceIn = initialBalances[swapTokenInIndex];
 
     for (let i = 0; i < 1000; i++) {
-      const currentA = (i * initialBalanceB) / 10;
-      const balances = [currentA, initialBalanceB];
-      const currentB = getTokenBalanceGivenInvariantAndAllOtherBalances(
+      const currentIn = (i * initialBalances[swapTokenOutIndex]) / 10;
+      const balances = [...initialBalances];
+      balances[swapTokenInIndex] = currentIn;
+      const currentOut = getTokenBalanceGivenInvariantAndAllOtherBalances(
         amplification,
         balances,
         initialInvariant,
         1
       );
-      if (currentB < lastBalanceB) {
-        lastBalanceA = currentA;
+      if (currentOut < lastBalanceOut) {
+        lastBalanceIn = currentIn;
         break;
       }
     }
 
-    const step = lastBalanceA / 1000;
+    const step = lastBalanceIn / 1000;
 
     return Array.from({ length: 1000 }, (_, i) => {
       const x = (i + 1) * step;
-      const balances = [x, initialBalanceB];
+      const balances = [...initialBalances];
+      balances[swapTokenInIndex] = x;
       const y = getTokenBalanceGivenInvariantAndAllOtherBalances(
         amplification,
         balances,
@@ -175,23 +177,20 @@ export default function StableSurge() {
 
       return { x, y };
     });
-  }, [initialBalanceA, initialBalanceB, amplification]);
+  }, [initialBalances, amplification]);
 
   const swapPreview = useMemo(() => {
     if (!swapAmountIn) return { amountOut: 0, fee: 0, feePercentage: 0 };
 
     // Calculate surge fee
-    const newBalances = [...[currentBalanceA, currentBalanceB]];
-    const currentBalances = [currentBalanceA, currentBalanceB];
-    const tokenIndexIn = swapTokenIn === "Token A" ? 0 : 1;
-    const tokenIndexOut = swapTokenIn === "Token A" ? 1 : 0;
-    newBalances[tokenIndexIn] += swapAmountIn;
-    newBalances[tokenIndexOut] =
+    const newBalances = [...currentBalances];
+    newBalances[swapTokenInIndex] += swapAmountIn;
+    newBalances[swapTokenOutIndex] =
       getTokenBalanceGivenInvariantAndAllOtherBalances(
         amplification,
         newBalances,
         currentInvariant,
-        tokenIndexOut
+        swapTokenOutIndex
       );
 
     const surgeFee = getSurgeFeePercentage(
@@ -204,40 +203,25 @@ export default function StableSurge() {
 
     const fees = (swapAmountIn * surgeFee) / 100;
 
-    if (swapTokenIn === "Token A") {
-      // Swapping Token A for Token B
-      const newBalanceA = currentBalanceA + swapAmountIn - fees;
-      const newBalanceB = getTokenBalanceGivenInvariantAndAllOtherBalances(
-        amplification,
-        [newBalanceA, currentBalanceB],
-        currentInvariant,
-        1
-      );
-      return {
-        amountOut: currentBalanceB - newBalanceB,
-        fee: fees,
-        feePercentage: surgeFee,
-      };
-    } else {
-      // Swapping Token B for Token A
-      const newBalanceB = currentBalanceB + swapAmountIn - fees;
-      const newBalanceA = getTokenBalanceGivenInvariantAndAllOtherBalances(
-        amplification,
-        [currentBalanceA, newBalanceB],
-        currentInvariant,
-        0
-      );
-      return {
-        amountOut: currentBalanceA - newBalanceA,
-        fee: fees,
-        feePercentage: surgeFee,
-      };
-    }
+    const balances = [...currentBalances];
+    balances[swapTokenInIndex] += swapAmountIn - fees;
+    const newBalanceOut = getTokenBalanceGivenInvariantAndAllOtherBalances(
+      amplification,
+      balances,
+      currentInvariant,
+      swapTokenOutIndex
+    );
+    return {
+      amountOut: currentBalances[swapTokenOutIndex] - newBalanceOut,
+      fee: fees,
+      feePercentage: surgeFee,
+    };
   }, [
     swapAmountIn,
-    swapTokenIn,
-    currentBalanceA,
-    currentBalanceB,
+    swapTokenInIndex,
+    swapTokenOutIndex,
+    currentBalances[swapTokenInIndex],
+    currentBalances[swapTokenOutIndex],
     currentInvariant,
     maxSurgeFee,
     surgeThreshold,
@@ -246,31 +230,44 @@ export default function StableSurge() {
   ]);
 
   const [lowerImbalanceThreshold, upperImbalanceThreshold] = useMemo(() => {
-    let lowerBalanceAImbalance = 0;
-    let upperBalanceAImbalance = 0;
+    let lowerBalanceInImbalance = 0;
+    let upperBalanceInImbalance = 0;
     let lowerImbalanceThreshold = { x: 0, y: 0 };
     let upperImbalanceThreshold = { x: 0, y: 0 };
     for (let i = 1; i <= 10000; i++) {
-      const balanceA = (i * (initialBalanceA + initialBalanceB)) / 2 / 100;
-      const balanceB = getTokenBalanceGivenInvariantAndAllOtherBalances(
-        amplification,
-        [balanceA, initialBalanceB],
-        currentInvariant,
-        1
-      );
+      const balances = [...initialBalances];
+      balances[swapTokenInIndex] =
+        (i *
+          (initialBalances[swapTokenInIndex] +
+            initialBalances[swapTokenOutIndex])) /
+        2 /
+        100;
+      balances[swapTokenOutIndex] =
+        getTokenBalanceGivenInvariantAndAllOtherBalances(
+          amplification,
+          balances,
+          currentInvariant,
+          swapTokenOutIndex
+        );
 
-      const imbalance = calculateImbalance([balanceA, balanceB]);
-      if (imbalance < surgeThreshold && lowerBalanceAImbalance === 0) {
-        lowerBalanceAImbalance = balanceA;
-        lowerImbalanceThreshold = { x: balanceA, y: balanceB };
+      const imbalance = calculateImbalance(balances);
+      if (imbalance < surgeThreshold && lowerBalanceInImbalance === 0) {
+        lowerBalanceInImbalance = balances[swapTokenInIndex];
+        lowerImbalanceThreshold = {
+          x: balances[swapTokenInIndex],
+          y: balances[swapTokenOutIndex],
+        };
       }
       if (
         imbalance > surgeThreshold &&
-        upperBalanceAImbalance === 0 &&
-        lowerBalanceAImbalance !== 0
+        upperBalanceInImbalance === 0 &&
+        lowerBalanceInImbalance !== 0
       ) {
-        upperBalanceAImbalance = balanceA;
-        upperImbalanceThreshold = { x: balanceA, y: balanceB };
+        upperBalanceInImbalance = balances[swapTokenInIndex];
+        upperImbalanceThreshold = {
+          x: balances[swapTokenInIndex],
+          y: balances[swapTokenOutIndex],
+        };
         break;
       }
     }
@@ -280,51 +277,35 @@ export default function StableSurge() {
   const previewPoint = useMemo(() => {
     if (!swapPreview.amountOut) return undefined;
 
-    if (swapTokenIn === "Token A") {
-      return {
-        x: currentBalanceA + swapAmountIn,
-        y: currentBalanceB - swapPreview.amountOut,
-      };
-    } else {
-      return {
-        x: currentBalanceA - swapPreview.amountOut,
-        y: currentBalanceB + swapAmountIn,
-      };
-    }
-  }, [
-    swapPreview,
-    swapAmountIn,
-    swapTokenIn,
-    currentBalanceA,
-    currentBalanceB,
-  ]);
+    return {
+      x: currentBalances[swapTokenInIndex] + swapAmountIn,
+      y: currentBalances[swapTokenOutIndex] - swapPreview.amountOut,
+    };
+  }, [swapPreview, swapAmountIn, swapTokenInIndex, currentBalances]);
 
   const handleUpdate = () => {
-    setInitialBalanceA(inputBalanceA);
-    setInitialBalanceB(inputBalanceB);
+    setTokenCount(inputTokenCount);
+    setInitialBalances(inputBalances.slice(0, inputTokenCount));
+    setCurrentBalances(inputBalances.slice(0, inputTokenCount));
+    setTotalFees(Array(inputTokenCount).fill(0));
     setAmplification(inputAmplification);
     setSwapFee(inputSwapFee);
     setMaxSurgeFee(inputMaxSurgeFee);
     setSurgeThreshold(inputSurgeThreshold);
-    setCurrentBalanceA(inputBalanceA);
-    setCurrentBalanceB(inputBalanceB);
   };
 
   const handleSwap = () => {
     const amountIn = Number(swapAmountIn);
 
     // Calculate surge fee
-    const newBalances = [...[currentBalanceA, currentBalanceB]];
-    const currentBalances = [currentBalanceA, currentBalanceB];
-    const tokenIndexIn = swapTokenIn === "Token A" ? 0 : 1;
-    const tokenIndexOut = swapTokenIn === "Token A" ? 1 : 0;
-    newBalances[tokenIndexIn] += swapAmountIn;
-    newBalances[tokenIndexOut] =
+    const newBalances = [...currentBalances];
+    newBalances[swapTokenInIndex] += swapAmountIn;
+    newBalances[swapTokenOutIndex] =
       getTokenBalanceGivenInvariantAndAllOtherBalances(
         amplification,
         newBalances,
         currentInvariant,
-        tokenIndexOut
+        swapTokenOutIndex
       );
 
     const surgeFee = getSurgeFeePercentage(
@@ -337,31 +318,20 @@ export default function StableSurge() {
 
     const fees = (amountIn * surgeFee) / 100;
 
-    if (swapTokenIn === "Token A") {
-      // Swapping Token A for Token B
-      const newBalanceA = currentBalanceA + amountIn - fees;
-      const newBalanceB = getTokenBalanceGivenInvariantAndAllOtherBalances(
+    currentBalances[swapTokenInIndex] += amountIn - fees;
+    currentBalances[swapTokenOutIndex] =
+      getTokenBalanceGivenInvariantAndAllOtherBalances(
         amplification,
-        [newBalanceA, currentBalanceB],
+        currentBalances,
         currentInvariant,
-        1
+        swapTokenOutIndex
       );
-      setCurrentBalanceA(newBalanceA + fees);
-      setCurrentBalanceB(newBalanceB);
-      setTotalFeesTokenA((prevFees) => prevFees + fees);
-    } else {
-      // Swapping Token B for Token A
-      const newBalanceB = currentBalanceB + amountIn - fees;
-      const newBalanceA = getTokenBalanceGivenInvariantAndAllOtherBalances(
-        amplification,
-        [currentBalanceA, newBalanceB],
-        currentInvariant,
-        0
-      );
-      setCurrentBalanceA(newBalanceA);
-      setCurrentBalanceB(newBalanceB + fees);
-      setTotalFeesTokenB((prevFees) => prevFees + fees);
-    }
+    setCurrentBalances(currentBalances);
+    setTotalFees((prevFees) => {
+      const newFees = [...prevFees];
+      newFees[swapTokenInIndex] += fees;
+      return newFees;
+    });
   };
 
   return (
@@ -375,21 +345,80 @@ export default function StableSurge() {
             </AccordionSummary>
             <AccordionDetails>
               <TextField
-                label="Initial Balance A"
+                select
+                label="Number of Tokens"
+                fullWidth
+                margin="normal"
+                value={inputTokenCount}
+                onChange={(e) => setInputTokenCount(Number(e.target.value))}
+                SelectProps={{
+                  native: true,
+                }}
+              >
+                <option value={2}>2 Tokens</option>
+                <option value={3}>3 Tokens</option>
+                <option value={4}>4 Tokens</option>
+              </TextField>
+              <TextField
+                label={`Initial Balance ${tokenNames[0]}`}
                 type="number"
                 fullWidth
                 margin="normal"
-                value={inputBalanceA}
-                onChange={(e) => setInputBalanceA(Number(e.target.value))}
+                value={inputBalances[0]}
+                onChange={(e) =>
+                  setInputBalances((prev) => {
+                    const result = [...prev];
+                    result[0] = Number(e.target.value);
+                    return result;
+                  })
+                }
               />
               <TextField
-                label="Initial Balance B"
+                label={`Initial Balance ${tokenNames[1]}`}
                 type="number"
                 fullWidth
                 margin="normal"
-                value={inputBalanceB}
-                onChange={(e) => setInputBalanceB(Number(e.target.value))}
+                value={inputBalances[1]}
+                onChange={(e) =>
+                  setInputBalances((prev) => {
+                    const result = [...prev];
+                    result[1] = Number(e.target.value);
+                    return result;
+                  })
+                }
               />
+              {inputTokenCount >= 3 && (
+                <TextField
+                  label={`Initial Balance ${tokenNames[2]}`}
+                  type="number"
+                  fullWidth
+                  margin="normal"
+                  value={inputBalances[2]}
+                  onChange={(e) =>
+                    setInputBalances((prev) => {
+                      const result = [...prev];
+                      result[2] = Number(e.target.value);
+                      return result;
+                    })
+                  }
+                />
+              )}
+              {inputTokenCount >= 4 && (
+                <TextField
+                  label={`Initial Balance ${tokenNames[3]}`}
+                  type="number"
+                  fullWidth
+                  margin="normal"
+                  value={inputBalances[3]}
+                  onChange={(e) =>
+                    setInputBalances((prev) => {
+                      const result = [...prev];
+                      result[3] = Number(e.target.value);
+                      return result;
+                    })
+                  }
+                />
+              )}
               <TextField
                 label="Amplification Parameter"
                 type="number"
@@ -446,14 +475,44 @@ export default function StableSurge() {
                 label="Token In"
                 fullWidth
                 margin="normal"
-                value={swapTokenIn}
-                onChange={(e) => setSwapTokenIn(e.target.value)}
+                value={swapTokenInIndex}
+                onChange={(e) => setSwapTokenInIndex(Number(e.target.value))}
                 SelectProps={{
                   native: true,
                 }}
               >
-                <option value="Token A">Token A</option>
-                <option value="Token B">Token B</option>
+                <option value={0}>{tokenNames[0]}</option>
+                <option value={1}>{tokenNames[1]}</option>
+                {tokenCount >= 3 && <option value={2}>{tokenNames[2]}</option>}
+                {tokenCount >= 4 && <option value={3}>{tokenNames[3]}</option>}
+              </TextField>
+              <TextField
+                select
+                label="Token Out"
+                fullWidth
+                margin="normal"
+                value={swapTokenOutIndex}
+                onChange={(e) => setSwapTokenOutIndex(Number(e.target.value))}
+                SelectProps={{
+                  native: true,
+                }}
+              >
+                <option value={0} disabled={swapTokenInIndex === 0}>
+                  {tokenNames[0]}
+                </option>
+                <option value={1} disabled={swapTokenInIndex === 1}>
+                  {tokenNames[1]}
+                </option>
+                {tokenCount >= 3 && (
+                  <option value={2} disabled={swapTokenInIndex === 2}>
+                    {tokenNames[2]}
+                  </option>
+                )}
+                {tokenCount >= 4 && (
+                  <option value={3} disabled={swapTokenInIndex === 3}>
+                    {tokenNames[3]}
+                  </option>
+                )}
               </TextField>
               <TextField
                 label="Amount In"
@@ -464,7 +523,7 @@ export default function StableSurge() {
                 onChange={(e) => setSwapAmountIn(Number(e.target.value))}
               />
               <Typography style={{ marginTop: 8, marginBottom: 8 }}>
-                Amount Out {swapTokenIn === "Token A" ? "B" : "A"}:{" "}
+                Amount Out {tokenNames[swapTokenOutIndex]}:{" "}
                 {swapPreview.amountOut > 0
                   ? swapPreview.amountOut.toFixed(2)
                   : "0"}
@@ -474,7 +533,7 @@ export default function StableSurge() {
               </Typography>
               <Typography style={{ marginBottom: 8 }}>
                 Fee: {swapPreview.fee > 0 ? swapPreview.fee.toFixed(2) : "0"}{" "}
-                {swapTokenIn}
+                {tokenNames[swapTokenInIndex]}
               </Typography>
               <Button
                 variant="contained"
@@ -486,6 +545,70 @@ export default function StableSurge() {
               </Button>
             </AccordionDetails>
           </Accordion>
+
+          <Accordion>
+            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+              <Typography variant="h6">Config</Typography>
+            </AccordionSummary>
+            <AccordionDetails>
+              <TextField
+                label="Token A Name"
+                fullWidth
+                margin="normal"
+                value={tokenNames[0]}
+                onChange={(e) =>
+                  setTokenNames((prev) => {
+                    const result = [...prev];
+                    result[0] = e.target.value;
+                    return result;
+                  })
+                }
+              />
+              <TextField
+                label="Token B Name"
+                fullWidth
+                margin="normal"
+                value={tokenNames[1]}
+                onChange={(e) =>
+                  setTokenNames((prev) => {
+                    const result = [...prev];
+                    result[1] = e.target.value;
+                    return result;
+                  })
+                }
+              />
+              {tokenCount >= 3 && (
+                <TextField
+                  label="Token C Name"
+                  fullWidth
+                  margin="normal"
+                  value={tokenNames[2]}
+                  onChange={(e) =>
+                    setTokenNames((prev) => {
+                      const result = [...prev];
+                      result[2] = e.target.value;
+                      return result;
+                    })
+                  }
+                />
+              )}
+              {tokenCount >= 4 && (
+                <TextField
+                  label="Token D Name"
+                  fullWidth
+                  margin="normal"
+                  value={tokenNames[3]}
+                  onChange={(e) =>
+                    setTokenNames((prev) => {
+                      const result = [...prev];
+                      result[3] = e.target.value;
+                      return result;
+                    })
+                  }
+                />
+              )}
+            </AccordionDetails>
+          </Accordion>
         </Grid>
 
         {/* Middle Column - Chart */}
@@ -495,11 +618,16 @@ export default function StableSurge() {
               <StableSurgeChart
                 curvePoints={curvePoints}
                 curvePointsWithFees={curvePointsWithFees}
-                currentPoint={{ x: currentBalanceA, y: currentBalanceB }}
+                currentPoint={{
+                  x: currentBalances[swapTokenInIndex],
+                  y: currentBalances[swapTokenOutIndex],
+                }}
                 initialCurvePoints={initialCurvePoints}
                 previewPoint={previewPoint}
                 lowerImbalanceThreshold={lowerImbalanceThreshold}
                 upperImbalanceThreshold={upperImbalanceThreshold}
+                tokenInName={tokenNames[swapTokenInIndex]}
+                tokenOutName={tokenNames[swapTokenOutIndex]}
               />
             </div>
           </Paper>
@@ -513,13 +641,29 @@ export default function StableSurge() {
             </AccordionSummary>
             <AccordionDetails>
               <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <Typography>Current Balance A:</Typography>
-                <Typography>{currentBalanceA.toFixed(2)}</Typography>
+                <Typography>Current Balance {tokenNames[0]}:</Typography>
+                <Typography>{currentBalances[0].toFixed(2)}</Typography>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <Typography>Current Balance B:</Typography>
-                <Typography>{currentBalanceB.toFixed(2)}</Typography>
+                <Typography>Current Balance {tokenNames[1]}:</Typography>
+                <Typography>{currentBalances[1].toFixed(2)}</Typography>
               </div>
+              {tokenCount >= 3 && (
+                <div
+                  style={{ display: "flex", justifyContent: "space-between" }}
+                >
+                  <Typography>Current Balance {tokenNames[2]}:</Typography>
+                  <Typography>{currentBalances[2].toFixed(2)}</Typography>
+                </div>
+              )}
+              {tokenCount >= 4 && (
+                <div
+                  style={{ display: "flex", justifyContent: "space-between" }}
+                >
+                  <Typography>Current Balance {tokenNames[3]}:</Typography>
+                  <Typography>{currentBalances[3].toFixed(2)}</Typography>
+                </div>
+              )}
               <div style={{ display: "flex", justifyContent: "space-between" }}>
                 <Typography>Current Invariant:</Typography>
                 <Typography>{currentInvariant.toFixed(2)}</Typography>
@@ -527,10 +671,7 @@ export default function StableSurge() {
               <div style={{ display: "flex", justifyContent: "space-between" }}>
                 <Typography>Current Imbalance (%):</Typography>
                 <Typography>
-                  {calculateImbalance([
-                    currentBalanceA,
-                    currentBalanceB,
-                  ]).toFixed(2)}
+                  {calculateImbalance(currentBalances).toFixed(2)}
                 </Typography>
               </div>
               {previewPoint && (
@@ -579,20 +720,33 @@ export default function StableSurge() {
             </AccordionSummary>
             <AccordionDetails>
               <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <Typography>Initial Balance A:</Typography>
-                <Typography>{initialBalanceA.toFixed(2)}</Typography>
+                <Typography>Initial Balance {tokenNames[0]}:</Typography>
+                <Typography>{initialBalances[0].toFixed(2)}</Typography>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <Typography>Initial Balance B:</Typography>
-                <Typography>{initialBalanceB.toFixed(2)}</Typography>
+                <Typography>Initial Balance {tokenNames[1]}:</Typography>
+                <Typography>{initialBalances[1].toFixed(2)}</Typography>
               </div>
+              {tokenCount >= 3 && (
+                <div
+                  style={{ display: "flex", justifyContent: "space-between" }}
+                >
+                  <Typography>Initial Balance {tokenNames[2]}:</Typography>
+                  <Typography>{initialBalances[2].toFixed(2)}</Typography>
+                </div>
+              )}
+              {tokenCount >= 4 && (
+                <div
+                  style={{ display: "flex", justifyContent: "space-between" }}
+                >
+                  <Typography>Initial Balance {tokenNames[3]}:</Typography>
+                  <Typography>{initialBalances[3].toFixed(2)}</Typography>
+                </div>
+              )}
               <div style={{ display: "flex", justifyContent: "space-between" }}>
                 <Typography>Initial Invariant:</Typography>
                 <Typography>
-                  {stableInvariant(amplification, [
-                    initialBalanceA,
-                    initialBalanceB,
-                  ]).toFixed(2)}
+                  {stableInvariant(amplification, initialBalances).toFixed(2)}
                 </Typography>
               </div>
             </AccordionDetails>
@@ -604,13 +758,29 @@ export default function StableSurge() {
             </AccordionSummary>
             <AccordionDetails>
               <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <Typography>Token A:</Typography>
-                <Typography>{totalFeesTokenA.toFixed(2)}</Typography>
+                <Typography>{tokenNames[0]}:</Typography>
+                <Typography>{totalFees[0].toFixed(2)}</Typography>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <Typography>Token B:</Typography>
-                <Typography>{totalFeesTokenB.toFixed(2)}</Typography>
+                <Typography>{tokenNames[1]}:</Typography>
+                <Typography>{totalFees[1].toFixed(2)}</Typography>
               </div>
+              {tokenCount >= 3 && (
+                <div
+                  style={{ display: "flex", justifyContent: "space-between" }}
+                >
+                  <Typography>{tokenNames[2]}:</Typography>
+                  <Typography>{totalFees[2].toFixed(2)}</Typography>
+                </div>
+              )}
+              {tokenCount >= 4 && (
+                <div
+                  style={{ display: "flex", justifyContent: "space-between" }}
+                >
+                  <Typography>{tokenNames[3]}:</Typography>
+                  <Typography>{totalFees[3].toFixed(2)}</Typography>
+                </div>
+              )}
             </AccordionDetails>
           </Accordion>
         </Grid>

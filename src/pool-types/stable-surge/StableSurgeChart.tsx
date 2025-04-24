@@ -12,6 +12,8 @@ export const StableSurgeChart: React.FC<{
   previewPoint?: { x: number; y: number };
   lowerImbalanceThreshold?: { x: number; y: number };
   upperImbalanceThreshold?: { x: number; y: number };
+  tokenInName?: string;
+  tokenOutName?: string;
 }> = ({
   curvePoints,
   curvePointsWithFees,
@@ -20,6 +22,8 @@ export const StableSurgeChart: React.FC<{
   previewPoint,
   lowerImbalanceThreshold,
   upperImbalanceThreshold,
+  tokenInName = "Balance A",
+  tokenOutName = "Balance B",
 }) => {
   const svgRef = useRef<SVGSVGElement>(null);
 
@@ -145,7 +149,7 @@ export const StableSurgeChart: React.FC<{
         .attr("x", innerWidth / 2)
         .attr("y", innerHeight + 40)
         .attr("text-anchor", "middle")
-        .text("Balance A");
+        .text(tokenInName);
 
       svg
         .append("text")
@@ -153,7 +157,7 @@ export const StableSurgeChart: React.FC<{
         .attr("x", -innerHeight / 2)
         .attr("y", -40)
         .attr("text-anchor", "middle")
-        .text("Balance B");
+        .text(tokenOutName);
 
       // After drawing the curve, add the current point if it exists
       if (currentPoint) {
@@ -291,6 +295,8 @@ export const StableSurgeChart: React.FC<{
     previewPoint,
     lowerImbalanceThreshold,
     upperImbalanceThreshold,
+    tokenInName,
+    tokenOutName,
   ]);
 
   return <svg ref={svgRef}></svg>;
