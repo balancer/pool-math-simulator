@@ -52,12 +52,13 @@ export default function StableSurge() {
 
     for (let i = 0; i < 1000; i++) {
       const currentIn = (i * currentBalances[swapTokenOutIndex]) / 10;
-      const balances = [currentIn, currentBalances[swapTokenOutIndex]];
+      const balances = [...currentBalances];
+      balances[swapTokenInIndex] = currentIn;
       const currentOut = getTokenBalanceGivenInvariantAndAllOtherBalances(
         amplification,
         balances,
         currentInvariant,
-        1
+        swapTokenOutIndex
       );
       if (currentOut < lastBalanceOut) {
         lastBalanceIn = currentIn;
@@ -69,12 +70,13 @@ export default function StableSurge() {
 
     return Array.from({ length: 1000 }, (_, i) => {
       const x = (i + 1) * step;
-      const balances = [x, currentBalances[swapTokenOutIndex]];
+      const balances = [...currentBalances];
+      balances[swapTokenInIndex] = x;
       const y = getTokenBalanceGivenInvariantAndAllOtherBalances(
         amplification,
         balances,
         currentInvariant,
-        1
+        swapTokenOutIndex
       );
 
       return { x, y };
@@ -87,12 +89,13 @@ export default function StableSurge() {
 
     for (let i = 0; i < 1000; i++) {
       const currentIn = (i * currentBalances[swapTokenOutIndex]) / 10;
-      const balances = [currentIn, currentBalances[swapTokenOutIndex]];
+      const balances = [...currentBalances];
+      balances[swapTokenInIndex] = currentIn;
       const currentOut = getTokenBalanceGivenInvariantAndAllOtherBalances(
         amplification,
         balances,
         currentInvariant,
-        1
+        swapTokenOutIndex
       );
       if (currentOut < lastBalanceOut) {
         lastBalanceIn = currentIn;
@@ -104,18 +107,19 @@ export default function StableSurge() {
 
     return Array.from({ length: 10000 }, (_, i) => {
       let x = (i + 1) * step;
-      const balances = [x, currentBalances[swapTokenOutIndex]];
+      const balances = [...currentBalances];
+      balances[swapTokenInIndex] = x;
       let y = getTokenBalanceGivenInvariantAndAllOtherBalances(
         amplification,
         balances,
         currentInvariant,
-        1
+        swapTokenOutIndex
       );
       const surgeFeePercentage = getSurgeFeePercentage(
         maxSurgeFee,
         surgeThreshold,
         swapFee,
-        [x, y],
+        balances,
         currentBalances
       );
       if (x < currentBalances[swapTokenInIndex]) {
@@ -154,7 +158,7 @@ export default function StableSurge() {
         amplification,
         balances,
         initialInvariant,
-        1
+        swapTokenOutIndex
       );
       if (currentOut < lastBalanceOut) {
         lastBalanceIn = currentIn;
@@ -172,7 +176,7 @@ export default function StableSurge() {
         amplification,
         balances,
         initialInvariant,
-        1
+        swapTokenOutIndex
       );
 
       return { x, y };
