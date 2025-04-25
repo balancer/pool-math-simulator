@@ -81,7 +81,14 @@ export default function StableSurge() {
 
       return { x, y };
     });
-  }, [currentBalances, amplification, currentInvariant]);
+  }, [
+    swapTokenInIndex,
+    swapTokenOutIndex,
+    currentBalances[swapTokenInIndex],
+    currentBalances[swapTokenOutIndex],
+    amplification,
+    currentInvariant,
+  ]);
 
   const curvePointsWithFees = useMemo(() => {
     const lastBalanceOut = currentBalances[swapTokenOutIndex] / 100;
@@ -137,7 +144,10 @@ export default function StableSurge() {
       return { x, y };
     });
   }, [
-    currentBalances,
+    swapTokenInIndex,
+    swapTokenOutIndex,
+    currentBalances[swapTokenInIndex],
+    currentBalances[swapTokenOutIndex],
     amplification,
     currentInvariant,
     maxSurgeFee,
@@ -181,7 +191,13 @@ export default function StableSurge() {
 
       return { x, y };
     });
-  }, [initialBalances, amplification]);
+  }, [
+    initialBalances[swapTokenInIndex],
+    initialBalances[swapTokenOutIndex],
+    amplification,
+    swapTokenInIndex,
+    swapTokenOutIndex,
+  ]);
 
   const swapPreview = useMemo(() => {
     if (!swapAmountIn) return { amountOut: 0, fee: 0, feePercentage: 0 };
@@ -276,7 +292,15 @@ export default function StableSurge() {
       }
     }
     return [lowerImbalanceThreshold, upperImbalanceThreshold];
-  }, [currentInvariant, surgeThreshold]);
+  }, [
+    currentInvariant,
+    surgeThreshold,
+    swapTokenInIndex,
+    swapTokenOutIndex,
+    initialBalances[swapTokenInIndex],
+    initialBalances[swapTokenOutIndex],
+    amplification,
+  ]);
 
   const previewPoint = useMemo(() => {
     if (!swapPreview.amountOut) return undefined;
