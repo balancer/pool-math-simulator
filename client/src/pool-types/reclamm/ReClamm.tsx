@@ -135,6 +135,13 @@ export default function ReClamm() {
   const [targetPriceRatioError, setTargetPriceRatioError] =
     useState<string>("");
 
+  // Add state for API result
+  const [apiResult, setApiResult] = useState<string>("");
+  const [network, setNetwork] = useState<string>("base-mainnet");
+  const [address, setAddress] = useState<string>(
+    "0x7dc81fb7e93cdde7754bff7f55428226bd9cef7b"
+  );
+
   const realTimeInvariant = useMemo(() => {
     return (
       (realTimeBalanceA + realTimeVirtualBalances.virtualBalanceA) *
@@ -247,6 +254,17 @@ export default function ReClamm() {
   const inputBalanceB = useMemo(() => {
     return (inputBalanceA * idealBalanceB) / idealBalanceA;
   }, [inputBalanceA, idealBalanceB, idealBalanceA]);
+
+  // Fetch API result on mount
+  useEffect(() => {
+    // fetch("https://us-central1-aclamm.cloudfunctions.net/helloWorld")
+    fetch(
+      `http://127.0.0.1:5001/aclamm/us-central1/reclammData?network=${network}&address=${address}`
+    )
+      .then((res) => res.text())
+      .then((data) => setApiResult(data))
+      .catch((err) => setApiResult("Error fetching API"));
+  }, []);
 
   // Start default scenario and show chart.
   useEffect(() => {
@@ -473,6 +491,13 @@ export default function ReClamm() {
               <Typography variant="h6">Create and Initialize</Typography>
             </AccordionSummary>
             <AccordionDetails>
+              {/* Show API result here */}
+              <Typography
+                variant="body2"
+                style={{ marginBottom: 8, color: "#1976d2" }}
+              >
+                API Result: {apiResult}
+              </Typography>
               <Typography
                 variant="subtitle1"
                 style={{

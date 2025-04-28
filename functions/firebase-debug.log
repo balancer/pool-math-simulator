@@ -1,0 +1,131 @@
+[debug] [2025-04-28T17:04:27.749Z] ----------------------------------------------------------------------
+[debug] [2025-04-28T17:04:27.750Z] Command:       /Users/joaoabouhatemdeliz/.nvm/versions/node/v22.15.0/bin/node /Users/joaoabouhatemdeliz/.nvm/versions/node/v18.20.4/bin/firebase emulators:start --only functions
+[debug] [2025-04-28T17:04:27.750Z] CLI Version:   14.2.1
+[debug] [2025-04-28T17:04:27.750Z] Platform:      darwin
+[debug] [2025-04-28T17:04:27.750Z] Node Version:  v22.15.0
+[debug] [2025-04-28T17:04:27.751Z] Time:          Mon Apr 28 2025 14:04:27 GMT-0300 (Brasilia Standard Time)
+[debug] [2025-04-28T17:04:27.751Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2025-04-28T17:04:27.858Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2025-04-28T17:04:27.858Z] > authorizing via signed-in user (joaobrunoah@gmail.com)
+[info] i  emulators: Starting emulators: functions {"metadata":{"emulator":{"name":"hub"},"message":"Starting emulators: functions"}}
+[debug] [2025-04-28T17:04:28.054Z] [logging] Logging Emulator only supports listening on one address (127.0.0.1). Not listening on ::1
+[debug] [2025-04-28T17:04:28.054Z] assigned listening specs for emulators {"user":{"hub":[{"address":"127.0.0.1","family":"IPv4","port":4400},{"address":"::1","family":"IPv6","port":4400}],"ui":[{"address":"127.0.0.1","family":"IPv4","port":4000},{"address":"::1","family":"IPv6","port":4000}],"logging":[{"address":"127.0.0.1","family":"IPv4","port":4500}]},"metadata":{"message":"assigned listening specs for emulators"}}
+[debug] [2025-04-28T17:04:28.056Z] [hub] writing locator at /var/folders/2c/13h5rtx104d95ys8tn_3w3h00000gn/T/hub-aclamm.json
+[debug] [2025-04-28T17:04:28.231Z] [functions] Functions Emulator only supports listening on one address (127.0.0.1). Not listening on ::1
+[debug] [2025-04-28T17:04:28.231Z] [eventarc] Eventarc Emulator only supports listening on one address (127.0.0.1). Not listening on ::1
+[debug] [2025-04-28T17:04:28.231Z] [tasks] Cloud Tasks Emulator only supports listening on one address (127.0.0.1). Not listening on ::1
+[debug] [2025-04-28T17:04:28.231Z] late-assigned ports for functions and eventarc emulators {"user":{"hub":[{"address":"127.0.0.1","family":"IPv4","port":4400},{"address":"::1","family":"IPv6","port":4400}],"ui":[{"address":"127.0.0.1","family":"IPv4","port":4000},{"address":"::1","family":"IPv6","port":4000}],"logging":[{"address":"127.0.0.1","family":"IPv4","port":4500}],"functions":[{"address":"127.0.0.1","family":"IPv4","port":5001}],"eventarc":[{"address":"127.0.0.1","family":"IPv4","port":9299}],"tasks":[{"address":"127.0.0.1","family":"IPv4","port":9499}]},"metadata":{"message":"late-assigned ports for functions and eventarc emulators"}}
+[warn] ⚠  functions: The following emulators are not running, calls to these services from the Functions emulator will affect production: apphosting, auth, firestore, database, hosting, pubsub, storage, dataconnect {"metadata":{"emulator":{"name":"functions"},"message":"The following emulators are not running, calls to these services from the Functions emulator will affect production: \u001b[1mapphosting, auth, firestore, database, hosting, pubsub, storage, dataconnect\u001b[22m"}}
+[debug] [2025-04-28T17:04:28.235Z] defaultcredentials: writing to file /Users/joaoabouhatemdeliz/.config/firebase/joaobrunoah_gmail_com_application_default_credentials.json
+[debug] [2025-04-28T17:04:28.237Z] Setting GAC to /Users/joaoabouhatemdeliz/.config/firebase/joaobrunoah_gmail_com_application_default_credentials.json {"metadata":{"emulator":{"name":"functions"},"message":"Setting GAC to /Users/joaoabouhatemdeliz/.config/firebase/joaobrunoah_gmail_com_application_default_credentials.json"}}
+[debug] [2025-04-28T17:04:28.237Z] Checked if tokens are valid: true, expires at: 1745863002958
+[debug] [2025-04-28T17:04:28.237Z] Checked if tokens are valid: true, expires at: 1745863002958
+[debug] [2025-04-28T17:04:28.237Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects/aclamm/adminSdkConfig [none]
+[debug] [2025-04-28T17:04:28.768Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects/aclamm/adminSdkConfig 200
+[debug] [2025-04-28T17:04:28.768Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects/aclamm/adminSdkConfig {"projectId":"aclamm","storageBucket":"aclamm.firebasestorage.app"}
+[info] i  functions: Watching "/Users/joaoabouhatemdeliz/Work/Balancer/pool-math-simulator/functions" for Cloud Functions... {"metadata":{"emulator":{"name":"functions"},"message":"Watching \"/Users/joaoabouhatemdeliz/Work/Balancer/pool-math-simulator/functions\" for Cloud Functions..."}}
+[debug] [2025-04-28T17:04:28.789Z] Validating nodejs source
+[debug] [2025-04-28T17:04:29.260Z] > [functions] package.json contents: {
+  "name": "functions",
+  "scripts": {
+    "build": "tsc",
+    "build:watch": "tsc --watch",
+    "serve": "npm run build && firebase emulators:start --only functions",
+    "shell": "npm run build && firebase functions:shell",
+    "start": "npm run shell",
+    "deploy": "firebase deploy --only functions",
+    "logs": "firebase functions:log"
+  },
+  "engines": {
+    "node": "22"
+  },
+  "main": "lib/index.js",
+  "dependencies": {
+    "firebase-admin": "^12.6.0",
+    "firebase-functions": "^6.0.1",
+    "web3": "^4.16.0"
+  },
+  "devDependencies": {
+    "firebase-functions-test": "^3.1.0",
+    "typescript": "^4.9.0"
+  },
+  "private": true
+}
+[debug] [2025-04-28T17:04:29.260Z] Building nodejs source
+[debug] [2025-04-28T17:04:29.260Z] Failed to find version of module node: reached end of search path /Users/joaoabouhatemdeliz/Work/Balancer/pool-math-simulator/functions/node_modules
+[info] ✔  functions: Using node@22 from host. 
+[info] i  functions: Loaded environment variables from .env. 
+[debug] [2025-04-28T17:04:29.262Z] Could not find functions.yaml. Must use http discovery
+[debug] [2025-04-28T17:04:29.265Z] Found firebase-functions binary at '/Users/joaoabouhatemdeliz/Work/Balancer/pool-math-simulator/functions/node_modules/.bin/firebase-functions'
+[info] Serving at port 8583
+
+[debug] [2025-04-28T17:04:29.425Z] Got response from /__/functions.yaml {"endpoints":{"reclammData":{"availableMemoryMb":null,"timeoutSeconds":null,"minInstances":null,"maxInstances":null,"ingressSettings":null,"concurrency":null,"serviceAccountEmail":null,"vpc":null,"platform":"gcfv2","labels":{},"httpsTrigger":{},"entryPoint":"reclammData"}},"specVersion":"v1alpha1","requiredAPIs":[],"extensions":{}}
+[info] ✔  functions: Loaded functions definitions from source: reclammData. {"metadata":{"emulator":{"name":"functions"},"message":"Loaded functions definitions from source: reclammData."}}
+[info] ✔  functions[us-central1-reclammData]: http function initialized (http://127.0.0.1:5001/aclamm/us-central1/reclammData). {"metadata":{"emulator":{"name":"functions"},"message":"\u001b[1mhttp\u001b[22m function initialized (http://127.0.0.1:5001/aclamm/us-central1/reclammData)."}}
+[debug] [2025-04-28T17:04:33.445Z] Could not find VSCode notification endpoint: FetchError: request to http://localhost:40001/vscode/notify failed, reason: . If you are not running the Firebase Data Connect VSCode extension, this is expected and not an issue.
+[info] 
+┌─────────────────────────────────────────────────────────────┐
+│ ✔  All emulators ready! It is now safe to connect your app. │
+│ i  View Emulator UI at http://127.0.0.1:4000/               │
+└─────────────────────────────────────────────────────────────┘
+
+┌───────────┬────────────────┬─────────────────────────────────┐
+│ Emulator  │ Host:Port      │ View in Emulator UI             │
+├───────────┼────────────────┼─────────────────────────────────┤
+│ Functions │ 127.0.0.1:5001 │ http://127.0.0.1:4000/functions │
+└───────────┴────────────────┴─────────────────────────────────┘
+  Emulator Hub host: 127.0.0.1 port: 4400
+  Other reserved ports: 4500
+
+Issues? Report them at https://github.com/firebase/firebase-tools/issues and attach the *-debug.log files.
+ 
+[debug] [2025-04-28T17:08:31.065Z] [work-queue] {"queuedWork":["/aclamm/us-central1/reclammData-2025-04-28T17:08:31.064Z"],"queueLength":1,"runningWork":[],"workRunningCount":0}
+[debug] [2025-04-28T17:08:31.066Z] [work-queue] {"queuedWork":[],"queueLength":0,"runningWork":["/aclamm/us-central1/reclammData-2025-04-28T17:08:31.064Z"],"workRunningCount":1}
+[debug] [2025-04-28T17:08:31.067Z] Accepted request GET /aclamm/us-central1/reclammData?network=base-mainnet&address=0x7dc81fb7e93cdde7754bff7f55428226bd9cef7b --> us-central1-reclammData
+[debug] [2025-04-28T17:08:31.071Z] [functions] Runtime ready! Sending request! {"metadata":{"emulator":{"name":"functions"},"message":"[functions] Runtime ready! Sending request!"}}
+[debug] [2025-04-28T17:08:31.071Z] [functions] Got req.url=/aclamm/us-central1/reclammData?network=base-mainnet&address=0x7dc81fb7e93cdde7754bff7f55428226bd9cef7b, mapping to path=/?network=base-mainnet&address=0x7dc81fb7e93cdde7754bff7f55428226bd9cef7b {"metadata":{"emulator":{"name":"functions"},"message":"[functions] Got req.url=/aclamm/us-central1/reclammData?network=base-mainnet&address=0x7dc81fb7e93cdde7754bff7f55428226bd9cef7b, mapping to path=/?network=base-mainnet&address=0x7dc81fb7e93cdde7754bff7f55428226bd9cef7b"}}
+[info] i  functions: Loaded environment variables from .env. 
+[debug] [2025-04-28T17:08:31.080Z] [worker-pool] addWorker(us-central1-reclammData) {"metadata":{"emulator":{"name":"functions"},"message":"[worker-pool] addWorker(us-central1-reclammData)"}}
+[debug] [2025-04-28T17:08:31.081Z] [worker-pool] Adding worker with key us-central1-reclammData, total=1 {"metadata":{"emulator":{"name":"functions"},"message":"[worker-pool] Adding worker with key us-central1-reclammData, total=1"}}
+[debug] [2025-04-28T17:08:31.826Z] [runtime-status] [29927] Resolved module firebase-admin {"declared":true,"installed":true,"version":"12.7.0","resolution":"/Users/joaoabouhatemdeliz/Work/Balancer/pool-math-simulator/functions/node_modules/firebase-admin/lib/index.js"} {"metadata":{"emulator":{"name":"functions"},"function":{"name":"us-central1-reclammData"},"extension":{},"message":"[runtime-status] [29927] Resolved module firebase-admin {\"declared\":true,\"installed\":true,\"version\":\"12.7.0\",\"resolution\":\"/Users/joaoabouhatemdeliz/Work/Balancer/pool-math-simulator/functions/node_modules/firebase-admin/lib/index.js\"}"}}
+[debug] [2025-04-28T17:08:31.827Z] [runtime-status] [29927] Resolved module firebase-functions {"declared":true,"installed":true,"version":"6.3.2","resolution":"/Users/joaoabouhatemdeliz/Work/Balancer/pool-math-simulator/functions/node_modules/firebase-functions/lib/v2/index.js"} {"metadata":{"emulator":{"name":"functions"},"function":{"name":"us-central1-reclammData"},"extension":{},"message":"[runtime-status] [29927] Resolved module firebase-functions {\"declared\":true,\"installed\":true,\"version\":\"6.3.2\",\"resolution\":\"/Users/joaoabouhatemdeliz/Work/Balancer/pool-math-simulator/functions/node_modules/firebase-functions/lib/v2/index.js\"}"}}
+[debug] [2025-04-28T17:08:31.827Z] [runtime-status] [29927] Outgoing network have been stubbed. [{"name":"http","status":"mocked"},{"name":"http","status":"mocked"},{"name":"https","status":"mocked"},{"name":"https","status":"mocked"},{"name":"net","status":"mocked"}] {"metadata":{"emulator":{"name":"functions"},"function":{"name":"us-central1-reclammData"},"extension":{},"message":"[runtime-status] [29927] Outgoing network have been stubbed. [{\"name\":\"http\",\"status\":\"mocked\"},{\"name\":\"http\",\"status\":\"mocked\"},{\"name\":\"https\",\"status\":\"mocked\"},{\"name\":\"https\",\"status\":\"mocked\"},{\"name\":\"net\",\"status\":\"mocked\"}]"}}
+[debug] [2025-04-28T17:08:31.827Z] [runtime-status] [29927] Resolved module firebase-functions {"declared":true,"installed":true,"version":"6.3.2","resolution":"/Users/joaoabouhatemdeliz/Work/Balancer/pool-math-simulator/functions/node_modules/firebase-functions/lib/v2/index.js"} {"metadata":{"emulator":{"name":"functions"},"function":{"name":"us-central1-reclammData"},"extension":{},"message":"[runtime-status] [29927] Resolved module firebase-functions {\"declared\":true,\"installed\":true,\"version\":\"6.3.2\",\"resolution\":\"/Users/joaoabouhatemdeliz/Work/Balancer/pool-math-simulator/functions/node_modules/firebase-functions/lib/v2/index.js\"}"}}
+[debug] [2025-04-28T17:08:32.026Z] [runtime-status] [29927] Checked functions.config() {"config":{}} {"metadata":{"emulator":{"name":"functions"},"function":{"name":"us-central1-reclammData"},"extension":{},"message":"[runtime-status] [29927] Checked functions.config() {\"config\":{}}"}}
+[debug] [2025-04-28T17:08:32.026Z] [runtime-status] [29927] firebase-functions has been stubbed. {"functionsResolution":{"declared":true,"installed":true,"version":"6.3.2","resolution":"/Users/joaoabouhatemdeliz/Work/Balancer/pool-math-simulator/functions/node_modules/firebase-functions/lib/v2/index.js"}} {"metadata":{"emulator":{"name":"functions"},"function":{"name":"us-central1-reclammData"},"extension":{},"message":"[runtime-status] [29927] firebase-functions has been stubbed. {\"functionsResolution\":{\"declared\":true,\"installed\":true,\"version\":\"6.3.2\",\"resolution\":\"/Users/joaoabouhatemdeliz/Work/Balancer/pool-math-simulator/functions/node_modules/firebase-functions/lib/v2/index.js\"}}"}}
+[debug] [2025-04-28T17:08:32.026Z] [runtime-status] [29927] Resolved module firebase-functions {"declared":true,"installed":true,"version":"6.3.2","resolution":"/Users/joaoabouhatemdeliz/Work/Balancer/pool-math-simulator/functions/node_modules/firebase-functions/lib/v2/index.js"} {"metadata":{"emulator":{"name":"functions"},"function":{"name":"us-central1-reclammData"},"extension":{},"message":"[runtime-status] [29927] Resolved module firebase-functions {\"declared\":true,\"installed\":true,\"version\":\"6.3.2\",\"resolution\":\"/Users/joaoabouhatemdeliz/Work/Balancer/pool-math-simulator/functions/node_modules/firebase-functions/lib/v2/index.js\"}"}}
+[debug] [2025-04-28T17:08:32.029Z] [runtime-status] [29927] Resolved module firebase-admin {"declared":true,"installed":true,"version":"12.7.0","resolution":"/Users/joaoabouhatemdeliz/Work/Balancer/pool-math-simulator/functions/node_modules/firebase-admin/lib/index.js"} {"metadata":{"emulator":{"name":"functions"},"function":{"name":"us-central1-reclammData"},"extension":{},"message":"[runtime-status] [29927] Resolved module firebase-admin {\"declared\":true,\"installed\":true,\"version\":\"12.7.0\",\"resolution\":\"/Users/joaoabouhatemdeliz/Work/Balancer/pool-math-simulator/functions/node_modules/firebase-admin/lib/index.js\"}"}}
+[debug] [2025-04-28T17:08:32.030Z] [runtime-status] [29927] Resolved module firebase-functions {"declared":true,"installed":true,"version":"6.3.2","resolution":"/Users/joaoabouhatemdeliz/Work/Balancer/pool-math-simulator/functions/node_modules/firebase-functions/lib/v2/index.js"} {"metadata":{"emulator":{"name":"functions"},"function":{"name":"us-central1-reclammData"},"extension":{},"message":"[runtime-status] [29927] Resolved module firebase-functions {\"declared\":true,\"installed\":true,\"version\":\"6.3.2\",\"resolution\":\"/Users/joaoabouhatemdeliz/Work/Balancer/pool-math-simulator/functions/node_modules/firebase-functions/lib/v2/index.js\"}"}}
+[debug] [2025-04-28T17:08:32.030Z] [runtime-status] [29927] firebase-admin has been stubbed. {"adminResolution":{"declared":true,"installed":true,"version":"12.7.0","resolution":"/Users/joaoabouhatemdeliz/Work/Balancer/pool-math-simulator/functions/node_modules/firebase-admin/lib/index.js"}} {"metadata":{"emulator":{"name":"functions"},"function":{"name":"us-central1-reclammData"},"extension":{},"message":"[runtime-status] [29927] firebase-admin has been stubbed. {\"adminResolution\":{\"declared\":true,\"installed\":true,\"version\":\"12.7.0\",\"resolution\":\"/Users/joaoabouhatemdeliz/Work/Balancer/pool-math-simulator/functions/node_modules/firebase-admin/lib/index.js\"}}"}}
+[debug] [2025-04-28T17:08:32.190Z] [runtime-status] [29927] Functions runtime initialized. {"cwd":"/Users/joaoabouhatemdeliz/Work/Balancer/pool-math-simulator/functions","node_version":"22.15.0"} {"metadata":{"emulator":{"name":"functions"},"function":{"name":"us-central1-reclammData"},"extension":{},"message":"[runtime-status] [29927] Functions runtime initialized. {\"cwd\":\"/Users/joaoabouhatemdeliz/Work/Balancer/pool-math-simulator/functions\",\"node_version\":\"22.15.0\"}"}}
+[debug] [2025-04-28T17:08:32.190Z] [runtime-status] [29927] Listening to port: /var/folders/2c/13h5rtx104d95ys8tn_3w3h00000gn/T/fire_emu_0b8b4b9caf6c9d13.sock {"metadata":{"emulator":{"name":"functions"},"function":{"name":"us-central1-reclammData"},"extension":{},"message":"[runtime-status] [29927] Listening to port: /var/folders/2c/13h5rtx104d95ys8tn_3w3h00000gn/T/fire_emu_0b8b4b9caf6c9d13.sock"}}
+[debug] [2025-04-28T17:08:32.210Z] [worker-us-central1-reclammData-22b92dcf-b054-412e-8707-07b21417f8b5]: IDLE {"metadata":{"emulator":{"name":"functions"},"function":{"name":"us-central1-reclammData"},"extension":{},"message":"[worker-us-central1-reclammData-22b92dcf-b054-412e-8707-07b21417f8b5]: IDLE"}}
+[debug] [2025-04-28T17:08:32.210Z] [worker-pool] submitRequest(triggerId=us-central1-reclammData) {"metadata":{"emulator":{"name":"functions"},"message":"[worker-pool] submitRequest(triggerId=us-central1-reclammData)"}}
+[info] i  functions: Beginning execution of "us-central1-reclammData" {"metadata":{"emulator":{"name":"functions"},"function":{"name":"us-central1-reclammData"},"extension":{},"message":"Beginning execution of \"us-central1-reclammData\""}}
+[debug] [2025-04-28T17:08:32.211Z] [worker-us-central1-reclammData-22b92dcf-b054-412e-8707-07b21417f8b5]: BUSY {"metadata":{"emulator":{"name":"functions"},"function":{"name":"us-central1-reclammData"},"extension":{},"message":"[worker-us-central1-reclammData-22b92dcf-b054-412e-8707-07b21417f8b5]: BUSY"}}
+[info] >  {"query":{"network":"base-mainnet","address":"0x7dc81fb7e93cdde7754bff7f55428226bd9cef7b"},"severity":"INFO","message":"Received request"} {"user":{"query":{"network":"base-mainnet","address":"0x7dc81fb7e93cdde7754bff7f55428226bd9cef7b"},"severity":"INFO","message":"Received request"},"metadata":{"emulator":{"name":"functions"},"function":{"name":"us-central1-reclammData"},"extension":{},"message":"\u001b[90m> \u001b[39m {\"query\":{\"network\":\"base-mainnet\",\"address\":\"0x7dc81fb7e93cdde7754bff7f55428226bd9cef7b\"},\"severity\":\"INFO\",\"message\":\"Received request\"}"}}
+[warn] ⚠  External network resource requested!
+   - URL: "https://base-mainnet.g.alchemy.com/v2/ziEHb2afvFvmCoUuaQ0Lq-u5TNu-coI6"
+ - Be careful, this may be a production service. {"metadata":{"emulator":{"name":"functions"},"function":{"name":"us-central1-reclammData"},"extension":{},"message":"External network resource requested!\n   - URL: \"https://base-mainnet.g.alchemy.com/v2/ziEHb2afvFvmCoUuaQ0Lq-u5TNu-coI6\"\n - Be careful, this may be a production service."}}
+[debug] [2025-04-28T17:08:33.216Z] Finishing up request with event=pause {"metadata":{"emulator":{"name":"functions"},"function":{"name":"us-central1-reclammData"},"extension":{},"message":"Finishing up request with event=pause"}}
+[info] i  functions: Finished "us-central1-reclammData" in 1005.612917ms {"metadata":{"emulator":{"name":"functions"},"function":{"name":"us-central1-reclammData"},"extension":{},"message":"Finished \"us-central1-reclammData\" in 1005.612917ms"}}
+[debug] [2025-04-28T17:08:33.217Z] [worker-us-central1-reclammData-22b92dcf-b054-412e-8707-07b21417f8b5]: IDLE {"metadata":{"emulator":{"name":"functions"},"function":{"name":"us-central1-reclammData"},"extension":{},"message":"[worker-us-central1-reclammData-22b92dcf-b054-412e-8707-07b21417f8b5]: IDLE"}}
+[debug] [2025-04-28T17:08:33.217Z] Finishing up request with event=finish {"metadata":{"emulator":{"name":"functions"},"function":{"name":"us-central1-reclammData"},"extension":{},"message":"Finishing up request with event=finish"}}
+[debug] [2025-04-28T17:08:33.217Z] Finishing up request with event=close {"metadata":{"emulator":{"name":"functions"},"function":{"name":"us-central1-reclammData"},"extension":{},"message":"Finishing up request with event=close"}}
+[debug] [2025-04-28T17:08:33.217Z] [work-queue] {"queuedWork":[],"queueLength":0,"runningWork":[],"workRunningCount":0}
+[debug] [2025-04-28T17:08:33.218Z] [work-queue] {"queuedWork":["/aclamm/us-central1/reclammData-2025-04-28T17:08:33.218Z"],"queueLength":1,"runningWork":[],"workRunningCount":0}
+[debug] [2025-04-28T17:08:33.218Z] [work-queue] {"queuedWork":[],"queueLength":0,"runningWork":["/aclamm/us-central1/reclammData-2025-04-28T17:08:33.218Z"],"workRunningCount":1}
+[debug] [2025-04-28T17:08:33.218Z] Accepted request GET /aclamm/us-central1/reclammData?network=base-mainnet&address=0x7dc81fb7e93cdde7754bff7f55428226bd9cef7b --> us-central1-reclammData
+[debug] [2025-04-28T17:08:33.219Z] [functions] Runtime ready! Sending request! {"metadata":{"emulator":{"name":"functions"},"message":"[functions] Runtime ready! Sending request!"}}
+[debug] [2025-04-28T17:08:33.219Z] [functions] Got req.url=/aclamm/us-central1/reclammData?network=base-mainnet&address=0x7dc81fb7e93cdde7754bff7f55428226bd9cef7b, mapping to path=/?network=base-mainnet&address=0x7dc81fb7e93cdde7754bff7f55428226bd9cef7b {"metadata":{"emulator":{"name":"functions"},"message":"[functions] Got req.url=/aclamm/us-central1/reclammData?network=base-mainnet&address=0x7dc81fb7e93cdde7754bff7f55428226bd9cef7b, mapping to path=/?network=base-mainnet&address=0x7dc81fb7e93cdde7754bff7f55428226bd9cef7b"}}
+[debug] [2025-04-28T17:08:33.219Z] [worker-pool] submitRequest(triggerId=us-central1-reclammData) {"metadata":{"emulator":{"name":"functions"},"message":"[worker-pool] submitRequest(triggerId=us-central1-reclammData)"}}
+[info] i  functions: Beginning execution of "us-central1-reclammData" {"metadata":{"emulator":{"name":"functions"},"function":{"name":"us-central1-reclammData"},"extension":{},"message":"Beginning execution of \"us-central1-reclammData\""}}
+[debug] [2025-04-28T17:08:33.219Z] [worker-us-central1-reclammData-22b92dcf-b054-412e-8707-07b21417f8b5]: BUSY {"metadata":{"emulator":{"name":"functions"},"function":{"name":"us-central1-reclammData"},"extension":{},"message":"[worker-us-central1-reclammData-22b92dcf-b054-412e-8707-07b21417f8b5]: BUSY"}}
+[info] >  {"query":{"network":"base-mainnet","address":"0x7dc81fb7e93cdde7754bff7f55428226bd9cef7b"},"severity":"INFO","message":"Received request"} {"user":{"query":{"network":"base-mainnet","address":"0x7dc81fb7e93cdde7754bff7f55428226bd9cef7b"},"severity":"INFO","message":"Received request"},"metadata":{"emulator":{"name":"functions"},"function":{"name":"us-central1-reclammData"},"extension":{},"message":"\u001b[90m> \u001b[39m {\"query\":{\"network\":\"base-mainnet\",\"address\":\"0x7dc81fb7e93cdde7754bff7f55428226bd9cef7b\"},\"severity\":\"INFO\",\"message\":\"Received request\"}"}}
+[debug] [2025-04-28T17:08:34.140Z] Finishing up request with event=pause {"metadata":{"emulator":{"name":"functions"},"function":{"name":"us-central1-reclammData"},"extension":{},"message":"Finishing up request with event=pause"}}
+[info] i  functions: Finished "us-central1-reclammData" in 920.886083ms {"metadata":{"emulator":{"name":"functions"},"function":{"name":"us-central1-reclammData"},"extension":{},"message":"Finished \"us-central1-reclammData\" in 920.886083ms"}}
+[debug] [2025-04-28T17:08:34.141Z] [worker-us-central1-reclammData-22b92dcf-b054-412e-8707-07b21417f8b5]: IDLE {"metadata":{"emulator":{"name":"functions"},"function":{"name":"us-central1-reclammData"},"extension":{},"message":"[worker-us-central1-reclammData-22b92dcf-b054-412e-8707-07b21417f8b5]: IDLE"}}
+[debug] [2025-04-28T17:08:34.141Z] Finishing up request with event=finish {"metadata":{"emulator":{"name":"functions"},"function":{"name":"us-central1-reclammData"},"extension":{},"message":"Finishing up request with event=finish"}}
+[debug] [2025-04-28T17:08:34.141Z] Finishing up request with event=close {"metadata":{"emulator":{"name":"functions"},"function":{"name":"us-central1-reclammData"},"extension":{},"message":"Finishing up request with event=close"}}
+[debug] [2025-04-28T17:08:34.141Z] [work-queue] {"queuedWork":[],"queueLength":0,"runningWork":[],"workRunningCount":0}
