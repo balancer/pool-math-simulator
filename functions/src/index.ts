@@ -47,21 +47,21 @@ export const reclammData = onRequest(
 
     const contract = new web3.eth.Contract(reclammAbi, address);
 
-    const priceRange = convertBigIntToNumber(
-      await contract.methods.computeCurrentPriceRange().call()
-    );
-    const virtualBalances = convertBigIntToNumber(
-      await contract.methods.computeCurrentVirtualBalances().call()
-    );
-    const realBalances = convertBigIntToNumber(
-      await contract.methods.getCurrentLiveBalances().call()
-    );
-    const dailyPriceShiftExponent = convertBigIntToNumber(
-      await contract.methods.getDailyPriceShiftExponent().call()
-    );
-    const centerednessMargin = convertBigIntToNumber(
-      await contract.methods.getCenterednessMargin().call()
-    );
+    const [
+      priceRange,
+      virtualBalances,
+      realBalances,
+      dailyPriceShiftExponent,
+      centerednessMargin,
+    ] = (
+      await Promise.all([
+        contract.methods.computeCurrentPriceRange().call(),
+        contract.methods.computeCurrentVirtualBalances().call(),
+        contract.methods.getCurrentLiveBalances().call(),
+        contract.methods.getDailyPriceShiftExponent().call(),
+        contract.methods.getCenterednessMargin().call(),
+      ])
+    ).map((obj) => convertBigIntToNumber(obj));
 
     // Construct the response object
     // const responseData = {

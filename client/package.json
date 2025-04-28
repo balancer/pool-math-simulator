@@ -26,8 +26,8 @@
     "web3": "^4.16.0"
   },
   "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
+    "start": "REACT_APP_FUNCTION_URL=http://127.0.0.1:5001/aclamm/us-central1 react-scripts start",
+    "build": "REACT_APP_FUNCTION_URL=https://us-central1-aclamm.cloudfunctions.net react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },

@@ -39,6 +39,41 @@ const tickMilliseconds = 10;
 
 const MIN_SWAP = 0.000001;
 
+const NETWORKS = [
+  {
+    name: "Base",
+    network: "base-mainnet",
+  },
+  {
+    name: "Ethereum",
+    network: "eth-mainnet",
+  },
+  {
+    name: "Sepolia",
+    network: "eth-sepolia",
+  },
+  {
+    name: "OP Mainnet",
+    network: "opt-mainnet",
+  },
+  {
+    name: "Arbitrum",
+    network: "arb-mainnet",
+  },
+  {
+    name: "Gnosis",
+    network: "gnosis-mainnet",
+  },
+  {
+    name: "Avalanche",
+    network: "avax-mainnet",
+  },
+  {
+    name: "Sonic",
+    network: "sonic-mainnet",
+  },
+];
+
 export default function ReClamm() {
   // Simulation variables
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
@@ -255,17 +290,6 @@ export default function ReClamm() {
     return (inputBalanceA * idealBalanceB) / idealBalanceA;
   }, [inputBalanceA, idealBalanceB, idealBalanceA]);
 
-  // Fetch API result on mount
-  useEffect(() => {
-    // fetch("https://us-central1-aclamm.cloudfunctions.net/helloWorld")
-    fetch(
-      `http://127.0.0.1:5001/aclamm/us-central1/reclammData?network=${network}&address=${address}`
-    )
-      .then((res) => res.text())
-      .then((data) => setApiResult(data))
-      .catch((err) => setApiResult("Error fetching API"));
-  }, []);
-
   // Start default scenario and show chart.
   useEffect(() => {
     setTimeout(() => {
@@ -377,6 +401,7 @@ export default function ReClamm() {
     setTargetPrice(Number(inputTargetPrice));
     initializeInvariants();
     setSimulationSeconds(0);
+    setBlockNumber(0);
   };
 
   const initializeInvariants = () => {
@@ -482,10 +507,118 @@ export default function ReClamm() {
     setSimulationSecondsPerBlock(inputSecondsPerBlock);
   };
 
+  const handleLoadPool = async () => {
+    const res = await fetch(
+      `${process.env.REACT_APP_FUNCTION_URL}/reclammData?network=${network}&address=${address}`
+    );
+    const data: {
+      priceRange: { minPrice: number; maxPrice: number };
+      virtualBalances: {
+        currentVirtualBalanceA: number;
+        currentVirtualBalanceB: number;
+      };
+      realBalances: number[];
+      dailyPriceShiftExponent: number;
+      centerednessMargin: number;
+    } = await res.json();
+
+    const balanceA = data.realBalances[0] / Math.pow(10, 18);
+    const balanceB = data.realBalances[1] / Math.pow(10, 18);
+    const virtualBalanceA =
+      data.virtualBalances.currentVirtualBalanceA / Math.pow(10, 18);
+    const virtualBalanceB =
+      data.virtualBalances.currentVirtualBalanceB / Math.pow(10, 18);
+
+    const maxPrice = data.priceRange.maxPrice / Math.pow(10, 18);
+    const minPrice = data.priceRange.minPrice / Math.pow(10, 18);
+
+    const priceRatio = maxPrice / minPrice;
+
+    const margin = data.centerednessMargin / Math.pow(10, 16);
+    const priceShift = data.dailyPriceShiftExponent / Math.pow(10, 16);
+
+    const targetPrice =
+      (balanceB + virtualBalanceB) / (balanceA + virtualBalanceA);
+
+    setInputMaxPrice(maxPrice);
+    setInputMinPrice(minPrice);
+    setInputTargetPrice(targetPrice);
+    setInputMargin(margin);
+    setPriceShiftDailyRate(priceShift);
+
+    setInputBalanceA(balanceA);
+    setInitialBalanceA(balanceA);
+    setInitialBalanceB(balanceB);
+    setCurrentBalanceA(balanceA);
+    setCurrentBalanceB(balanceB);
+    setRealTimeBalanceA(balanceA);
+    setRealTimeBalanceB(balanceB);
+
+    setCurrentVirtualBalances({
+      virtualBalanceA,
+      virtualBalanceB,
+    });
+    setRealTimeVirtualBalances({
+      virtualBalanceA,
+      virtualBalanceB,
+    });
+
+    setPriceRatio(priceRatio);
+    setMargin(margin);
+    setMinPrice(minPrice);
+    setMaxPrice(maxPrice);
+    setTimeout(() => initializeInvariants(), 1);
+    setSimulationSeconds(0);
+    setBlockNumber(0);
+  };
+
   return (
     <Container>
       <Grid container spacing={2}>
         <Grid item xs={3}>
+          {/* Load Real Pool Section */}
+          <Accordion>
+            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+              <Typography variant="h6">Load Real Pool</Typography>
+            </AccordionSummary>
+            <AccordionDetails>
+              <TextField
+                select
+                label="Network"
+                fullWidth
+                margin="normal"
+                value={network}
+                onChange={(e) => setNetwork(e.target.value)}
+                SelectProps={{
+                  native: true,
+                }}
+              >
+                {NETWORKS.sort((a, b) => a.name.localeCompare(b.name)).map(
+                  (n) => (
+                    <option key={n.network} value={n.network}>
+                      {n.name}
+                    </option>
+                  )
+                )}
+              </TextField>
+              <TextField
+                label="Address"
+                type="text"
+                fullWidth
+                margin="normal"
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
+              />
+              <Button
+                variant="contained"
+                fullWidth
+                onClick={handleLoadPool}
+                style={{ marginTop: 16 }}
+              >
+                Load Pool
+              </Button>
+            </AccordionDetails>
+          </Accordion>
           <Accordion>
             <AccordionSummary expandIcon={<ExpandMoreIcon />}>
               <Typography variant="h6">Create and Initialize</Typography>

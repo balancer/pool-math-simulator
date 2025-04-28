@@ -62,11 +62,13 @@ exports.reclammData = (0, https_1.onRequest)({ cors: true }, async (request, res
     const rpcUrl = `https://${network}.g.alchemy.com/v2/${apiKey.value()}`;
     const web3 = new web3_1.Web3(rpcUrl);
     const contract = new web3.eth.Contract(reclammAbi_1.reclammAbi, address);
-    const priceRange = convertBigIntToNumber(await contract.methods.computeCurrentPriceRange().call());
-    const virtualBalances = convertBigIntToNumber(await contract.methods.computeCurrentVirtualBalances().call());
-    const realBalances = convertBigIntToNumber(await contract.methods.getCurrentLiveBalances().call());
-    const dailyPriceShiftExponent = convertBigIntToNumber(await contract.methods.getDailyPriceShiftExponent().call());
-    const centerednessMargin = convertBigIntToNumber(await contract.methods.getCenterednessMargin().call());
+    const [priceRange, virtualBalances, realBalances, dailyPriceShiftExponent, centerednessMargin,] = (await Promise.all([
+        contract.methods.computeCurrentPriceRange().call(),
+        contract.methods.computeCurrentVirtualBalances().call(),
+        contract.methods.getCurrentLiveBalances().call(),
+        contract.methods.getDailyPriceShiftExponent().call(),
+        contract.methods.getCenterednessMargin().call(),
+    ])).map((obj) => convertBigIntToNumber(obj));
     // Construct the response object
     // const responseData = {
     //   network,
