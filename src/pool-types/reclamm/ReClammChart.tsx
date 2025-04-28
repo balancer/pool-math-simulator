@@ -1,8 +1,8 @@
 import React, { useRef, useEffect, useMemo } from "react";
 import * as d3 from "d3";
-import { calculateLowerMargin, calculateUpperMargin } from "./AclAmmMath";
+import { calculateLowerMargin, calculateUpperMargin } from "./ReClammMath";
 
-interface AclAmmChartProps {
+interface ReClammChartProps {
   realTimeBalanceA: number;
   realTimeBalanceB: number;
   margin: number;
@@ -24,7 +24,7 @@ interface AclAmmChartProps {
 const NUM_POINTS = 100;
 const MARGIN = 0.1;
 
-export const AclAmmChart: React.FC<AclAmmChartProps> = ({
+export const ReClammChart: React.FC<ReClammChartProps> = ({
   realTimeBalanceA,
   realTimeBalanceB,
   margin,

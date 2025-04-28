@@ -7,7 +7,7 @@ import {
   useLocation,
   Navigate,
 } from "react-router-dom";
-import AclAmm from "./pool-types/aclamm/AclAmm";
+import ReClamm from "./pool-types/reclamm/ReClamm";
 import StableSurge from "./pool-types/stable-surge/StableSurge";
 import styled from "styled-components";
 
@@ -110,7 +110,7 @@ function App() {
       <Navigation />
       <Routes>
         <Route path="/" element={<Home />} />
-        <Route path="/reclamm" element={<AclAmm />} />
+        <Route path="/reclamm" element={<ReClamm />} />
         <Route path="/acl-amm" element={<Navigate to="/reclamm" />} />
         <Route path="/stable-surge" element={<StableSurge />} />
         <Route path="*" element={<Navigate to="/" />} />

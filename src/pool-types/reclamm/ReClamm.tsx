@@ -13,7 +13,7 @@ import {
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import PauseIcon from "@mui/icons-material/Pause";
-import { AclAmmChart } from "./AclAmmChart";
+import { ReClammChart } from "./ReClammChart";
 import {
   calculateLowerMargin,
   calculateOutGivenIn,
@@ -22,7 +22,7 @@ import {
   calculateBalancesAfterSwapIn,
   recalculateVirtualBalances,
   calculateInvariant,
-} from "./AclAmmMath";
+} from "./ReClammMath";
 import { formatTime } from "../../utils/Time";
 
 const defaultInitialBalanceA = 1000;
@@ -39,7 +39,7 @@ const tickMilliseconds = 10;
 
 const MIN_SWAP = 0.000001;
 
-export default function AclAmm() {
+export default function ReClamm() {
   // Simulation variables
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [simulationSeconds, setSimulationSeconds] = useState<number>(0);
@@ -722,7 +722,7 @@ export default function AclAmm() {
         <Grid item xs={6}>
           <Paper style={{ padding: 16, textAlign: "center" }}>
             <div style={{ width: "100%", height: 600 }}>
-              <AclAmmChart
+              <ReClammChart
                 realTimeBalanceA={realTimeBalanceA}
                 realTimeBalanceB={realTimeBalanceB}
                 realTimeVirtualBalances={realTimeVirtualBalances}
