@@ -301,7 +301,12 @@ export default function ReClamm() {
         virtualBalanceA: inputVirtualBalanceA,
         virtualBalanceB: inputVirtualBalanceB,
       });
-      initializeInvariants();
+      initializeInvariants(
+        inputBalanceA,
+        initialBalanceB,
+        inputVirtualBalanceA,
+        inputVirtualBalanceB
+      );
     }, 1);
   }, []);
 
@@ -399,19 +404,27 @@ export default function ReClamm() {
     setMinPrice(Number(inputMinPrice));
     setMaxPrice(Number(inputMaxPrice));
     setTargetPrice(Number(inputTargetPrice));
-    initializeInvariants();
+    initializeInvariants(
+      inputBalanceA,
+      initialBalanceB,
+      inputVirtualBalanceA,
+      inputVirtualBalanceB
+    );
     setSimulationSeconds(0);
     setBlockNumber(0);
   };
 
-  const initializeInvariants = () => {
+  const initializeInvariants = (
+    balanceA: number,
+    balanceB: number,
+    virtualBalanceA: number,
+    virtualBalanceB: number
+  ) => {
     setInitialInvariant(
-      (inputBalanceA + inputVirtualBalanceA) *
-        (inputBalanceB + inputVirtualBalanceB)
+      (balanceA + virtualBalanceA) * (balanceB + virtualBalanceB)
     );
     setCurrentInvariant(
-      (inputBalanceA + inputVirtualBalanceA) *
-        (inputBalanceB + inputVirtualBalanceB)
+      (balanceA + virtualBalanceA) * (balanceB + virtualBalanceB)
     );
   };
 
@@ -567,7 +580,7 @@ export default function ReClamm() {
     setMargin(margin);
     setMinPrice(minPrice);
     setMaxPrice(maxPrice);
-    setTimeout(() => initializeInvariants(), 1);
+    initializeInvariants(balanceA, balanceB, virtualBalanceA, virtualBalanceB);
     setSimulationSeconds(0);
     setBlockNumber(0);
   };
