@@ -637,13 +637,6 @@ export default function ReClamm() {
               <Typography variant="h6">Create and Initialize</Typography>
             </AccordionSummary>
             <AccordionDetails>
-              {/* Show API result here */}
-              <Typography
-                variant="body2"
-                style={{ marginBottom: 8, color: "#1976d2" }}
-              >
-                API Result: {apiResult}
-              </Typography>
               <Typography
                 variant="subtitle1"
                 style={{
