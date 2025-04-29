@@ -360,6 +360,19 @@ export const reclammAbi = [
   },
   {
     inputs: [],
+    name: "getPriceShiftDailyRateInSeconds",
+    outputs: [
+      {
+        internalType: "uint256",
+        name: "dailyPriceShiftBase",
+        type: "uint256",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
     name: "getDailyPriceShiftExponent",
     outputs: [
       {

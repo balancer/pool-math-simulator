@@ -24,6 +24,7 @@ import {
   calculateInvariant,
 } from "./ReClammMath";
 import { formatTime } from "../../utils/Time";
+import { toFixedDecimals } from "../../utils/ToFixedLib";
 
 const defaultInitialBalanceA = 1000;
 const defaultInitialBalanceB = 2000;
@@ -725,20 +726,20 @@ export default function ReClamm() {
               <div style={{ display: "flex", justifyContent: "space-between" }}>
                 <Typography>Ideal Proportion:</Typography>
                 <Typography>
-                  {(idealBalanceB / idealBalanceA).toFixed(2)}
+                  {toFixedDecimals(idealBalanceB / idealBalanceA)}
                 </Typography>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between" }}>
                 <Typography>Initial Balance B:</Typography>
-                <Typography>{inputBalanceB.toFixed(2)}</Typography>
+                <Typography>{toFixedDecimals(inputBalanceB)}</Typography>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between" }}>
                 <Typography>Virtual Balance A:</Typography>
-                <Typography>{inputVirtualBalanceA.toFixed(2)}</Typography>
+                <Typography>{toFixedDecimals(inputVirtualBalanceA)}</Typography>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between" }}>
                 <Typography>Virtual Balance B:</Typography>
-                <Typography>{inputVirtualBalanceB.toFixed(2)}</Typography>
+                <Typography>{toFixedDecimals(inputVirtualBalanceB)}</Typography>
               </div>
               <Button
                 variant="contained"
@@ -797,7 +798,7 @@ export default function ReClamm() {
               >
                 Amount Out {swapTokenIn === "Token A" ? "B" : "A"}:{" "}
                 {calculatedSwapAmountOut.amount > 0
-                  ? calculatedSwapAmountOut.amount.toFixed(2)
+                  ? toFixedDecimals(calculatedSwapAmountOut.amount)
                   : "0"}
                 {calculatedSwapAmountOut.exceedsBalance && (
                   <div style={{ fontSize: "0.8em" }}>
@@ -954,26 +955,26 @@ export default function ReClamm() {
             <AccordionDetails>
               <div style={{ display: "flex", justifyContent: "space-between" }}>
                 <Typography>Invariant:</Typography>
-                <Typography>{currentInvariant.toFixed(2)}</Typography>
+                <Typography>{toFixedDecimals(currentInvariant)}</Typography>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between" }}>
                 <Typography>Current Balance A:</Typography>
-                <Typography>{currentBalanceA.toFixed(2)}</Typography>
+                <Typography>{toFixedDecimals(currentBalanceA)}</Typography>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between" }}>
                 <Typography>Current Balance B:</Typography>
-                <Typography>{currentBalanceB.toFixed(2)}</Typography>
+                <Typography>{toFixedDecimals(currentBalanceB)}</Typography>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between" }}>
                 <Typography>Virtual Balance A:</Typography>
                 <Typography>
-                  {currentVirtualBalances.virtualBalanceA.toFixed(2)}
+                  {toFixedDecimals(currentVirtualBalances.virtualBalanceA)}
                 </Typography>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between" }}>
                 <Typography>Virtual Balance B:</Typography>
                 <Typography>
-                  {currentVirtualBalances.virtualBalanceB.toFixed(2)}
+                  {toFixedDecimals(currentVirtualBalances.virtualBalanceB)}
                 </Typography>
               </div>
               <div style={{ marginTop: 16 }}>
@@ -982,11 +983,11 @@ export default function ReClamm() {
                 >
                   <Typography>Rate Max/Min:</Typography>
                   <Typography>
-                    {(
+                    {toFixedDecimals(
                       Math.pow(currentInvariant, 2) /
-                      (Math.pow(currentVirtualBalances.virtualBalanceA, 2) *
-                        Math.pow(currentVirtualBalances.virtualBalanceB, 2))
-                    ).toFixed(2)}
+                        (Math.pow(currentVirtualBalances.virtualBalanceA, 2) *
+                          Math.pow(currentVirtualBalances.virtualBalanceB, 2))
+                    )}
                   </Typography>
                 </div>
                 <div
@@ -994,10 +995,10 @@ export default function ReClamm() {
                 >
                   <Typography style={{ color: "red" }}>Min Price A:</Typography>
                   <Typography style={{ color: "red" }}>
-                    {(
+                    {toFixedDecimals(
                       Math.pow(currentVirtualBalances.virtualBalanceB, 2) /
-                      currentInvariant
-                    ).toFixed(4)}
+                        currentInvariant
+                    )}
                   </Typography>
                 </div>
                 <div
@@ -1007,7 +1008,9 @@ export default function ReClamm() {
                     Lower Margin Price A:
                   </Typography>
                   <Typography style={{ color: "blue" }}>
-                    {(currentInvariant / Math.pow(higherMargin, 2)).toFixed(4)}
+                    {toFixedDecimals(
+                      currentInvariant / Math.pow(higherMargin, 2)
+                    )}
                   </Typography>
                 </div>
                 <div
@@ -1017,11 +1020,12 @@ export default function ReClamm() {
                     Current Price A:
                   </Typography>
                   <Typography style={{ color: "green" }}>
-                    {(
+                    {toFixedDecimals(
                       (currentBalanceB +
                         currentVirtualBalances.virtualBalanceB) /
-                      (currentBalanceA + currentVirtualBalances.virtualBalanceA)
-                    ).toFixed(4)}
+                        (currentBalanceA +
+                          currentVirtualBalances.virtualBalanceA)
+                    )}
                   </Typography>
                 </div>
                 <div
@@ -1031,7 +1035,9 @@ export default function ReClamm() {
                     Upper Margin Price A:
                   </Typography>
                   <Typography style={{ color: "blue" }}>
-                    {(currentInvariant / Math.pow(lowerMargin, 2)).toFixed(4)}
+                    {toFixedDecimals(
+                      currentInvariant / Math.pow(lowerMargin, 2)
+                    )}
                   </Typography>
                 </div>
                 <div
@@ -1039,10 +1045,10 @@ export default function ReClamm() {
                 >
                   <Typography style={{ color: "red" }}>Max Price A:</Typography>
                   <Typography style={{ color: "red" }}>
-                    {(
+                    {toFixedDecimals(
                       currentInvariant /
-                      Math.pow(currentVirtualBalances.virtualBalanceA, 2)
-                    ).toFixed(4)}
+                        Math.pow(currentVirtualBalances.virtualBalanceA, 2)
+                    )}
                   </Typography>
                 </div>
               </div>
@@ -1056,26 +1062,26 @@ export default function ReClamm() {
             <AccordionDetails>
               <div style={{ display: "flex", justifyContent: "space-between" }}>
                 <Typography>Invariant:</Typography>
-                <Typography>{realTimeInvariant.toFixed(2)}</Typography>
+                <Typography>{toFixedDecimals(realTimeInvariant)}</Typography>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between" }}>
                 <Typography>Current Balance A:</Typography>
-                <Typography>{realTimeBalanceA.toFixed(2)}</Typography>
+                <Typography>{toFixedDecimals(realTimeBalanceA)}</Typography>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between" }}>
                 <Typography>Current Balance B:</Typography>
-                <Typography>{realTimeBalanceB.toFixed(2)}</Typography>
+                <Typography>{toFixedDecimals(realTimeBalanceB)}</Typography>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between" }}>
                 <Typography>Virtual Balance A:</Typography>
                 <Typography>
-                  {realTimeVirtualBalances.virtualBalanceA.toFixed(2)}
+                  {toFixedDecimals(realTimeVirtualBalances.virtualBalanceA)}
                 </Typography>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between" }}>
                 <Typography>Virtual Balance B:</Typography>
                 <Typography>
-                  {realTimeVirtualBalances.virtualBalanceB.toFixed(2)}
+                  {toFixedDecimals(realTimeVirtualBalances.virtualBalanceB)}
                 </Typography>
               </div>
               <div style={{ marginTop: 16 }}>
@@ -1084,11 +1090,11 @@ export default function ReClamm() {
                 >
                   <Typography>Rate Max/Min:</Typography>
                   <Typography>
-                    {(
+                    {toFixedDecimals(
                       Math.pow(realTimeInvariant, 2) /
-                      (Math.pow(realTimeVirtualBalances.virtualBalanceA, 2) *
-                        Math.pow(realTimeVirtualBalances.virtualBalanceB, 2))
-                    ).toFixed(2)}
+                        (Math.pow(realTimeVirtualBalances.virtualBalanceA, 2) *
+                          Math.pow(realTimeVirtualBalances.virtualBalanceB, 2))
+                    )}
                   </Typography>
                 </div>
                 <div
@@ -1096,10 +1102,10 @@ export default function ReClamm() {
                 >
                   <Typography style={{ color: "red" }}>Min Price A:</Typography>
                   <Typography style={{ color: "red" }}>
-                    {(
+                    {toFixedDecimals(
                       Math.pow(realTimeVirtualBalances.virtualBalanceB, 2) /
-                      realTimeInvariant
-                    ).toFixed(4)}
+                        realTimeInvariant
+                    )}
                   </Typography>
                 </div>
                 <div
@@ -1109,7 +1115,9 @@ export default function ReClamm() {
                     Lower Margin Price A:
                   </Typography>
                   <Typography style={{ color: "blue" }}>
-                    {(realTimeInvariant / Math.pow(higherMargin, 2)).toFixed(4)}
+                    {toFixedDecimals(
+                      realTimeInvariant / Math.pow(higherMargin, 2)
+                    )}
                   </Typography>
                 </div>
                 <div
@@ -1119,12 +1127,12 @@ export default function ReClamm() {
                     Current Price A:
                   </Typography>
                   <Typography style={{ color: "green" }}>
-                    {(
+                    {toFixedDecimals(
                       (realTimeBalanceB +
                         realTimeVirtualBalances.virtualBalanceB) /
-                      (realTimeBalanceA +
-                        realTimeVirtualBalances.virtualBalanceA)
-                    ).toFixed(4)}
+                        (realTimeBalanceA +
+                          realTimeVirtualBalances.virtualBalanceA)
+                    )}
                   </Typography>
                 </div>
                 <div
@@ -1134,7 +1142,9 @@ export default function ReClamm() {
                     Upper Margin Price A:
                   </Typography>
                   <Typography style={{ color: "blue" }}>
-                    {(realTimeInvariant / Math.pow(lowerMargin, 2)).toFixed(4)}
+                    {toFixedDecimals(
+                      realTimeInvariant / Math.pow(lowerMargin, 2)
+                    )}
                   </Typography>
                 </div>
                 <div
@@ -1142,10 +1152,10 @@ export default function ReClamm() {
                 >
                   <Typography style={{ color: "red" }}>Max Price A:</Typography>
                   <Typography style={{ color: "red" }}>
-                    {(
+                    {toFixedDecimals(
                       realTimeInvariant /
-                      Math.pow(realTimeVirtualBalances.virtualBalanceA, 2)
-                    ).toFixed(4)}
+                        Math.pow(realTimeVirtualBalances.virtualBalanceA, 2)
+                    )}
                   </Typography>
                 </div>
               </div>
@@ -1170,7 +1180,7 @@ export default function ReClamm() {
                     }}
                   >
                     <Typography>Start Price Ratio:</Typography>
-                    <Typography>{startPriceRatio.toFixed(2)}</Typography>
+                    <Typography>{toFixedDecimals(startPriceRatio)}</Typography>
                   </div>
                   <div
                     style={{
@@ -1180,7 +1190,7 @@ export default function ReClamm() {
                     }}
                   >
                     <Typography>Current Price Ratio:</Typography>
-                    <Typography>{priceRatio.toFixed(2)}</Typography>
+                    <Typography>{toFixedDecimals(priceRatio)}</Typography>
                   </div>
                   <div
                     style={{
@@ -1190,7 +1200,7 @@ export default function ReClamm() {
                     }}
                   >
                     <Typography>Target Price Ratio:</Typography>
-                    <Typography>{targetPriceRatio.toFixed(2)}</Typography>
+                    <Typography>{toFixedDecimals(targetPriceRatio)}</Typography>
                   </div>
                   <div
                     style={{
@@ -1208,12 +1218,12 @@ export default function ReClamm() {
                   style={{ display: "flex", justifyContent: "space-between" }}
                 >
                   <Typography>Current Price Ratio:</Typography>
-                  <Typography>{priceRatio.toFixed(2)}</Typography>
+                  <Typography>{toFixedDecimals(priceRatio)}</Typography>
                 </div>
               )}
               <div style={{ display: "flex", justifyContent: "space-between" }}>
                 <Typography>Pool Centeredness:</Typography>
-                <Typography>{poolCenteredness.toFixed(2)}</Typography>
+                <Typography>{toFixedDecimals(poolCenteredness)}</Typography>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between" }}>
                 <Typography>Status:</Typography>
@@ -1242,31 +1252,31 @@ export default function ReClamm() {
             <AccordionDetails>
               <div style={{ display: "flex", justifyContent: "space-between" }}>
                 <Typography>Initial Balance A:</Typography>
-                <Typography>{initialBalanceA.toFixed(2)}</Typography>
+                <Typography>{toFixedDecimals(initialBalanceA)}</Typography>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between" }}>
                 <Typography>Initial Balance B:</Typography>
-                <Typography>{initialBalanceB.toFixed(2)}</Typography>
+                <Typography>{toFixedDecimals(initialBalanceB)}</Typography>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between" }}>
                 <Typography>Min Price A:</Typography>
-                <Typography>{minPrice.toFixed(2)}</Typography>
+                <Typography>{toFixedDecimals(minPrice)}</Typography>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between" }}>
                 <Typography>Target Price A:</Typography>
-                <Typography>{targetPrice.toFixed(2)}</Typography>
+                <Typography>{toFixedDecimals(targetPrice)}</Typography>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between" }}>
                 <Typography>Max Price A:</Typography>
-                <Typography>{maxPrice.toFixed(2)}</Typography>
+                <Typography>{toFixedDecimals(maxPrice)}</Typography>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between" }}>
                 <Typography>Price Ratio:</Typography>
-                <Typography>{priceRatio.toFixed(2)}</Typography>
+                <Typography>{toFixedDecimals(priceRatio)}</Typography>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between" }}>
                 <Typography>Margin:</Typography>
-                <Typography>{margin.toFixed(2)}%</Typography>
+                <Typography>{toFixedDecimals(margin)}%</Typography>
               </div>
             </AccordionDetails>
           </Accordion>

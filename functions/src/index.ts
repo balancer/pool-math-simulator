@@ -58,7 +58,24 @@ export const reclammData = onRequest(
         contract.methods.computeCurrentPriceRange().call(),
         contract.methods.computeCurrentVirtualBalances().call(),
         contract.methods.getCurrentLiveBalances().call(),
-        contract.methods.getDailyPriceShiftExponent().call(),
+        (async () => {
+          try {
+            return await contract.methods.getDailyPriceShiftExponent().call();
+          } catch (error) {
+            // Compatibility with V1
+            try {
+              const priceShiftBase = convertBigIntToNumber(
+                await contract.methods.getPriceShiftDailyRateInSeconds().call()
+              );
+              return priceShiftBase * 124649;
+            } catch (error) {
+              logger.error("Error getting daily price shift exponent", {
+                error,
+              });
+              return 1e18;
+            }
+          }
+        })(),
         contract.methods.getCenterednessMargin().call(),
       ])
     ).map((obj) => convertBigIntToNumber(obj));
