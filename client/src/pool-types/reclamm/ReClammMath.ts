@@ -194,15 +194,15 @@ export const recalculateVirtualBalances = (params: {
     (params.simulationParams.secondsSinceLastInteraction %
       params.simulationParams.simulationSecondsPerBlock);
 
-  if (fixedSecondsSinceLastInteraction <= 0.01) {
-    return {
-      newVirtualBalances: {
-        virtualBalanceA: params.oldVirtualBalanceA,
-        virtualBalanceB: params.oldVirtualBalanceB,
-      },
-      newPriceRatio: params.currentPriceRatio,
-    };
-  }
+  // if (fixedSecondsSinceLastInteraction <= 0.01) {
+  //   return {
+  //     newVirtualBalances: {
+  //       virtualBalanceA: params.oldVirtualBalanceA,
+  //       virtualBalanceB: params.oldVirtualBalanceB,
+  //     },
+  //     newPriceRatio: params.currentPriceRatio,
+  //   };
+  // }
 
   const poolCenteredness = calculatePoolCenteredness({
     balanceA: params.balanceA,
@@ -222,52 +222,40 @@ export const recalculateVirtualBalances = (params: {
     virtualBalanceB: params.oldVirtualBalanceB,
   });
 
-  const isPriceRatioUpdating =
-    params.simulationParams.simulationSeconds >=
-      params.updateQ0Params.startTime &&
-    (params.simulationParams.simulationSeconds <=
-      params.updateQ0Params.endTime ||
-      params.simulationParams.simulationSeconds -
-        fixedSecondsSinceLastInteraction <=
-        params.updateQ0Params.endTime);
+  // Q0 is updating.
+  newPriceRatio =
+    params.simulationParams.simulationSeconds >= params.updateQ0Params.endTime
+      ? params.updateQ0Params.targetPriceRatio
+      : params.updateQ0Params.startPriceRatio *
+        Math.pow(
+          params.updateQ0Params.targetPriceRatio /
+            params.updateQ0Params.startPriceRatio,
+          Math.min(
+            params.updateQ0Params.endTime - params.updateQ0Params.startTime,
+            params.simulationParams.simulationSeconds -
+              params.updateQ0Params.startTime
+          ) /
+            (params.updateQ0Params.endTime - params.updateQ0Params.startTime)
+        );
 
-  // Price ratio update logic
-  if (isPriceRatioUpdating) {
-    // Q0 is updating.
-    newPriceRatio =
-      params.updateQ0Params.startPriceRatio *
-      Math.pow(
-        params.updateQ0Params.targetPriceRatio /
-          params.updateQ0Params.startPriceRatio,
-        Math.min(
-          params.updateQ0Params.endTime - params.updateQ0Params.startTime,
-          params.simulationParams.simulationSeconds -
-            params.updateQ0Params.startTime
-        ) /
-          (params.updateQ0Params.endTime - params.updateQ0Params.startTime)
-      );
+  if (isPoolAboveCenter) {
+    const a = Math.sqrt(newPriceRatio) - 1;
+    const b = -params.balanceA * (1 + poolCenteredness);
+    const c = -params.balanceA * params.balanceA * poolCenteredness;
 
-    if (isPoolAboveCenter) {
-      const a = Math.sqrt(newPriceRatio) - 1;
-      const b = -params.balanceA * (1 + poolCenteredness);
-      const c = -params.balanceA * params.balanceA * poolCenteredness;
+    newVirtualBalanceA = (-b + Math.sqrt(Math.pow(b, 2) - 4 * a * c)) / (2 * a);
+    newVirtualBalanceB =
+      (params.balanceB * newVirtualBalanceA) /
+      (params.balanceA * poolCenteredness);
+  } else {
+    const a = Math.sqrt(newPriceRatio) - 1;
+    const b = -params.balanceB * (1 + poolCenteredness);
+    const c = -params.balanceB * params.balanceB * poolCenteredness;
 
-      newVirtualBalanceA =
-        (-b + Math.sqrt(Math.pow(b, 2) - 4 * a * c)) / (2 * a);
-      newVirtualBalanceB =
-        (params.balanceB * newVirtualBalanceA) /
-        (params.balanceA * poolCenteredness);
-    } else {
-      const a = Math.sqrt(newPriceRatio) - 1;
-      const b = -params.balanceB * (1 + poolCenteredness);
-      const c = -params.balanceB * params.balanceB * poolCenteredness;
-
-      newVirtualBalanceB =
-        (-b + Math.sqrt(Math.pow(b, 2) - 4 * a * c)) / (2 * a);
-      newVirtualBalanceA =
-        (params.balanceA * newVirtualBalanceB) /
-        (params.balanceB * poolCenteredness);
-    }
+    newVirtualBalanceB = (-b + Math.sqrt(Math.pow(b, 2) - 4 * a * c)) / (2 * a);
+    newVirtualBalanceA =
+      (params.balanceA * newVirtualBalanceB) /
+      (params.balanceB * poolCenteredness);
   }
 
   if (poolCenteredness <= params.poolParams.margin / 100) {

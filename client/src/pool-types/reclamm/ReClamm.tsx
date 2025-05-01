@@ -171,12 +171,13 @@ export default function ReClamm() {
   const [targetPriceRatioError, setTargetPriceRatioError] =
     useState<string>("");
 
-  // Add state for API result
-  const [apiResult, setApiResult] = useState<string>("");
   const [network, setNetwork] = useState<string>("base-mainnet");
   const [address, setAddress] = useState<string>(
     "0x7dc81fb7e93cdde7754bff7f55428226bd9cef7b"
   );
+
+  // Add new state for LP fee percentage
+  const [lpFeePercent, setLpFeePercent] = useState<number>(1);
 
   const realTimeInvariant = useMemo(() => {
     return (
@@ -218,7 +219,7 @@ export default function ReClamm() {
       balanceB: realTimeBalanceB,
       virtualBalanceA: realTimeVirtualBalances.virtualBalanceA,
       virtualBalanceB: realTimeVirtualBalances.virtualBalanceB,
-      swapAmountIn: swapAmountIn,
+      swapAmountIn: (1 - lpFeePercent / 100) * swapAmountIn,
       swapTokenIn: swapTokenIn,
     });
 
@@ -237,6 +238,7 @@ export default function ReClamm() {
     realTimeBalanceA,
     realTimeBalanceB,
     realTimeVirtualBalances,
+    lpFeePercent,
   ]);
 
   const inputPriceRatio = useMemo(() => {
@@ -456,17 +458,53 @@ export default function ReClamm() {
   };
 
   const handleRealTimeSwap = () => {
-    const { newBalanceA, newBalanceB } = calculateBalancesAfterSwapIn({
-      balanceA: realTimeBalanceA,
-      balanceB: realTimeBalanceB,
+    const feeAmount = swapAmountIn * (lpFeePercent / 100);
+    let newBalanceA = realTimeBalanceA;
+    let newBalanceB = realTimeBalanceB;
+
+    if (swapTokenIn === "Token A") {
+      newBalanceA += feeAmount;
+    } else {
+      newBalanceB += feeAmount;
+    }
+
+    const result = calculateBalancesAfterSwapIn({
+      balanceA: newBalanceA,
+      balanceB: newBalanceB,
       virtualBalanceA: realTimeVirtualBalances.virtualBalanceA,
       virtualBalanceB: realTimeVirtualBalances.virtualBalanceB,
       swapAmountIn: swapAmountIn,
       swapTokenIn: swapTokenIn,
     });
 
-    setRealTimeBalanceA(newBalanceA);
-    setRealTimeBalanceB(newBalanceB);
+    setRealTimeBalanceA(result.newBalanceA);
+    setRealTimeBalanceB(result.newBalanceB);
+
+    const { newVirtualBalances: virtualBalancesAfterSwap } =
+      recalculateVirtualBalances({
+        balanceA: result.newBalanceA,
+        balanceB: result.newBalanceB,
+        oldVirtualBalanceA: realTimeVirtualBalances.virtualBalanceA,
+        oldVirtualBalanceB: realTimeVirtualBalances.virtualBalanceB,
+        currentPriceRatio: priceRatio,
+        poolParams: {
+          margin: margin,
+          priceShiftDailyRate: priceShiftDailyRate,
+        },
+        updateQ0Params: {
+          startTime: startTime,
+          endTime: endTime,
+          startPriceRatio: startPriceRatio,
+          targetPriceRatio: targetPriceRatio,
+        },
+        simulationParams: {
+          simulationSeconds: simulationSeconds,
+          simulationSecondsPerBlock: simulationSecondsPerBlock,
+          secondsSinceLastInteraction: simulationSeconds - lastSwapTime,
+        },
+      });
+
+    setRealTimeVirtualBalances(virtualBalancesAfterSwap);
   };
 
   const handleCurrentSwap = () => {
@@ -495,23 +533,60 @@ export default function ReClamm() {
     setLastSwapTime(simulationSeconds);
     setCurrentVirtualBalances(newVirtualBalances);
 
-    const { newBalanceA, newBalanceB } = calculateBalancesAfterSwapIn({
-      balanceA: currentBalanceA,
-      balanceB: currentBalanceB,
+    const feeAmount = swapAmountIn * (lpFeePercent / 100);
+    let newBalanceA = currentBalanceA;
+    let newBalanceB = currentBalanceB;
+
+    if (swapTokenIn === "Token A") {
+      newBalanceA += feeAmount;
+    } else {
+      newBalanceB += feeAmount;
+    }
+
+    const result = calculateBalancesAfterSwapIn({
+      balanceA: newBalanceA,
+      balanceB: newBalanceB,
       virtualBalanceA: newVirtualBalances.virtualBalanceA,
       virtualBalanceB: newVirtualBalances.virtualBalanceB,
       swapAmountIn: swapAmountIn,
       swapTokenIn: swapTokenIn,
     });
 
-    setCurrentBalanceA(newBalanceA);
-    setCurrentBalanceB(newBalanceB);
+    setCurrentBalanceA(result.newBalanceA);
+    setCurrentBalanceB(result.newBalanceB);
+
+    const { newVirtualBalances: virtualBalancesAfterSwap } =
+      recalculateVirtualBalances({
+        balanceA: result.newBalanceA,
+        balanceB: result.newBalanceB,
+        oldVirtualBalanceA: currentVirtualBalances.virtualBalanceA,
+        oldVirtualBalanceB: currentVirtualBalances.virtualBalanceB,
+        currentPriceRatio: priceRatio,
+        poolParams: {
+          margin: margin,
+          priceShiftDailyRate: priceShiftDailyRate,
+        },
+        updateQ0Params: {
+          startTime: startTime,
+          endTime: endTime,
+          startPriceRatio: startPriceRatio,
+          targetPriceRatio: targetPriceRatio,
+        },
+        simulationParams: {
+          simulationSeconds: simulationSeconds,
+          simulationSecondsPerBlock: simulationSecondsPerBlock,
+          secondsSinceLastInteraction: simulationSeconds - lastSwapTime,
+        },
+      });
+
+    setCurrentVirtualBalances(virtualBalancesAfterSwap);
+
     setCurrentInvariant(
       calculateInvariant({
-        balanceA: newBalanceA,
-        balanceB: newBalanceB,
-        virtualBalanceA: newVirtualBalances.virtualBalanceA,
-        virtualBalanceB: newVirtualBalances.virtualBalanceB,
+        balanceA: result.newBalanceA,
+        balanceB: result.newBalanceB,
+        virtualBalanceA: virtualBalancesAfterSwap.virtualBalanceA,
+        virtualBalanceB: virtualBalancesAfterSwap.virtualBalanceB,
       })
     );
   };
@@ -578,6 +653,8 @@ export default function ReClamm() {
     });
 
     setPriceRatio(priceRatio);
+    setStartPriceRatio(priceRatio);
+    setTargetPriceRatio(priceRatio);
     setMargin(margin);
     setMinPrice(minPrice);
     setMaxPrice(maxPrice);
@@ -786,6 +863,14 @@ export default function ReClamm() {
                 margin="normal"
                 value={swapAmountIn}
                 onChange={(e) => setSwapAmountIn(Number(e.target.value))}
+              />
+              <TextField
+                label="LP Fee %"
+                type="number"
+                fullWidth
+                margin="normal"
+                value={lpFeePercent}
+                onChange={(e) => setLpFeePercent(Number(e.target.value))}
               />
               <Typography
                 style={{
