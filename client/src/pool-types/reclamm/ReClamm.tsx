@@ -118,6 +118,9 @@ export default function ReClamm() {
   const [inputTargetPrice, setInputTargetPrice] =
     useState<number>(defaultTargetPrice);
 
+  const [inputTargetPriceRatio, setInputTargetPriceRatio] =
+    useState<number>(defaultTargetPrice);
+
   const [realTimeBalanceA, setRealTimeBalanceA] = useState<number>(
     defaultInitialBalanceA
   );
@@ -409,7 +412,7 @@ export default function ReClamm() {
     setTargetPrice(Number(inputTargetPrice));
     initializeInvariants(
       inputBalanceA,
-      initialBalanceB,
+      inputBalanceB,
       inputVirtualBalanceA,
       inputVirtualBalanceB
     );
@@ -423,6 +426,13 @@ export default function ReClamm() {
     virtualBalanceA: number,
     virtualBalanceB: number
   ) => {
+    console.log(
+      "initializeInvariants",
+      balanceA,
+      balanceB,
+      virtualBalanceA,
+      virtualBalanceB
+    );
     setInitialInvariant(
       (balanceA + virtualBalanceA) * (balanceB + virtualBalanceB)
     );
@@ -447,7 +457,7 @@ export default function ReClamm() {
     setEndTimeError("");
     setTargetPriceRatioError("");
     setStartPriceRatio(priceRatio);
-    setTargetPriceRatio(inputTargetPrice);
+    setTargetPriceRatio(inputTargetPriceRatio);
     setStartTime(simulationSeconds);
     setEndTime(inputEndTime);
   };
@@ -913,8 +923,10 @@ export default function ReClamm() {
                 type="number"
                 fullWidth
                 margin="normal"
-                value={inputTargetPrice}
-                onChange={(e) => setInputTargetPrice(Number(e.target.value))}
+                value={inputTargetPriceRatio}
+                onChange={(e) =>
+                  setInputTargetPriceRatio(Number(e.target.value))
+                }
                 error={!!targetPriceRatioError}
                 helperText={targetPriceRatioError}
               />
