@@ -447,7 +447,7 @@ export default function ReClamm() {
       return;
     }
 
-    if (inputTargetPrice < 1.1 || inputTargetPrice > 1000) {
+    if (inputTargetPriceRatio < 1.1 || inputTargetPriceRatio > 1000) {
       setTargetPriceRatioError(
         "Target price ratio must be between 1.1 and 1000"
       );
