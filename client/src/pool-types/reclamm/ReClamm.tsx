@@ -347,6 +347,29 @@ export default function ReClamm() {
     setSimulationSecondsLastTick(simulationSeconds);
     setBlockNumber((prev) => prev + 1);
 
+    console.log({
+      balanceA: realTimeBalanceA,
+      balanceB: realTimeBalanceB,
+      oldVirtualBalanceA: realTimeVirtualBalances.virtualBalanceA,
+      oldVirtualBalanceB: realTimeVirtualBalances.virtualBalanceB,
+      currentPriceRatio: priceRatio,
+      poolParams: {
+        margin: margin,
+        priceShiftDailyRate: priceShiftDailyRate,
+      },
+      updateQ0Params: {
+        startTime: startTime,
+        endTime: endTime,
+        startPriceRatio: startPriceRatio,
+        targetPriceRatio: targetPriceRatio,
+      },
+      simulationParams: {
+        simulationSeconds: simulationSeconds,
+        simulationSecondsPerBlock: simulationSecondsPerBlock,
+        secondsSinceLastInteraction: simulationSecondsPerBlock,
+      },
+    });
+
     const { newVirtualBalances, newPriceRatio } = recalculateVirtualBalances({
       balanceA: realTimeBalanceA,
       balanceB: realTimeBalanceB,
@@ -406,6 +429,8 @@ export default function ReClamm() {
       virtualBalanceB: Number(inputVirtualBalanceB),
     });
     setPriceRatio(Number(inputPriceRatio));
+    setStartPriceRatio(Number(inputPriceRatio));
+    setTargetPriceRatio(Number(inputPriceRatio));
     setMargin(Number(inputMargin));
     setMinPrice(Number(inputMinPrice));
     setMaxPrice(Number(inputMaxPrice));
