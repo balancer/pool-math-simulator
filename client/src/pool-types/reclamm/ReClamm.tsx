@@ -21,6 +21,7 @@ import {
   recalculateVirtualBalances,
   calculateInvariant,
 } from "./ReClammMath";
+import { MIN_SWAP, NETWORKS } from "./constants";
 
 import { formatTime } from "../../utils/Time";
 import { toFixedDecimals } from "../../utils/ToFixedLib";
@@ -37,43 +38,6 @@ const defaultTargetPrice = 2;
 const defaultMaxBalanceA = 3000;
 
 const tickMilliseconds = 10;
-
-const MIN_SWAP = 0.000001;
-
-const NETWORKS = [
-  {
-    name: "Base",
-    network: "base-mainnet",
-  },
-  {
-    name: "Ethereum",
-    network: "eth-mainnet",
-  },
-  {
-    name: "Sepolia",
-    network: "eth-sepolia",
-  },
-  {
-    name: "OP Mainnet",
-    network: "opt-mainnet",
-  },
-  {
-    name: "Arbitrum",
-    network: "arb-mainnet",
-  },
-  {
-    name: "Gnosis",
-    network: "gnosis-mainnet",
-  },
-  {
-    name: "Avalanche",
-    network: "avax-mainnet",
-  },
-  {
-    name: "Sonic",
-    network: "sonic-mainnet",
-  },
-];
 
 export default function ReClamm() {
   // Simulation variables
@@ -347,29 +311,6 @@ export default function ReClamm() {
     setSimulationSecondsLastTick(simulationSeconds);
     setBlockNumber((prev) => prev + 1);
 
-    console.log({
-      balanceA: realTimeBalanceA,
-      balanceB: realTimeBalanceB,
-      oldVirtualBalanceA: realTimeVirtualBalances.virtualBalanceA,
-      oldVirtualBalanceB: realTimeVirtualBalances.virtualBalanceB,
-      currentPriceRatio: priceRatio,
-      poolParams: {
-        margin: margin,
-        priceShiftDailyRate: priceShiftDailyRate,
-      },
-      updateQ0Params: {
-        startTime: startTime,
-        endTime: endTime,
-        startPriceRatio: startPriceRatio,
-        targetPriceRatio: targetPriceRatio,
-      },
-      simulationParams: {
-        simulationSeconds: simulationSeconds,
-        simulationSecondsPerBlock: simulationSecondsPerBlock,
-        secondsSinceLastInteraction: simulationSecondsPerBlock,
-      },
-    });
-
     const { newVirtualBalances, newPriceRatio } = recalculateVirtualBalances({
       balanceA: realTimeBalanceA,
       balanceB: realTimeBalanceB,
@@ -451,13 +392,6 @@ export default function ReClamm() {
     virtualBalanceA: number,
     virtualBalanceB: number
   ) => {
-    console.log(
-      "initializeInvariants",
-      balanceA,
-      balanceB,
-      virtualBalanceA,
-      virtualBalanceB
-    );
     setInitialInvariant(
       (balanceA + virtualBalanceA) * (balanceB + virtualBalanceB)
     );
