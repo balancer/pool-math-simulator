@@ -51,6 +51,7 @@ export default function ReClamm() {
     setBlockNumber,
     speedMultiplier,
   } = useTimer();
+
   const [isPoolInRange, setIsPoolInRange] = useState<boolean>(true);
   const [outOfRangeTime, setOutOfRangeTime] = useState<number>(0);
   const [lastRangeCheckTime, setLastRangeCheckTime] = useState<number>(0);
@@ -151,10 +152,12 @@ export default function ReClamm() {
   const [lpFeePercent, setLpFeePercent] = useState<number>(1);
 
   const realTimeInvariant = useMemo(() => {
-    return (
-      (realTimeBalanceA + realTimeVirtualBalances.virtualBalanceA) *
-      (realTimeBalanceB + realTimeVirtualBalances.virtualBalanceB)
-    );
+    return calculateInvariant({
+      balanceA: realTimeBalanceA,
+      balanceB: realTimeBalanceB,
+      virtualBalanceA: realTimeVirtualBalances.virtualBalanceA,
+      virtualBalanceB: realTimeVirtualBalances.virtualBalanceB,
+    });
   }, [realTimeBalanceA, realTimeBalanceB, realTimeVirtualBalances]);
 
   const { poolCenteredness } = useMemo(() => {
@@ -945,6 +948,7 @@ export default function ReClamm() {
         </Grid>
 
         <Grid item xs={6}>
+          <Timer />
           <Paper style={{ padding: 16, textAlign: "center" }}>
             <div style={{ width: "100%", height: 600 }}>
               <ReClammChart
@@ -961,7 +965,6 @@ export default function ReClamm() {
               />
             </div>
           </Paper>
-          <Timer />
         </Grid>
 
         {/* Current Values Column */}
