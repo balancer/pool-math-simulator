@@ -17,7 +17,7 @@ import { ReClammChart } from "./ReClammChart";
 import {
   calculateLowerMargin,
   calculateOutGivenIn,
-  calculatePoolCenteredness,
+  computeCenteredness,
   calculateUpperMargin,
   calculateBalancesAfterSwapIn,
   recalculateVirtualBalances,
@@ -189,8 +189,8 @@ export default function ReClamm() {
     );
   }, [realTimeBalanceA, realTimeBalanceB, realTimeVirtualBalances]);
 
-  const poolCenteredness = useMemo(() => {
-    return calculatePoolCenteredness({
+  const { poolCenteredness } = useMemo(() => {
+    return computeCenteredness({
       balanceA: realTimeBalanceA,
       balanceB: realTimeBalanceB,
       virtualBalanceA: realTimeVirtualBalances.virtualBalanceA,
