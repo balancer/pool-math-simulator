@@ -30,6 +30,7 @@ import { formatTime } from "../../utils/Time";
 import { toFixedDecimals } from "../../utils/ToFixedLib";
 import Timer from "../../components/Timer";
 import { useTimer } from "../../contexts/TimerContext";
+import { ReClammPriceBar } from "./ReClammPriceBar";
 
 const defaultInitialBalanceA = 1000;
 const defaultInitialBalanceB = 2000;
@@ -573,11 +574,6 @@ export default function ReClamm() {
     );
   };
 
-  // Add handler for saving simulation config
-  const handleSaveSimulationConfig = () => {
-    setSimulationSecondsPerBlock(inputSecondsPerBlock);
-  };
-
   const handleLoadPool = async () => {
     const res = await fetch(
       `${process.env.REACT_APP_FUNCTION_URL}/reclammData?network=${network}&address=${address}`
@@ -649,6 +645,27 @@ export default function ReClamm() {
     <Container>
       <Grid container spacing={2}>
         <Grid item xs={3}>
+          <FormControlLabel
+            control={
+              <Switch
+                checked={debugMode}
+                onChange={(e) => setDebugMode(e.target.checked)}
+                color="primary"
+              />
+            }
+            label="Debug Mode"
+          />
+          {debugMode && (
+            <Typography
+              variant="body2"
+              color="textSecondary"
+              style={{ marginTop: 8 }}
+            >
+              Debug mode is enabled. Additional logging and detailed information
+              will be displayed.
+            </Typography>
+          )}
+
           {/* Load Real Pool Section */}
           <Accordion>
             <AccordionSummary expandIcon={<ExpandMoreIcon />}>
@@ -925,38 +942,20 @@ export default function ReClamm() {
               </Button>
             </AccordionDetails>
           </Accordion>
-
-          <Accordion>
-            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-              <Typography variant="h6">Debug Settings</Typography>
-            </AccordionSummary>
-            <AccordionDetails>
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={debugMode}
-                    onChange={(e) => setDebugMode(e.target.checked)}
-                    color="primary"
-                  />
-                }
-                label="Debug Mode"
-              />
-              {debugMode && (
-                <Typography
-                  variant="body2"
-                  color="textSecondary"
-                  style={{ marginTop: 8 }}
-                >
-                  Debug mode is enabled. Additional logging and detailed
-                  information will be displayed.
-                </Typography>
-              )}
-            </AccordionDetails>
-          </Accordion>
         </Grid>
 
         <Grid item xs={debugMode ? 6 : 9}>
           <Timer />
+
+          {/* ReClamm Price Bar */}
+          <ReClammPriceBar
+            realTimeBalanceA={realTimeBalanceA}
+            realTimeBalanceB={realTimeBalanceB}
+            realTimeVirtualBalances={realTimeVirtualBalances}
+            realTimeInvariant={realTimeInvariant}
+            margin={margin}
+          />
+
           <Fade in={debugMode} timeout={300}>
             <Paper
               style={{
