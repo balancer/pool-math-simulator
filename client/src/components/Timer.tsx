@@ -5,24 +5,18 @@ import PauseIcon from "@mui/icons-material/Pause";
 import { Typography } from "@mui/material";
 
 import { formatTime } from "../utils/Time";
+import { useTimer } from "../contexts/TimerContext";
 
-interface TimerProps {
-  blockNumber: number;
-  isPlaying: boolean;
-  setIsPlaying: (playing: boolean) => void;
-  setSpeedMultiplier: (speed: number) => void;
-  simulationSeconds: number;
-  speedMultiplier: number;
-}
+export default function Timer() {
+  const {
+    blockNumber,
+    isPlaying,
+    setIsPlaying,
+    setSpeedMultiplier,
+    simulationSeconds,
+    speedMultiplier,
+  } = useTimer();
 
-export default function Timer({
-  blockNumber,
-  isPlaying,
-  setIsPlaying,
-  setSpeedMultiplier,
-  simulationSeconds,
-  speedMultiplier,
-}: TimerProps) {
   return (
     <Paper style={{ padding: 16, marginTop: 16 }}>
       <div

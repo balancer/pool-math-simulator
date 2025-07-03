@@ -26,6 +26,7 @@ import { MIN_SWAP, NETWORKS } from "./constants";
 import { formatTime } from "../../utils/Time";
 import { toFixedDecimals } from "../../utils/ToFixedLib";
 import Timer from "../../components/Timer";
+import { useTimer } from "../../contexts/TimerContext";
 
 const defaultInitialBalanceA = 1000;
 const defaultInitialBalanceB = 2000;
@@ -41,12 +42,15 @@ const tickMilliseconds = 10;
 
 export default function ReClamm() {
   // Simulation variables
-  const [isPlaying, setIsPlaying] = useState<boolean>(false);
-  const [simulationSeconds, setSimulationSeconds] = useState<number>(0);
-  const [simulationSecondsLastTick, setSimulationSecondsLastTick] =
-    useState<number>(1);
-  const [blockNumber, setBlockNumber] = useState<number>(0);
-  const [speedMultiplier, setSpeedMultiplier] = useState<number>(1);
+  const {
+    isPlaying,
+    simulationSeconds,
+    setSimulationSeconds,
+    simulationSecondsLastTick,
+    setSimulationSecondsLastTick,
+    setBlockNumber,
+    speedMultiplier,
+  } = useTimer();
   const [isPoolInRange, setIsPoolInRange] = useState<boolean>(true);
   const [outOfRangeTime, setOutOfRangeTime] = useState<number>(0);
   const [lastRangeCheckTime, setLastRangeCheckTime] = useState<number>(0);
@@ -957,14 +961,7 @@ export default function ReClamm() {
               />
             </div>
           </Paper>
-          <Timer
-            blockNumber={blockNumber}
-            isPlaying={isPlaying}
-            setIsPlaying={setIsPlaying}
-            setSpeedMultiplier={setSpeedMultiplier}
-            simulationSeconds={simulationSeconds}
-            speedMultiplier={speedMultiplier}
-          />
+          <Timer />
         </Grid>
 
         {/* Current Values Column */}
