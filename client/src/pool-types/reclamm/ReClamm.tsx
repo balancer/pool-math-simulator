@@ -9,6 +9,9 @@ import {
   Accordion,
   AccordionSummary,
   AccordionDetails,
+  Switch,
+  FormControlLabel,
+  Fade,
 } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import { ReClammChart } from "./ReClammChart";
@@ -150,6 +153,9 @@ export default function ReClamm() {
 
   // Add new state for LP fee percentage
   const [lpFeePercent, setLpFeePercent] = useState<number>(1);
+
+  // Add debug mode state
+  const [debugMode, setDebugMode] = useState<boolean>(false);
 
   const realTimeInvariant = useMemo(() => {
     return calculateInvariant({
@@ -922,386 +928,458 @@ export default function ReClamm() {
 
           <Accordion>
             <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-              <Typography variant="h6">Simulation Parameters</Typography>
+              <Typography variant="h6">Debug Settings</Typography>
             </AccordionSummary>
             <AccordionDetails>
-              <TextField
-                label="Seconds Per Block"
-                type="number"
-                fullWidth
-                margin="normal"
-                value={inputSecondsPerBlock}
-                onChange={(e) =>
-                  setInputSecondsPerBlock(Number(e.target.value))
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={debugMode}
+                    onChange={(e) => setDebugMode(e.target.checked)}
+                    color="primary"
+                  />
                 }
+                label="Debug Mode"
               />
-              <Button
-                variant="contained"
-                fullWidth
-                onClick={handleSaveSimulationConfig}
-                style={{ marginTop: 16 }}
-              >
-                Save Config
-              </Button>
+              {debugMode && (
+                <Typography
+                  variant="body2"
+                  color="textSecondary"
+                  style={{ marginTop: 8 }}
+                >
+                  Debug mode is enabled. Additional logging and detailed
+                  information will be displayed.
+                </Typography>
+              )}
             </AccordionDetails>
           </Accordion>
         </Grid>
 
-        <Grid item xs={6}>
+        <Grid item xs={debugMode ? 6 : 9}>
           <Timer />
-          <Paper style={{ padding: 16, textAlign: "center" }}>
-            <div style={{ width: "100%", height: 600 }}>
-              <ReClammChart
-                realTimeBalanceA={realTimeBalanceA}
-                realTimeBalanceB={realTimeBalanceB}
-                realTimeVirtualBalances={realTimeVirtualBalances}
-                realTimeInvariant={realTimeInvariant}
-                initialInvariant={initialInvariant}
-                margin={margin}
-                currentBalanceA={currentBalanceA}
-                currentBalanceB={currentBalanceB}
-                currentVirtualBalances={currentVirtualBalances}
-                currentInvariant={currentInvariant}
-              />
-            </div>
-          </Paper>
+          <Fade in={debugMode} timeout={300}>
+            <Paper
+              style={{
+                padding: 16,
+                textAlign: "center",
+                opacity: debugMode ? 1 : 0,
+                transition: "opacity 300ms ease-in-out",
+                pointerEvents: debugMode ? "auto" : "none",
+              }}
+            >
+              <div style={{ width: "100%", height: 600 }}>
+                <ReClammChart
+                  realTimeBalanceA={realTimeBalanceA}
+                  realTimeBalanceB={realTimeBalanceB}
+                  realTimeVirtualBalances={realTimeVirtualBalances}
+                  realTimeInvariant={realTimeInvariant}
+                  initialInvariant={initialInvariant}
+                  margin={margin}
+                  currentBalanceA={currentBalanceA}
+                  currentBalanceB={currentBalanceB}
+                  currentVirtualBalances={currentVirtualBalances}
+                  currentInvariant={currentInvariant}
+                />
+              </div>
+            </Paper>
+          </Fade>
         </Grid>
 
         {/* Current Values Column */}
-        <Grid item xs={3}>
-          <Accordion defaultExpanded>
-            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-              <Typography variant="h6">Current Pool State</Typography>
-            </AccordionSummary>
-            <AccordionDetails>
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <Typography>Invariant:</Typography>
-                <Typography>{toFixedDecimals(currentInvariant)}</Typography>
-              </div>
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <Typography>Current Balance A:</Typography>
-                <Typography>{toFixedDecimals(currentBalanceA)}</Typography>
-              </div>
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <Typography>Current Balance B:</Typography>
-                <Typography>{toFixedDecimals(currentBalanceB)}</Typography>
-              </div>
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <Typography>Virtual Balance A:</Typography>
-                <Typography>
-                  {toFixedDecimals(currentVirtualBalances.virtualBalanceA)}
-                </Typography>
-              </div>
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <Typography>Virtual Balance B:</Typography>
-                <Typography>
-                  {toFixedDecimals(currentVirtualBalances.virtualBalanceB)}
-                </Typography>
-              </div>
-              <div style={{ marginTop: 16 }}>
+        <Fade in={debugMode} timeout={300}>
+          <Grid item xs={3}>
+            <Accordion defaultExpanded>
+              <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                <Typography variant="h6">Current Pool State</Typography>
+              </AccordionSummary>
+              <AccordionDetails>
                 <div
                   style={{ display: "flex", justifyContent: "space-between" }}
                 >
-                  <Typography>Rate Max/Min:</Typography>
+                  <Typography>Invariant:</Typography>
+                  <Typography>{toFixedDecimals(currentInvariant)}</Typography>
+                </div>
+                <div
+                  style={{ display: "flex", justifyContent: "space-between" }}
+                >
+                  <Typography>Current Balance A:</Typography>
+                  <Typography>{toFixedDecimals(currentBalanceA)}</Typography>
+                </div>
+                <div
+                  style={{ display: "flex", justifyContent: "space-between" }}
+                >
+                  <Typography>Current Balance B:</Typography>
+                  <Typography>{toFixedDecimals(currentBalanceB)}</Typography>
+                </div>
+                <div
+                  style={{ display: "flex", justifyContent: "space-between" }}
+                >
+                  <Typography>Virtual Balance A:</Typography>
                   <Typography>
-                    {toFixedDecimals(
-                      Math.pow(currentInvariant, 2) /
-                        (Math.pow(currentVirtualBalances.virtualBalanceA, 2) *
-                          Math.pow(currentVirtualBalances.virtualBalanceB, 2))
-                    )}
+                    {toFixedDecimals(currentVirtualBalances.virtualBalanceA)}
                   </Typography>
                 </div>
                 <div
                   style={{ display: "flex", justifyContent: "space-between" }}
                 >
-                  <Typography style={{ color: "red" }}>Min Price A:</Typography>
-                  <Typography style={{ color: "red" }}>
-                    {toFixedDecimals(
-                      Math.pow(currentVirtualBalances.virtualBalanceB, 2) /
-                        currentInvariant
-                    )}
-                  </Typography>
-                </div>
-                <div
-                  style={{ display: "flex", justifyContent: "space-between" }}
-                >
-                  <Typography style={{ color: "blue" }}>
-                    Lower Margin Price A:
-                  </Typography>
-                  <Typography style={{ color: "blue" }}>
-                    {toFixedDecimals(
-                      currentInvariant / Math.pow(higherMargin, 2)
-                    )}
-                  </Typography>
-                </div>
-                <div
-                  style={{ display: "flex", justifyContent: "space-between" }}
-                >
-                  <Typography style={{ color: "green" }}>
-                    Current Price A:
-                  </Typography>
-                  <Typography style={{ color: "green" }}>
-                    {toFixedDecimals(
-                      (currentBalanceB +
-                        currentVirtualBalances.virtualBalanceB) /
-                        (currentBalanceA +
-                          currentVirtualBalances.virtualBalanceA)
-                    )}
-                  </Typography>
-                </div>
-                <div
-                  style={{ display: "flex", justifyContent: "space-between" }}
-                >
-                  <Typography style={{ color: "blue" }}>
-                    Upper Margin Price A:
-                  </Typography>
-                  <Typography style={{ color: "blue" }}>
-                    {toFixedDecimals(
-                      currentInvariant / Math.pow(lowerMargin, 2)
-                    )}
-                  </Typography>
-                </div>
-                <div
-                  style={{ display: "flex", justifyContent: "space-between" }}
-                >
-                  <Typography style={{ color: "red" }}>Max Price A:</Typography>
-                  <Typography style={{ color: "red" }}>
-                    {toFixedDecimals(
-                      currentInvariant /
-                        Math.pow(currentVirtualBalances.virtualBalanceA, 2)
-                    )}
-                  </Typography>
-                </div>
-              </div>
-            </AccordionDetails>
-          </Accordion>
-
-          <Accordion defaultExpanded>
-            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-              <Typography variant="h6">Real-Time Pool State</Typography>
-            </AccordionSummary>
-            <AccordionDetails>
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <Typography>Invariant:</Typography>
-                <Typography>{toFixedDecimals(realTimeInvariant)}</Typography>
-              </div>
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <Typography>Current Balance A:</Typography>
-                <Typography>{toFixedDecimals(realTimeBalanceA)}</Typography>
-              </div>
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <Typography>Current Balance B:</Typography>
-                <Typography>{toFixedDecimals(realTimeBalanceB)}</Typography>
-              </div>
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <Typography>Virtual Balance A:</Typography>
-                <Typography>
-                  {toFixedDecimals(realTimeVirtualBalances.virtualBalanceA)}
-                </Typography>
-              </div>
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <Typography>Virtual Balance B:</Typography>
-                <Typography>
-                  {toFixedDecimals(realTimeVirtualBalances.virtualBalanceB)}
-                </Typography>
-              </div>
-              <div style={{ marginTop: 16 }}>
-                <div
-                  style={{ display: "flex", justifyContent: "space-between" }}
-                >
-                  <Typography>Rate Max/Min:</Typography>
+                  <Typography>Virtual Balance B:</Typography>
                   <Typography>
-                    {toFixedDecimals(
-                      Math.pow(realTimeInvariant, 2) /
-                        (Math.pow(realTimeVirtualBalances.virtualBalanceA, 2) *
-                          Math.pow(realTimeVirtualBalances.virtualBalanceB, 2))
-                    )}
+                    {toFixedDecimals(currentVirtualBalances.virtualBalanceB)}
                   </Typography>
                 </div>
-                <div
-                  style={{ display: "flex", justifyContent: "space-between" }}
-                >
-                  <Typography style={{ color: "red" }}>Min Price A:</Typography>
-                  <Typography style={{ color: "red" }}>
-                    {toFixedDecimals(
-                      Math.pow(realTimeVirtualBalances.virtualBalanceB, 2) /
-                        realTimeInvariant
-                    )}
-                  </Typography>
-                </div>
-                <div
-                  style={{ display: "flex", justifyContent: "space-between" }}
-                >
-                  <Typography style={{ color: "blue" }}>
-                    Lower Margin Price A:
-                  </Typography>
-                  <Typography style={{ color: "blue" }}>
-                    {toFixedDecimals(
-                      realTimeInvariant / Math.pow(higherMargin, 2)
-                    )}
-                  </Typography>
-                </div>
-                <div
-                  style={{ display: "flex", justifyContent: "space-between" }}
-                >
-                  <Typography style={{ color: "green" }}>
-                    Current Price A:
-                  </Typography>
-                  <Typography style={{ color: "green" }}>
-                    {toFixedDecimals(
-                      (realTimeBalanceB +
-                        realTimeVirtualBalances.virtualBalanceB) /
-                        (realTimeBalanceA +
-                          realTimeVirtualBalances.virtualBalanceA)
-                    )}
-                  </Typography>
-                </div>
-                <div
-                  style={{ display: "flex", justifyContent: "space-between" }}
-                >
-                  <Typography style={{ color: "blue" }}>
-                    Upper Margin Price A:
-                  </Typography>
-                  <Typography style={{ color: "blue" }}>
-                    {toFixedDecimals(
-                      realTimeInvariant / Math.pow(lowerMargin, 2)
-                    )}
-                  </Typography>
-                </div>
-                <div
-                  style={{ display: "flex", justifyContent: "space-between" }}
-                >
-                  <Typography style={{ color: "red" }}>Max Price A:</Typography>
-                  <Typography style={{ color: "red" }}>
-                    {toFixedDecimals(
-                      realTimeInvariant /
-                        Math.pow(realTimeVirtualBalances.virtualBalanceA, 2)
-                    )}
-                  </Typography>
-                </div>
-              </div>
-            </AccordionDetails>
-          </Accordion>
-
-          <Accordion defaultExpanded>
-            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-              <Typography variant="h6">Price Ratio</Typography>
-            </AccordionSummary>
-            <AccordionDetails>
-              {simulationSeconds < endTime ? (
-                <>
-                  <Typography style={{ color: "green", fontWeight: "bold" }}>
-                    UPDATING RANGE
-                  </Typography>
+                <div style={{ marginTop: 16 }}>
                   <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      marginLeft: 10,
-                    }}
+                    style={{ display: "flex", justifyContent: "space-between" }}
                   >
-                    <Typography>Start Price Ratio:</Typography>
-                    <Typography>{toFixedDecimals(startPriceRatio)}</Typography>
+                    <Typography>Rate Max/Min:</Typography>
+                    <Typography>
+                      {toFixedDecimals(
+                        Math.pow(currentInvariant, 2) /
+                          (Math.pow(currentVirtualBalances.virtualBalanceA, 2) *
+                            Math.pow(currentVirtualBalances.virtualBalanceB, 2))
+                      )}
+                    </Typography>
                   </div>
                   <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      marginLeft: 10,
-                    }}
+                    style={{ display: "flex", justifyContent: "space-between" }}
+                  >
+                    <Typography style={{ color: "red" }}>
+                      Min Price A:
+                    </Typography>
+                    <Typography style={{ color: "red" }}>
+                      {toFixedDecimals(
+                        Math.pow(currentVirtualBalances.virtualBalanceB, 2) /
+                          currentInvariant
+                      )}
+                    </Typography>
+                  </div>
+                  <div
+                    style={{ display: "flex", justifyContent: "space-between" }}
+                  >
+                    <Typography style={{ color: "blue" }}>
+                      Lower Margin Price A:
+                    </Typography>
+                    <Typography style={{ color: "blue" }}>
+                      {toFixedDecimals(
+                        currentInvariant / Math.pow(higherMargin, 2)
+                      )}
+                    </Typography>
+                  </div>
+                  <div
+                    style={{ display: "flex", justifyContent: "space-between" }}
+                  >
+                    <Typography style={{ color: "green" }}>
+                      Current Price A:
+                    </Typography>
+                    <Typography style={{ color: "green" }}>
+                      {toFixedDecimals(
+                        (currentBalanceB +
+                          currentVirtualBalances.virtualBalanceB) /
+                          (currentBalanceA +
+                            currentVirtualBalances.virtualBalanceA)
+                      )}
+                    </Typography>
+                  </div>
+                  <div
+                    style={{ display: "flex", justifyContent: "space-between" }}
+                  >
+                    <Typography style={{ color: "blue" }}>
+                      Upper Margin Price A:
+                    </Typography>
+                    <Typography style={{ color: "blue" }}>
+                      {toFixedDecimals(
+                        currentInvariant / Math.pow(lowerMargin, 2)
+                      )}
+                    </Typography>
+                  </div>
+                  <div
+                    style={{ display: "flex", justifyContent: "space-between" }}
+                  >
+                    <Typography style={{ color: "red" }}>
+                      Max Price A:
+                    </Typography>
+                    <Typography style={{ color: "red" }}>
+                      {toFixedDecimals(
+                        currentInvariant /
+                          Math.pow(currentVirtualBalances.virtualBalanceA, 2)
+                      )}
+                    </Typography>
+                  </div>
+                </div>
+              </AccordionDetails>
+            </Accordion>
+
+            <Accordion defaultExpanded>
+              <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                <Typography variant="h6">Real-Time Pool State</Typography>
+              </AccordionSummary>
+              <AccordionDetails>
+                <div
+                  style={{ display: "flex", justifyContent: "space-between" }}
+                >
+                  <Typography>Invariant:</Typography>
+                  <Typography>{toFixedDecimals(realTimeInvariant)}</Typography>
+                </div>
+                <div
+                  style={{ display: "flex", justifyContent: "space-between" }}
+                >
+                  <Typography>Current Balance A:</Typography>
+                  <Typography>{toFixedDecimals(realTimeBalanceA)}</Typography>
+                </div>
+                <div
+                  style={{ display: "flex", justifyContent: "space-between" }}
+                >
+                  <Typography>Current Balance B:</Typography>
+                  <Typography>{toFixedDecimals(realTimeBalanceB)}</Typography>
+                </div>
+                <div
+                  style={{ display: "flex", justifyContent: "space-between" }}
+                >
+                  <Typography>Virtual Balance A:</Typography>
+                  <Typography>
+                    {toFixedDecimals(realTimeVirtualBalances.virtualBalanceA)}
+                  </Typography>
+                </div>
+                <div
+                  style={{ display: "flex", justifyContent: "space-between" }}
+                >
+                  <Typography>Virtual Balance B:</Typography>
+                  <Typography>
+                    {toFixedDecimals(realTimeVirtualBalances.virtualBalanceB)}
+                  </Typography>
+                </div>
+                <div style={{ marginTop: 16 }}>
+                  <div
+                    style={{ display: "flex", justifyContent: "space-between" }}
+                  >
+                    <Typography>Rate Max/Min:</Typography>
+                    <Typography>
+                      {toFixedDecimals(
+                        Math.pow(realTimeInvariant, 2) /
+                          (Math.pow(
+                            realTimeVirtualBalances.virtualBalanceA,
+                            2
+                          ) *
+                            Math.pow(
+                              realTimeVirtualBalances.virtualBalanceB,
+                              2
+                            ))
+                      )}
+                    </Typography>
+                  </div>
+                  <div
+                    style={{ display: "flex", justifyContent: "space-between" }}
+                  >
+                    <Typography style={{ color: "red" }}>
+                      Min Price A:
+                    </Typography>
+                    <Typography style={{ color: "red" }}>
+                      {toFixedDecimals(
+                        Math.pow(realTimeVirtualBalances.virtualBalanceB, 2) /
+                          realTimeInvariant
+                      )}
+                    </Typography>
+                  </div>
+                  <div
+                    style={{ display: "flex", justifyContent: "space-between" }}
+                  >
+                    <Typography style={{ color: "blue" }}>
+                      Lower Margin Price A:
+                    </Typography>
+                    <Typography style={{ color: "blue" }}>
+                      {toFixedDecimals(
+                        realTimeInvariant / Math.pow(higherMargin, 2)
+                      )}
+                    </Typography>
+                  </div>
+                  <div
+                    style={{ display: "flex", justifyContent: "space-between" }}
+                  >
+                    <Typography style={{ color: "green" }}>
+                      Current Price A:
+                    </Typography>
+                    <Typography style={{ color: "green" }}>
+                      {toFixedDecimals(
+                        (realTimeBalanceB +
+                          realTimeVirtualBalances.virtualBalanceB) /
+                          (realTimeBalanceA +
+                            realTimeVirtualBalances.virtualBalanceA)
+                      )}
+                    </Typography>
+                  </div>
+                  <div
+                    style={{ display: "flex", justifyContent: "space-between" }}
+                  >
+                    <Typography style={{ color: "blue" }}>
+                      Upper Margin Price A:
+                    </Typography>
+                    <Typography style={{ color: "blue" }}>
+                      {toFixedDecimals(
+                        realTimeInvariant / Math.pow(lowerMargin, 2)
+                      )}
+                    </Typography>
+                  </div>
+                  <div
+                    style={{ display: "flex", justifyContent: "space-between" }}
+                  >
+                    <Typography style={{ color: "red" }}>
+                      Max Price A:
+                    </Typography>
+                    <Typography style={{ color: "red" }}>
+                      {toFixedDecimals(
+                        realTimeInvariant /
+                          Math.pow(realTimeVirtualBalances.virtualBalanceA, 2)
+                      )}
+                    </Typography>
+                  </div>
+                </div>
+              </AccordionDetails>
+            </Accordion>
+
+            <Accordion defaultExpanded>
+              <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                <Typography variant="h6">Price Ratio</Typography>
+              </AccordionSummary>
+              <AccordionDetails>
+                {simulationSeconds < endTime ? (
+                  <>
+                    <Typography style={{ color: "green", fontWeight: "bold" }}>
+                      UPDATING RANGE
+                    </Typography>
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        marginLeft: 10,
+                      }}
+                    >
+                      <Typography>Start Price Ratio:</Typography>
+                      <Typography>
+                        {toFixedDecimals(startPriceRatio)}
+                      </Typography>
+                    </div>
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        marginLeft: 10,
+                      }}
+                    >
+                      <Typography>Current Price Ratio:</Typography>
+                      <Typography>{toFixedDecimals(priceRatio)}</Typography>
+                    </div>
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        marginLeft: 10,
+                      }}
+                    >
+                      <Typography>Target Price Ratio:</Typography>
+                      <Typography>
+                        {toFixedDecimals(targetPriceRatio)}
+                      </Typography>
+                    </div>
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        marginLeft: 10,
+                      }}
+                    >
+                      <Typography>End Time (s):</Typography>
+                      <Typography>{endTime}</Typography>
+                    </div>
+                  </>
+                ) : (
+                  <div
+                    style={{ display: "flex", justifyContent: "space-between" }}
                   >
                     <Typography>Current Price Ratio:</Typography>
                     <Typography>{toFixedDecimals(priceRatio)}</Typography>
                   </div>
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      marginLeft: 10,
-                    }}
-                  >
-                    <Typography>Target Price Ratio:</Typography>
-                    <Typography>{toFixedDecimals(targetPriceRatio)}</Typography>
-                  </div>
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      marginLeft: 10,
-                    }}
-                  >
-                    <Typography>End Time (s):</Typography>
-                    <Typography>{endTime}</Typography>
-                  </div>
-                </>
-              ) : (
+                )}
                 <div
                   style={{ display: "flex", justifyContent: "space-between" }}
                 >
-                  <Typography>Current Price Ratio:</Typography>
+                  <Typography>Pool Centeredness:</Typography>
+                  <Typography>{toFixedDecimals(poolCenteredness)}</Typography>
+                </div>
+                <div
+                  style={{ display: "flex", justifyContent: "space-between" }}
+                >
+                  <Typography>Status:</Typography>
+                  <Typography
+                    style={{
+                      color: poolCenteredness > margin / 100 ? "green" : "red",
+                      fontWeight: "bold",
+                    }}
+                  >
+                    {poolCenteredness > margin / 100
+                      ? "IN RANGE"
+                      : "OUT OF RANGE"}
+                  </Typography>
+                </div>
+                <div
+                  style={{ display: "flex", justifyContent: "space-between" }}
+                >
+                  <Typography>Out of Range time:</Typography>
+                  <Typography>{formatTime(outOfRangeTime)}</Typography>
+                </div>
+              </AccordionDetails>
+            </Accordion>
+
+            <Accordion defaultExpanded>
+              <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                <Typography variant="h6">Initial Values</Typography>
+              </AccordionSummary>
+              <AccordionDetails>
+                <div
+                  style={{ display: "flex", justifyContent: "space-between" }}
+                >
+                  <Typography>Initial Balance A:</Typography>
+                  <Typography>{toFixedDecimals(initialBalanceA)}</Typography>
+                </div>
+                <div
+                  style={{ display: "flex", justifyContent: "space-between" }}
+                >
+                  <Typography>Initial Balance B:</Typography>
+                  <Typography>{toFixedDecimals(initialBalanceB)}</Typography>
+                </div>
+                <div
+                  style={{ display: "flex", justifyContent: "space-between" }}
+                >
+                  <Typography>Min Price A:</Typography>
+                  <Typography>{toFixedDecimals(minPrice)}</Typography>
+                </div>
+                <div
+                  style={{ display: "flex", justifyContent: "space-between" }}
+                >
+                  <Typography>Target Price A:</Typography>
+                  <Typography>{toFixedDecimals(targetPrice)}</Typography>
+                </div>
+                <div
+                  style={{ display: "flex", justifyContent: "space-between" }}
+                >
+                  <Typography>Max Price A:</Typography>
+                  <Typography>{toFixedDecimals(maxPrice)}</Typography>
+                </div>
+                <div
+                  style={{ display: "flex", justifyContent: "space-between" }}
+                >
+                  <Typography>Price Ratio:</Typography>
                   <Typography>{toFixedDecimals(priceRatio)}</Typography>
                 </div>
-              )}
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <Typography>Pool Centeredness:</Typography>
-                <Typography>{toFixedDecimals(poolCenteredness)}</Typography>
-              </div>
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <Typography>Status:</Typography>
-                <Typography
-                  style={{
-                    color: poolCenteredness > margin / 100 ? "green" : "red",
-                    fontWeight: "bold",
-                  }}
+                <div
+                  style={{ display: "flex", justifyContent: "space-between" }}
                 >
-                  {poolCenteredness > margin / 100
-                    ? "IN RANGE"
-                    : "OUT OF RANGE"}
-                </Typography>
-              </div>
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <Typography>Out of Range time:</Typography>
-                <Typography>{formatTime(outOfRangeTime)}</Typography>
-              </div>
-            </AccordionDetails>
-          </Accordion>
-
-          <Accordion defaultExpanded>
-            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-              <Typography variant="h6">Initial Values</Typography>
-            </AccordionSummary>
-            <AccordionDetails>
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <Typography>Initial Balance A:</Typography>
-                <Typography>{toFixedDecimals(initialBalanceA)}</Typography>
-              </div>
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <Typography>Initial Balance B:</Typography>
-                <Typography>{toFixedDecimals(initialBalanceB)}</Typography>
-              </div>
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <Typography>Min Price A:</Typography>
-                <Typography>{toFixedDecimals(minPrice)}</Typography>
-              </div>
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <Typography>Target Price A:</Typography>
-                <Typography>{toFixedDecimals(targetPrice)}</Typography>
-              </div>
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <Typography>Max Price A:</Typography>
-                <Typography>{toFixedDecimals(maxPrice)}</Typography>
-              </div>
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <Typography>Price Ratio:</Typography>
-                <Typography>{toFixedDecimals(priceRatio)}</Typography>
-              </div>
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <Typography>Margin:</Typography>
-                <Typography>{toFixedDecimals(margin)}%</Typography>
-              </div>
-            </AccordionDetails>
-          </Accordion>
-        </Grid>
+                  <Typography>Margin:</Typography>
+                  <Typography>{toFixedDecimals(margin)}%</Typography>
+                </div>
+              </AccordionDetails>
+            </Accordion>
+          </Grid>
+        </Fade>
       </Grid>
     </Container>
   );
