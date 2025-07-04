@@ -1,10 +1,10 @@
-import { Paper } from "@mui/material";
-import { Button } from "@mui/material";
-import { PlayArrow, Pause, FastForward } from "@mui/icons-material";
-import { Typography } from "@mui/material";
+import { Paper } from '@mui/material';
+import { Button } from '@mui/material';
+import { PlayArrow, Pause, FastForward } from '@mui/icons-material';
+import { Typography } from '@mui/material';
 
-import { formatTime } from "../utils/Time";
-import { useTimer } from "../contexts/TimerContext";
+import { formatTime } from '../utils/Time';
+import { useTimer } from '../contexts/TimerContext';
 
 export default function Timer() {
   const {
@@ -28,14 +28,14 @@ export default function Timer() {
     >
       <div
         style={{
-          display: "flex",
-          alignItems: "center",
+          display: 'flex',
+          alignItems: 'center',
           gap: 16,
           marginBottom: 16,
         }}
       >
         <Button
-          variant="contained"
+          variant='contained'
           onClick={() => {
             setIsPlaying(!isPlaying);
           }}
@@ -48,9 +48,9 @@ export default function Timer() {
           startIcon={isPlaying ? <Pause /> : <PlayArrow />}
         />
         <Button
-          variant="contained"
+          variant='contained'
           onClick={() => {
-            setSpeedMultiplier((prev) => (prev * 10 > 1000 ? 1 : prev * 10));
+            setSpeedMultiplier(prev => (prev * 10 > 1000 ? 1 : prev * 10));
           }}
           startIcon={<FastForward />}
         >
@@ -58,11 +58,11 @@ export default function Timer() {
         </Button>
         <Typography
           style={{
-            fontWeight: "bold",
-            color: isPlaying ? "green" : "red",
+            fontWeight: 'bold',
+            color: isPlaying ? 'green' : 'red',
           }}
         >
-          Simulation time: {formatTime(simulationSeconds)} - Block:{" "}
+          Simulation time: {formatTime(simulationSeconds)} - Block:{' '}
           {blockNumber}
         </Typography>
       </div>

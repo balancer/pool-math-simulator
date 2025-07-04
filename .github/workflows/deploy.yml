@@ -1,0 +1,46 @@
+name: Deploy to Firebase
+
+on:
+  push:
+    branches: [main, master]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: ".nvmrc"
+          cache: "npm"
+          cache-dependency-path: |
+            client/package-lock.json
+            functions/package-lock.json
+
+      - name: Install client dependencies
+        working-directory: ./client
+        run: npm ci
+
+      - name: Build client
+        working-directory: ./client
+        run: npm run build
+
+      - name: Install functions dependencies
+        working-directory: ./functions
+        run: npm ci
+
+      - name: Build functions
+        working-directory: ./functions
+        run: npm run build
+
+      - name: Install Firebase CLI
+        run: npm install -g firebase-tools
+
+      - name: Deploy to Firebase
+        run: firebase deploy --token "${{ secrets.FIREBASE_TOKEN }}"
+        env:
+          FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}

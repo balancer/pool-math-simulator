@@ -1,4 +1,4 @@
-import * as WeightedMath from "../weighted-pool/WeightedMath";
+import * as WeightedMath from '../weighted-pool/WeightedMath';
 
 const timeFix = 12464900; // Using the same constant as the Contract. The full value is 12464935.015039.
 
@@ -73,7 +73,7 @@ export function calculateOutGivenIn(params: {
     params.balanceB + params.virtualBalanceB,
   ];
 
-  if (params.swapTokenIn === "Token A") {
+  if (params.swapTokenIn === 'Token A') {
     return WeightedMath.calculateOutGivenIn({
       balances: balances,
       weights: [0.5, 0.5],
@@ -119,7 +119,7 @@ export function calculateBalancesAfterSwapIn(params: {
 
   let newBalanceA: number;
   let newBalanceB: number;
-  if (params.swapTokenIn === "Token A") {
+  if (params.swapTokenIn === 'Token A') {
     newBalanceA = params.balanceA + amountIn;
     newBalanceB = params.balanceB - amountOut;
 

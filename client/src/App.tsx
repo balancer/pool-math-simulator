@@ -1,4 +1,4 @@
-import React from "react";
+import React from 'react';
 import {
   BrowserRouter as Router,
   Route,
@@ -6,11 +6,11 @@ import {
   Link,
   useLocation,
   Navigate,
-} from "react-router-dom";
-import ReClamm from "./pool-types/reclamm/ReClamm";
-import StableSurge from "./pool-types/stable-surge/StableSurge";
-import { TimerProvider } from "./contexts/TimerContext";
-import styled from "styled-components";
+} from 'react-router-dom';
+import ReClamm from './pool-types/reclamm/ReClamm';
+import StableSurge from './pool-types/stable-surge/StableSurge';
+import { TimerProvider } from './contexts/TimerContext';
+import styled from 'styled-components';
 
 // Styled components for the menus
 const TopNav = styled.nav`
@@ -73,8 +73,8 @@ const CenterMenu = styled.div`
 // Home component for the start menu
 const Home = () => (
   <CenterMenu>
-    <Link to="/reclamm">ReClamm</Link>
-    <Link to="/stable-surge">Stable Surge</Link>
+    <Link to='/reclamm'>ReClamm</Link>
+    <Link to='/stable-surge'>Stable Surge</Link>
   </CenterMenu>
 );
 
@@ -84,19 +84,19 @@ const Navigation = () => {
 
   return (
     <TopNav>
-      <Logo to="/">
-        <img src="/img/balancer.png" alt="Logo" />
+      <Logo to='/'>
+        <img src='/img/balancer.png' alt='Logo' />
       </Logo>
       <NavLinks>
         <Link
-          to="/reclamm"
-          className={location.pathname === "/reclamm" ? "active" : ""}
+          to='/reclamm'
+          className={location.pathname === '/reclamm' ? 'active' : ''}
         >
           ReClamm
         </Link>
         <Link
-          to="/stable-surge"
-          className={location.pathname === "/stable-surge" ? "active" : ""}
+          to='/stable-surge'
+          className={location.pathname === '/stable-surge' ? 'active' : ''}
         >
           Stable Surge
         </Link>
@@ -111,11 +111,11 @@ function App() {
       <Router>
         <Navigation />
         <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/reclamm" element={<ReClamm />} />
-          <Route path="/acl-amm" element={<Navigate to="/reclamm" />} />
-          <Route path="/stable-surge" element={<StableSurge />} />
-          <Route path="*" element={<Navigate to="/" />} />
+          <Route path='/' element={<Home />} />
+          <Route path='/reclamm' element={<ReClamm />} />
+          <Route path='/acl-amm' element={<Navigate to='/reclamm' />} />
+          <Route path='/stable-surge' element={<StableSurge />} />
+          <Route path='*' element={<Navigate to='/' />} />
         </Routes>
       </Router>
     </TimerProvider>
