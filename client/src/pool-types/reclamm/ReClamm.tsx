@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect } from 'react';
 import {
   TextField,
   Grid,
@@ -12,9 +12,9 @@ import {
   Switch,
   FormControlLabel,
   Fade,
-} from "@mui/material";
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-import { ReClammChart } from "./ReClammChart";
+} from '@mui/material';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import { ReClammChart } from './ReClammChart';
 import {
   calculateLowerMargin,
   calculateOutGivenIn,
@@ -23,14 +23,14 @@ import {
   calculateBalancesAfterSwapIn,
   recalculateVirtualBalances,
   calculateInvariant,
-} from "./ReClammMath";
-import { MIN_SWAP, NETWORKS } from "./constants";
+} from './ReClammMath';
+import { MIN_SWAP, NETWORKS } from './constants';
 
-import { formatTime } from "../../utils/Time";
-import { toFixedDecimals } from "../../utils/ToFixedLib";
-import Timer from "../../components/Timer";
-import { useTimer } from "../../contexts/TimerContext";
-import { ReClammPriceBar } from "./ReClammPriceBar";
+import { formatTime } from '../../utils/Time';
+import { toFixedDecimals } from '../../utils/ToFixedLib';
+import Timer from '../../components/Timer';
+import { useTimer } from '../../contexts/TimerContext';
+import { ReClammPriceBar } from './ReClammPriceBar';
 
 const defaultInitialBalanceA = 1000;
 const defaultInitialBalanceB = 2000;
@@ -106,7 +106,7 @@ export default function ReClamm() {
   });
 
   // Swap variables
-  const [swapTokenIn, setSwapTokenIn] = useState("Token A");
+  const [swapTokenIn, setSwapTokenIn] = useState('Token A');
   const [swapAmountIn, setSwapAmountIn] = useState<number>(defaultSwapAmountIn);
 
   // Price Ratio Variables
@@ -129,7 +129,7 @@ export default function ReClamm() {
     useState<number>(12);
 
   // Add new state for error message
-  const [endTimeError, setEndTimeError] = useState<string>("");
+  const [endTimeError, setEndTimeError] = useState<string>('');
 
   const [currentBalanceA, setCurrentBalanceA] = useState<number>(
     defaultInitialBalanceA
@@ -145,11 +145,11 @@ export default function ReClamm() {
   const [lastSwapTime, setLastSwapTime] = useState<number>(0);
 
   const [targetPriceRatioError, setTargetPriceRatioError] =
-    useState<string>("");
+    useState<string>('');
 
-  const [network, setNetwork] = useState<string>("base-mainnet");
+  const [network, setNetwork] = useState<string>('base-mainnet');
   const [address, setAddress] = useState<string>(
-    "0x7dc81fb7e93cdde7754bff7f55428226bd9cef7b"
+    '0x7dc81fb7e93cdde7754bff7f55428226bd9cef7b'
   );
 
   // Add new state for LP fee percentage
@@ -206,7 +206,7 @@ export default function ReClamm() {
 
     // Check if amount out exceeds available balance
     const relevantBalance =
-      swapTokenIn === "Token A"
+      swapTokenIn === 'Token A'
         ? realTimeBalanceB - MIN_SWAP
         : realTimeBalanceA - MIN_SWAP;
     return {
@@ -300,7 +300,7 @@ export default function ReClamm() {
     if (isPlaying) {
       intervalId = setInterval(() => {
         setSimulationSeconds(
-          (prev) => prev + speedMultiplier / (1000 / tickMilliseconds)
+          prev => prev + speedMultiplier / (1000 / tickMilliseconds)
         );
       }, tickMilliseconds);
     }
@@ -323,7 +323,7 @@ export default function ReClamm() {
       return;
     }
     setSimulationSecondsLastTick(simulationSeconds);
-    setBlockNumber((prev) => prev + 1);
+    setBlockNumber(prev => prev + 1);
 
     const { newVirtualBalances, newPriceRatio } = recalculateVirtualBalances({
       balanceA: realTimeBalanceA,
@@ -359,7 +359,7 @@ export default function ReClamm() {
         setOutOfRangeTime(0);
       } else {
         setOutOfRangeTime(
-          (prev) => prev + (simulationSeconds - lastRangeCheckTime)
+          prev => prev + (simulationSeconds - lastRangeCheckTime)
         );
       }
     } else {
@@ -416,19 +416,19 @@ export default function ReClamm() {
 
   const handleUpdatePriceRatio = async () => {
     if (inputEndTime < simulationSeconds) {
-      setEndTimeError("End time >= Simulation Time");
+      setEndTimeError('End time >= Simulation Time');
       return;
     }
 
     if (inputTargetPriceRatio < 1.1 || inputTargetPriceRatio > 1000) {
       setTargetPriceRatioError(
-        "Target price ratio must be between 1.1 and 1000"
+        'Target price ratio must be between 1.1 and 1000'
       );
       return;
     }
 
-    setEndTimeError("");
-    setTargetPriceRatioError("");
+    setEndTimeError('');
+    setTargetPriceRatioError('');
     setStartPriceRatio(priceRatio);
     setTargetPriceRatio(inputTargetPriceRatio);
     setStartTime(simulationSeconds);
@@ -445,7 +445,7 @@ export default function ReClamm() {
     let newBalanceA = realTimeBalanceA;
     let newBalanceB = realTimeBalanceB;
 
-    if (swapTokenIn === "Token A") {
+    if (swapTokenIn === 'Token A') {
       newBalanceA += feeAmount;
     } else {
       newBalanceB += feeAmount;
@@ -520,7 +520,7 @@ export default function ReClamm() {
     let newBalanceA = currentBalanceA;
     let newBalanceB = currentBalanceB;
 
-    if (swapTokenIn === "Token A") {
+    if (swapTokenIn === 'Token A') {
       newBalanceA += feeAmount;
     } else {
       newBalanceB += feeAmount;
@@ -649,16 +649,16 @@ export default function ReClamm() {
             control={
               <Switch
                 checked={debugMode}
-                onChange={(e) => setDebugMode(e.target.checked)}
-                color="primary"
+                onChange={e => setDebugMode(e.target.checked)}
+                color='primary'
               />
             }
-            label="Debug Mode"
+            label='Debug Mode'
           />
           {debugMode && (
             <Typography
-              variant="body2"
-              color="textSecondary"
+              variant='body2'
+              color='textSecondary'
               style={{ marginTop: 8 }}
             >
               Debug mode is enabled. Additional logging and detailed information
@@ -669,22 +669,22 @@ export default function ReClamm() {
           {/* Load Real Pool Section */}
           <Accordion>
             <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-              <Typography variant="h6">Load Real Pool</Typography>
+              <Typography variant='h6'>Load Real Pool</Typography>
             </AccordionSummary>
             <AccordionDetails>
               <TextField
                 select
-                label="Network"
+                label='Network'
                 fullWidth
-                margin="normal"
+                margin='normal'
                 value={network}
-                onChange={(e) => setNetwork(e.target.value)}
+                onChange={e => setNetwork(e.target.value)}
                 SelectProps={{
                   native: true,
                 }}
               >
                 {NETWORKS.sort((a, b) => a.name.localeCompare(b.name)).map(
-                  (n) => (
+                  n => (
                     <option key={n.network} value={n.network}>
                       {n.name}
                     </option>
@@ -692,15 +692,15 @@ export default function ReClamm() {
                 )}
               </TextField>
               <TextField
-                label="Address"
-                type="text"
+                label='Address'
+                type='text'
                 fullWidth
-                margin="normal"
+                margin='normal'
                 value={address}
-                onChange={(e) => setAddress(e.target.value)}
+                onChange={e => setAddress(e.target.value)}
               />
               <Button
-                variant="contained"
+                variant='contained'
                 fullWidth
                 onClick={handleLoadPool}
                 style={{ marginTop: 16 }}
@@ -711,13 +711,13 @@ export default function ReClamm() {
           </Accordion>
           <Accordion>
             <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-              <Typography variant="h6">Create and Initialize</Typography>
+              <Typography variant='h6'>Create and Initialize</Typography>
             </AccordionSummary>
             <AccordionDetails>
               <Typography
-                variant="subtitle1"
+                variant='subtitle1'
                 style={{
-                  fontWeight: "bold",
+                  fontWeight: 'bold',
                 }}
               >
                 Create Parameters
@@ -725,64 +725,62 @@ export default function ReClamm() {
               <Grid container spacing={1}>
                 <Grid item xs={6}>
                   <TextField
-                    label="Minimum Price"
-                    type="number"
+                    label='Minimum Price'
+                    type='number'
                     fullWidth
-                    margin="normal"
+                    margin='normal'
                     value={inputMinPrice}
-                    onChange={(e) => setInputMinPrice(Number(e.target.value))}
+                    onChange={e => setInputMinPrice(Number(e.target.value))}
                   />
                 </Grid>
                 <Grid item xs={6}>
                   <TextField
-                    label="Maximum Price"
-                    type="number"
+                    label='Maximum Price'
+                    type='number'
                     fullWidth
-                    margin="normal"
+                    margin='normal'
                     value={inputMaxPrice}
-                    onChange={(e) => setInputMaxPrice(Number(e.target.value))}
+                    onChange={e => setInputMaxPrice(Number(e.target.value))}
                   />
                 </Grid>
                 <Grid item xs={6}>
                   <TextField
-                    label="Target Price"
-                    type="number"
+                    label='Target Price'
+                    type='number'
                     fullWidth
-                    margin="normal"
+                    margin='normal'
                     value={inputTargetPrice}
-                    onChange={(e) =>
-                      setInputTargetPrice(Number(e.target.value))
-                    }
+                    onChange={e => setInputTargetPrice(Number(e.target.value))}
                   />
                 </Grid>
                 <Grid item xs={6}>
                   <TextField
-                    label="Margin (%)"
-                    type="number"
+                    label='Margin (%)'
+                    type='number'
                     fullWidth
-                    margin="normal"
+                    margin='normal'
                     value={inputMargin}
-                    onChange={(e) => setInputMargin(Number(e.target.value))}
+                    onChange={e => setInputMargin(Number(e.target.value))}
                   />
                 </Grid>
                 <Grid item xs={12}>
                   <TextField
-                    label="Price Shift Daily Rate (%)"
-                    type="number"
+                    label='Price Shift Daily Rate (%)'
+                    type='number'
                     fullWidth
-                    margin="normal"
+                    margin='normal'
                     value={priceShiftDailyRate}
-                    onChange={(e) =>
+                    onChange={e =>
                       setPriceShiftDailyRate(Number(e.target.value))
                     }
                   />
                 </Grid>
               </Grid>
               <Typography
-                variant="subtitle1"
+                variant='subtitle1'
                 style={{
                   marginTop: 8,
-                  fontWeight: "bold",
+                  fontWeight: 'bold',
                 }}
               >
                 Initial Balances
@@ -790,35 +788,35 @@ export default function ReClamm() {
               <Grid container spacing={1}>
                 <Grid item xs={12}>
                   <TextField
-                    label="Initial Balance A"
-                    type="number"
+                    label='Initial Balance A'
+                    type='number'
                     fullWidth
-                    margin="normal"
+                    margin='normal'
                     value={inputBalanceA}
-                    onChange={(e) => setInputBalanceA(Number(e.target.value))}
+                    onChange={e => setInputBalanceA(Number(e.target.value))}
                   />
                 </Grid>
               </Grid>
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <Typography>Ideal Proportion:</Typography>
                 <Typography>
                   {toFixedDecimals(idealBalanceB / idealBalanceA)}
                 </Typography>
               </div>
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <Typography>Initial Balance B:</Typography>
                 <Typography>{toFixedDecimals(inputBalanceB)}</Typography>
               </div>
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <Typography>Virtual Balance A:</Typography>
                 <Typography>{toFixedDecimals(inputVirtualBalanceA)}</Typography>
               </div>
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <Typography>Virtual Balance B:</Typography>
                 <Typography>{toFixedDecimals(inputVirtualBalanceB)}</Typography>
               </div>
               <Button
-                variant="contained"
+                variant='contained'
                 fullWidth
                 onClick={handleInitialization}
                 disabled={
@@ -838,61 +836,61 @@ export default function ReClamm() {
 
           <Accordion>
             <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-              <Typography variant="h6">Swap Exact In</Typography>
+              <Typography variant='h6'>Swap Exact In</Typography>
             </AccordionSummary>
             <AccordionDetails>
               <TextField
                 select
-                label="Token In"
+                label='Token In'
                 fullWidth
-                margin="normal"
+                margin='normal'
                 value={swapTokenIn}
-                onChange={(e) => setSwapTokenIn(e.target.value)}
+                onChange={e => setSwapTokenIn(e.target.value)}
                 SelectProps={{
                   native: true,
                 }}
               >
-                <option value="Token A">Token A</option>
-                <option value="Token B">Token B</option>
+                <option value='Token A'>Token A</option>
+                <option value='Token B'>Token B</option>
               </TextField>
               <TextField
-                label="Amount In"
-                type="number"
+                label='Amount In'
+                type='number'
                 fullWidth
-                margin="normal"
+                margin='normal'
                 value={swapAmountIn}
-                onChange={(e) => setSwapAmountIn(Number(e.target.value))}
+                onChange={e => setSwapAmountIn(Number(e.target.value))}
               />
               <TextField
-                label="LP Fee %"
-                type="number"
+                label='LP Fee %'
+                type='number'
                 fullWidth
-                margin="normal"
+                margin='normal'
                 value={lpFeePercent}
-                onChange={(e) => setLpFeePercent(Number(e.target.value))}
+                onChange={e => setLpFeePercent(Number(e.target.value))}
               />
               <Typography
                 style={{
                   marginTop: 8,
                   marginBottom: 8,
                   color: calculatedSwapAmountOut.exceedsBalance
-                    ? "red"
-                    : "inherit",
+                    ? 'red'
+                    : 'inherit',
                 }}
               >
-                Amount Out {swapTokenIn === "Token A" ? "B" : "A"}:{" "}
+                Amount Out {swapTokenIn === 'Token A' ? 'B' : 'A'}:{' '}
                 {calculatedSwapAmountOut.amount > 0
                   ? toFixedDecimals(calculatedSwapAmountOut.amount)
-                  : "0"}
+                  : '0'}
                 {calculatedSwapAmountOut.exceedsBalance && (
-                  <div style={{ fontSize: "0.8em" }}>
-                    Token {swapTokenIn === "Token A" ? "B" : "A"} Amount in the
+                  <div style={{ fontSize: '0.8em' }}>
+                    Token {swapTokenIn === 'Token A' ? 'B' : 'A'} Amount in the
                     pool must be at least {MIN_SWAP}.
                   </div>
                 )}
               </Typography>
               <Button
-                variant="contained"
+                variant='contained'
                 fullWidth
                 onClick={handleSwap}
                 disabled={calculatedSwapAmountOut.exceedsBalance}
@@ -904,18 +902,16 @@ export default function ReClamm() {
           </Accordion>
           <Accordion>
             <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-              <Typography variant="h6">Update Price Ratio</Typography>
+              <Typography variant='h6'>Update Price Ratio</Typography>
             </AccordionSummary>
             <AccordionDetails>
               <TextField
-                label="Target Price Ratio"
-                type="number"
+                label='Target Price Ratio'
+                type='number'
                 fullWidth
-                margin="normal"
+                margin='normal'
                 value={inputTargetPriceRatio}
-                onChange={(e) =>
-                  setInputTargetPriceRatio(Number(e.target.value))
-                }
+                onChange={e => setInputTargetPriceRatio(Number(e.target.value))}
                 error={!!targetPriceRatioError}
                 helperText={targetPriceRatioError}
               />
@@ -923,17 +919,17 @@ export default function ReClamm() {
                 Current Time: {simulationSeconds.toFixed(0)}
               </Typography>
               <TextField
-                label="End Time (in seconds)"
-                type="number"
+                label='End Time (in seconds)'
+                type='number'
                 fullWidth
-                margin="normal"
+                margin='normal'
                 value={inputEndTime}
-                onChange={(e) => setInputEndTime(Number(e.target.value))}
+                onChange={e => setInputEndTime(Number(e.target.value))}
                 error={!!endTimeError}
                 helperText={endTimeError}
               />
               <Button
-                variant="contained"
+                variant='contained'
                 fullWidth
                 onClick={handleUpdatePriceRatio}
                 style={{ marginTop: 16 }}
@@ -960,13 +956,13 @@ export default function ReClamm() {
             <Paper
               style={{
                 padding: 16,
-                textAlign: "center",
+                textAlign: 'center',
                 opacity: debugMode ? 1 : 0,
-                transition: "opacity 300ms ease-in-out",
-                pointerEvents: debugMode ? "auto" : "none",
+                transition: 'opacity 300ms ease-in-out',
+                pointerEvents: debugMode ? 'auto' : 'none',
               }}
             >
-              <div style={{ width: "100%", height: 600 }}>
+              <div style={{ width: '100%', height: 600 }}>
                 <ReClammChart
                   realTimeBalanceA={realTimeBalanceA}
                   realTimeBalanceB={realTimeBalanceB}
@@ -989,29 +985,29 @@ export default function ReClamm() {
           <Grid item xs={3}>
             <Accordion defaultExpanded>
               <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                <Typography variant="h6">Current Pool State</Typography>
+                <Typography variant='h6'>Current Pool State</Typography>
               </AccordionSummary>
               <AccordionDetails>
                 <div
-                  style={{ display: "flex", justifyContent: "space-between" }}
+                  style={{ display: 'flex', justifyContent: 'space-between' }}
                 >
                   <Typography>Invariant:</Typography>
                   <Typography>{toFixedDecimals(currentInvariant)}</Typography>
                 </div>
                 <div
-                  style={{ display: "flex", justifyContent: "space-between" }}
+                  style={{ display: 'flex', justifyContent: 'space-between' }}
                 >
                   <Typography>Current Balance A:</Typography>
                   <Typography>{toFixedDecimals(currentBalanceA)}</Typography>
                 </div>
                 <div
-                  style={{ display: "flex", justifyContent: "space-between" }}
+                  style={{ display: 'flex', justifyContent: 'space-between' }}
                 >
                   <Typography>Current Balance B:</Typography>
                   <Typography>{toFixedDecimals(currentBalanceB)}</Typography>
                 </div>
                 <div
-                  style={{ display: "flex", justifyContent: "space-between" }}
+                  style={{ display: 'flex', justifyContent: 'space-between' }}
                 >
                   <Typography>Virtual Balance A:</Typography>
                   <Typography>
@@ -1019,7 +1015,7 @@ export default function ReClamm() {
                   </Typography>
                 </div>
                 <div
-                  style={{ display: "flex", justifyContent: "space-between" }}
+                  style={{ display: 'flex', justifyContent: 'space-between' }}
                 >
                   <Typography>Virtual Balance B:</Typography>
                   <Typography>
@@ -1028,7 +1024,7 @@ export default function ReClamm() {
                 </div>
                 <div style={{ marginTop: 16 }}>
                   <div
-                    style={{ display: "flex", justifyContent: "space-between" }}
+                    style={{ display: 'flex', justifyContent: 'space-between' }}
                   >
                     <Typography>Rate Max/Min:</Typography>
                     <Typography>
@@ -1040,12 +1036,12 @@ export default function ReClamm() {
                     </Typography>
                   </div>
                   <div
-                    style={{ display: "flex", justifyContent: "space-between" }}
+                    style={{ display: 'flex', justifyContent: 'space-between' }}
                   >
-                    <Typography style={{ color: "red" }}>
+                    <Typography style={{ color: 'red' }}>
                       Min Price A:
                     </Typography>
-                    <Typography style={{ color: "red" }}>
+                    <Typography style={{ color: 'red' }}>
                       {toFixedDecimals(
                         Math.pow(currentVirtualBalances.virtualBalanceB, 2) /
                           currentInvariant
@@ -1053,24 +1049,24 @@ export default function ReClamm() {
                     </Typography>
                   </div>
                   <div
-                    style={{ display: "flex", justifyContent: "space-between" }}
+                    style={{ display: 'flex', justifyContent: 'space-between' }}
                   >
-                    <Typography style={{ color: "blue" }}>
+                    <Typography style={{ color: 'blue' }}>
                       Lower Margin Price A:
                     </Typography>
-                    <Typography style={{ color: "blue" }}>
+                    <Typography style={{ color: 'blue' }}>
                       {toFixedDecimals(
                         currentInvariant / Math.pow(higherMargin, 2)
                       )}
                     </Typography>
                   </div>
                   <div
-                    style={{ display: "flex", justifyContent: "space-between" }}
+                    style={{ display: 'flex', justifyContent: 'space-between' }}
                   >
-                    <Typography style={{ color: "green" }}>
+                    <Typography style={{ color: 'green' }}>
                       Current Price A:
                     </Typography>
-                    <Typography style={{ color: "green" }}>
+                    <Typography style={{ color: 'green' }}>
                       {toFixedDecimals(
                         (currentBalanceB +
                           currentVirtualBalances.virtualBalanceB) /
@@ -1080,24 +1076,24 @@ export default function ReClamm() {
                     </Typography>
                   </div>
                   <div
-                    style={{ display: "flex", justifyContent: "space-between" }}
+                    style={{ display: 'flex', justifyContent: 'space-between' }}
                   >
-                    <Typography style={{ color: "blue" }}>
+                    <Typography style={{ color: 'blue' }}>
                       Upper Margin Price A:
                     </Typography>
-                    <Typography style={{ color: "blue" }}>
+                    <Typography style={{ color: 'blue' }}>
                       {toFixedDecimals(
                         currentInvariant / Math.pow(lowerMargin, 2)
                       )}
                     </Typography>
                   </div>
                   <div
-                    style={{ display: "flex", justifyContent: "space-between" }}
+                    style={{ display: 'flex', justifyContent: 'space-between' }}
                   >
-                    <Typography style={{ color: "red" }}>
+                    <Typography style={{ color: 'red' }}>
                       Max Price A:
                     </Typography>
-                    <Typography style={{ color: "red" }}>
+                    <Typography style={{ color: 'red' }}>
                       {toFixedDecimals(
                         currentInvariant /
                           Math.pow(currentVirtualBalances.virtualBalanceA, 2)
@@ -1110,29 +1106,29 @@ export default function ReClamm() {
 
             <Accordion defaultExpanded>
               <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                <Typography variant="h6">Real-Time Pool State</Typography>
+                <Typography variant='h6'>Real-Time Pool State</Typography>
               </AccordionSummary>
               <AccordionDetails>
                 <div
-                  style={{ display: "flex", justifyContent: "space-between" }}
+                  style={{ display: 'flex', justifyContent: 'space-between' }}
                 >
                   <Typography>Invariant:</Typography>
                   <Typography>{toFixedDecimals(realTimeInvariant)}</Typography>
                 </div>
                 <div
-                  style={{ display: "flex", justifyContent: "space-between" }}
+                  style={{ display: 'flex', justifyContent: 'space-between' }}
                 >
                   <Typography>Current Balance A:</Typography>
                   <Typography>{toFixedDecimals(realTimeBalanceA)}</Typography>
                 </div>
                 <div
-                  style={{ display: "flex", justifyContent: "space-between" }}
+                  style={{ display: 'flex', justifyContent: 'space-between' }}
                 >
                   <Typography>Current Balance B:</Typography>
                   <Typography>{toFixedDecimals(realTimeBalanceB)}</Typography>
                 </div>
                 <div
-                  style={{ display: "flex", justifyContent: "space-between" }}
+                  style={{ display: 'flex', justifyContent: 'space-between' }}
                 >
                   <Typography>Virtual Balance A:</Typography>
                   <Typography>
@@ -1140,7 +1136,7 @@ export default function ReClamm() {
                   </Typography>
                 </div>
                 <div
-                  style={{ display: "flex", justifyContent: "space-between" }}
+                  style={{ display: 'flex', justifyContent: 'space-between' }}
                 >
                   <Typography>Virtual Balance B:</Typography>
                   <Typography>
@@ -1149,7 +1145,7 @@ export default function ReClamm() {
                 </div>
                 <div style={{ marginTop: 16 }}>
                   <div
-                    style={{ display: "flex", justifyContent: "space-between" }}
+                    style={{ display: 'flex', justifyContent: 'space-between' }}
                   >
                     <Typography>Rate Max/Min:</Typography>
                     <Typography>
@@ -1167,12 +1163,12 @@ export default function ReClamm() {
                     </Typography>
                   </div>
                   <div
-                    style={{ display: "flex", justifyContent: "space-between" }}
+                    style={{ display: 'flex', justifyContent: 'space-between' }}
                   >
-                    <Typography style={{ color: "red" }}>
+                    <Typography style={{ color: 'red' }}>
                       Min Price A:
                     </Typography>
-                    <Typography style={{ color: "red" }}>
+                    <Typography style={{ color: 'red' }}>
                       {toFixedDecimals(
                         Math.pow(realTimeVirtualBalances.virtualBalanceB, 2) /
                           realTimeInvariant
@@ -1180,24 +1176,24 @@ export default function ReClamm() {
                     </Typography>
                   </div>
                   <div
-                    style={{ display: "flex", justifyContent: "space-between" }}
+                    style={{ display: 'flex', justifyContent: 'space-between' }}
                   >
-                    <Typography style={{ color: "blue" }}>
+                    <Typography style={{ color: 'blue' }}>
                       Lower Margin Price A:
                     </Typography>
-                    <Typography style={{ color: "blue" }}>
+                    <Typography style={{ color: 'blue' }}>
                       {toFixedDecimals(
                         realTimeInvariant / Math.pow(higherMargin, 2)
                       )}
                     </Typography>
                   </div>
                   <div
-                    style={{ display: "flex", justifyContent: "space-between" }}
+                    style={{ display: 'flex', justifyContent: 'space-between' }}
                   >
-                    <Typography style={{ color: "green" }}>
+                    <Typography style={{ color: 'green' }}>
                       Current Price A:
                     </Typography>
-                    <Typography style={{ color: "green" }}>
+                    <Typography style={{ color: 'green' }}>
                       {toFixedDecimals(
                         (realTimeBalanceB +
                           realTimeVirtualBalances.virtualBalanceB) /
@@ -1207,24 +1203,24 @@ export default function ReClamm() {
                     </Typography>
                   </div>
                   <div
-                    style={{ display: "flex", justifyContent: "space-between" }}
+                    style={{ display: 'flex', justifyContent: 'space-between' }}
                   >
-                    <Typography style={{ color: "blue" }}>
+                    <Typography style={{ color: 'blue' }}>
                       Upper Margin Price A:
                     </Typography>
-                    <Typography style={{ color: "blue" }}>
+                    <Typography style={{ color: 'blue' }}>
                       {toFixedDecimals(
                         realTimeInvariant / Math.pow(lowerMargin, 2)
                       )}
                     </Typography>
                   </div>
                   <div
-                    style={{ display: "flex", justifyContent: "space-between" }}
+                    style={{ display: 'flex', justifyContent: 'space-between' }}
                   >
-                    <Typography style={{ color: "red" }}>
+                    <Typography style={{ color: 'red' }}>
                       Max Price A:
                     </Typography>
-                    <Typography style={{ color: "red" }}>
+                    <Typography style={{ color: 'red' }}>
                       {toFixedDecimals(
                         realTimeInvariant /
                           Math.pow(realTimeVirtualBalances.virtualBalanceA, 2)
@@ -1237,18 +1233,18 @@ export default function ReClamm() {
 
             <Accordion defaultExpanded>
               <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                <Typography variant="h6">Price Ratio</Typography>
+                <Typography variant='h6'>Price Ratio</Typography>
               </AccordionSummary>
               <AccordionDetails>
                 {simulationSeconds < endTime ? (
                   <>
-                    <Typography style={{ color: "green", fontWeight: "bold" }}>
+                    <Typography style={{ color: 'green', fontWeight: 'bold' }}>
                       UPDATING RANGE
                     </Typography>
                     <div
                       style={{
-                        display: "flex",
-                        justifyContent: "space-between",
+                        display: 'flex',
+                        justifyContent: 'space-between',
                         marginLeft: 10,
                       }}
                     >
@@ -1259,8 +1255,8 @@ export default function ReClamm() {
                     </div>
                     <div
                       style={{
-                        display: "flex",
-                        justifyContent: "space-between",
+                        display: 'flex',
+                        justifyContent: 'space-between',
                         marginLeft: 10,
                       }}
                     >
@@ -1269,8 +1265,8 @@ export default function ReClamm() {
                     </div>
                     <div
                       style={{
-                        display: "flex",
-                        justifyContent: "space-between",
+                        display: 'flex',
+                        justifyContent: 'space-between',
                         marginLeft: 10,
                       }}
                     >
@@ -1281,8 +1277,8 @@ export default function ReClamm() {
                     </div>
                     <div
                       style={{
-                        display: "flex",
-                        justifyContent: "space-between",
+                        display: 'flex',
+                        justifyContent: 'space-between',
                         marginLeft: 10,
                       }}
                     >
@@ -1292,35 +1288,35 @@ export default function ReClamm() {
                   </>
                 ) : (
                   <div
-                    style={{ display: "flex", justifyContent: "space-between" }}
+                    style={{ display: 'flex', justifyContent: 'space-between' }}
                   >
                     <Typography>Current Price Ratio:</Typography>
                     <Typography>{toFixedDecimals(priceRatio)}</Typography>
                   </div>
                 )}
                 <div
-                  style={{ display: "flex", justifyContent: "space-between" }}
+                  style={{ display: 'flex', justifyContent: 'space-between' }}
                 >
                   <Typography>Pool Centeredness:</Typography>
                   <Typography>{toFixedDecimals(poolCenteredness)}</Typography>
                 </div>
                 <div
-                  style={{ display: "flex", justifyContent: "space-between" }}
+                  style={{ display: 'flex', justifyContent: 'space-between' }}
                 >
                   <Typography>Status:</Typography>
                   <Typography
                     style={{
-                      color: poolCenteredness > margin / 100 ? "green" : "red",
-                      fontWeight: "bold",
+                      color: poolCenteredness > margin / 100 ? 'green' : 'red',
+                      fontWeight: 'bold',
                     }}
                   >
                     {poolCenteredness > margin / 100
-                      ? "IN RANGE"
-                      : "OUT OF RANGE"}
+                      ? 'IN RANGE'
+                      : 'OUT OF RANGE'}
                   </Typography>
                 </div>
                 <div
-                  style={{ display: "flex", justifyContent: "space-between" }}
+                  style={{ display: 'flex', justifyContent: 'space-between' }}
                 >
                   <Typography>Out of Range time:</Typography>
                   <Typography>{formatTime(outOfRangeTime)}</Typography>
@@ -1330,47 +1326,47 @@ export default function ReClamm() {
 
             <Accordion defaultExpanded>
               <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                <Typography variant="h6">Initial Values</Typography>
+                <Typography variant='h6'>Initial Values</Typography>
               </AccordionSummary>
               <AccordionDetails>
                 <div
-                  style={{ display: "flex", justifyContent: "space-between" }}
+                  style={{ display: 'flex', justifyContent: 'space-between' }}
                 >
                   <Typography>Initial Balance A:</Typography>
                   <Typography>{toFixedDecimals(initialBalanceA)}</Typography>
                 </div>
                 <div
-                  style={{ display: "flex", justifyContent: "space-between" }}
+                  style={{ display: 'flex', justifyContent: 'space-between' }}
                 >
                   <Typography>Initial Balance B:</Typography>
                   <Typography>{toFixedDecimals(initialBalanceB)}</Typography>
                 </div>
                 <div
-                  style={{ display: "flex", justifyContent: "space-between" }}
+                  style={{ display: 'flex', justifyContent: 'space-between' }}
                 >
                   <Typography>Min Price A:</Typography>
                   <Typography>{toFixedDecimals(minPrice)}</Typography>
                 </div>
                 <div
-                  style={{ display: "flex", justifyContent: "space-between" }}
+                  style={{ display: 'flex', justifyContent: 'space-between' }}
                 >
                   <Typography>Target Price A:</Typography>
                   <Typography>{toFixedDecimals(targetPrice)}</Typography>
                 </div>
                 <div
-                  style={{ display: "flex", justifyContent: "space-between" }}
+                  style={{ display: 'flex', justifyContent: 'space-between' }}
                 >
                   <Typography>Max Price A:</Typography>
                   <Typography>{toFixedDecimals(maxPrice)}</Typography>
                 </div>
                 <div
-                  style={{ display: "flex", justifyContent: "space-between" }}
+                  style={{ display: 'flex', justifyContent: 'space-between' }}
                 >
                   <Typography>Price Ratio:</Typography>
                   <Typography>{toFixedDecimals(priceRatio)}</Typography>
                 </div>
                 <div
-                  style={{ display: "flex", justifyContent: "space-between" }}
+                  style={{ display: 'flex', justifyContent: 'space-between' }}
                 >
                   <Typography>Margin:</Typography>
                   <Typography>{toFixedDecimals(margin)}%</Typography>

@@ -1,6 +1,6 @@
-import React, { useRef, useEffect, useMemo } from "react";
-import * as d3 from "d3";
-import { calculateLowerMargin, calculateUpperMargin } from "./ReClammMath";
+import React, { useRef, useEffect, useMemo } from 'react';
+import * as d3 from 'd3';
+import { calculateLowerMargin, calculateUpperMargin } from './ReClammMath';
 
 interface ReClammChartProps {
   realTimeBalanceA: number;
@@ -109,19 +109,19 @@ export const ReClammChart: React.FC<ReClammChartProps> = ({
     const realTimeLowerMarginPoint = {
       x: realTimeRealMargin,
       y: realTimeInvariant / realTimeRealMargin,
-      pointType: "margin",
+      pointType: 'margin',
     };
 
     const realTimeUpperMarginPoint = {
       x: realTimeUpperMargin,
       y: realTimeInvariant / realTimeUpperMargin,
-      pointType: "margin",
+      pointType: 'margin',
     };
 
     const realTimeBalances = {
       x: realTimeBalanceA + realTimeVirtualBalances.virtualBalanceA,
       y: realTimeBalanceB + realTimeVirtualBalances.virtualBalanceB,
-      pointType: "current",
+      pointType: 'current',
     };
 
     // Current points
@@ -154,19 +154,19 @@ export const ReClammChart: React.FC<ReClammChartProps> = ({
     const currentLowerMarginPoint = {
       x: currentLowerMargin,
       y: currentInvariant / currentLowerMargin,
-      pointType: "margin",
+      pointType: 'margin',
     };
 
     const currentUpperMarginPoint = {
       x: currentUpperMargin,
       y: currentInvariant / currentUpperMargin,
-      pointType: "margin",
+      pointType: 'margin',
     };
 
     const currentBalances = {
       x: currentBalanceA + currentVirtualBalances.virtualBalanceA,
       y: currentBalanceB + currentVirtualBalances.virtualBalanceB,
-      pointType: "current",
+      pointType: 'current',
     };
 
     return [
@@ -217,7 +217,7 @@ export const ReClammChart: React.FC<ReClammChartProps> = ({
 
     const renderChart = () => {
       // Clear previous chart
-      d3.select(svgRef.current).selectAll("*").remove();
+      d3.select(svgRef.current).selectAll('*').remove();
 
       // Set up dimensions
       const svgElement = svgRef.current;
@@ -232,221 +232,221 @@ export const ReClammChart: React.FC<ReClammChartProps> = ({
       const xScale = d3
         .scaleLinear()
         .domain([
-          d3.min(realTimeChartData, (d) => d.x)!,
-          d3.max(realTimeChartData, (d) => d.x)!,
+          d3.min(realTimeChartData, d => d.x)!,
+          d3.max(realTimeChartData, d => d.x)!,
         ])
         .range([0, innerWidth]);
 
       const yScale = d3
         .scaleLinear()
         .domain([
-          d3.min(realTimeChartData, (d) => d.y)!,
-          d3.max(realTimeChartData, (d) => d.y)!,
+          d3.min(realTimeChartData, d => d.y)!,
+          d3.max(realTimeChartData, d => d.y)!,
         ])
         .range([innerHeight, 0]);
 
       // Create SVG
       const svg = d3
         .select(svgRef.current)
-        .attr("width", width)
-        .attr("height", height)
-        .append("g")
-        .attr("transform", `translate(${margin.left},${margin.top})`);
+        .attr('width', width)
+        .attr('height', height)
+        .append('g')
+        .attr('transform', `translate(${margin.left},${margin.top})`);
 
       // Add grid
       svg
-        .append("g")
-        .attr("class", "grid")
-        .attr("opacity", 0.1)
+        .append('g')
+        .attr('class', 'grid')
+        .attr('opacity', 0.1)
         .call(
           d3
             .axisBottom(xScale)
             .tickSize(innerHeight)
-            .tickFormat(() => "")
+            .tickFormat(() => '')
         )
-        .call((g) => g.select(".domain").remove());
+        .call(g => g.select('.domain').remove());
 
       svg
-        .append("g")
-        .attr("class", "grid")
-        .attr("opacity", 0.1)
+        .append('g')
+        .attr('class', 'grid')
+        .attr('opacity', 0.1)
         .call(
           d3
             .axisLeft(yScale)
             .tickSize(-innerWidth)
-            .tickFormat(() => "")
+            .tickFormat(() => '')
         )
-        .call((g) => g.select(".domain").remove());
+        .call(g => g.select('.domain').remove());
 
       // Add axes
       svg
-        .append("g")
-        .attr("transform", `translate(0,${innerHeight})`)
+        .append('g')
+        .attr('transform', `translate(0,${innerHeight})`)
         .call(d3.axisBottom(xScale));
 
-      svg.append("g").call(d3.axisLeft(yScale));
+      svg.append('g').call(d3.axisLeft(yScale));
 
       // Add reference lines
       svg
-        .append("line")
-        .attr("x1", xScale(realTimeVirtualBalances.virtualBalanceA))
-        .attr("x2", xScale(realTimeVirtualBalances.virtualBalanceA))
-        .attr("y1", 0)
-        .attr("y2", innerHeight)
-        .attr("stroke", "#BBBBBB")
-        .attr("stroke-width", 2);
+        .append('line')
+        .attr('x1', xScale(realTimeVirtualBalances.virtualBalanceA))
+        .attr('x2', xScale(realTimeVirtualBalances.virtualBalanceA))
+        .attr('y1', 0)
+        .attr('y2', innerHeight)
+        .attr('stroke', '#BBBBBB')
+        .attr('stroke-width', 2);
 
       svg
-        .append("line")
-        .attr("x1", 0)
-        .attr("x2", innerWidth)
-        .attr("y1", yScale(realTimeVirtualBalances.virtualBalanceB))
-        .attr("y2", yScale(realTimeVirtualBalances.virtualBalanceB))
-        .attr("stroke", "#BBBBBB")
-        .attr("stroke-width", 2);
+        .append('line')
+        .attr('x1', 0)
+        .attr('x2', innerWidth)
+        .attr('y1', yScale(realTimeVirtualBalances.virtualBalanceB))
+        .attr('y2', yScale(realTimeVirtualBalances.virtualBalanceB))
+        .attr('stroke', '#BBBBBB')
+        .attr('stroke-width', 2);
 
       // Add initial price curve (before the regular curve)
       const initialLine = d3
         .line<any>()
-        .x((d) => xScale(d.x))
-        .y((d) => yScale(d.y));
+        .x(d => xScale(d.x))
+        .y(d => yScale(d.y));
 
       svg
-        .append("path")
+        .append('path')
         .datum(chartInitialData)
-        .attr("fill", "none")
-        .attr("stroke", "red")
-        .attr("stroke-width", 2)
-        .attr("stroke-dasharray", "5,5")
-        .attr("d", initialLine);
+        .attr('fill', 'none')
+        .attr('stroke', 'red')
+        .attr('stroke-width', 2)
+        .attr('stroke-dasharray', '5,5')
+        .attr('d', initialLine);
 
       // Add current price curve
       const currentLine = d3
         .line<any>()
-        .x((d) => xScale(d.x))
-        .y((d) => yScale(d.y));
+        .x(d => xScale(d.x))
+        .y(d => yScale(d.y));
 
       svg
-        .append("path")
+        .append('path')
         .datum(currentChartData)
-        .attr("fill", "none")
-        .attr("stroke", "blue")
-        .attr("stroke-width", 2)
-        .attr("d", currentLine);
+        .attr('fill', 'none')
+        .attr('stroke', 'blue')
+        .attr('stroke-width', 2)
+        .attr('d', currentLine);
 
       // Add curve
       const line = d3
         .line<any>()
-        .x((d) => xScale(d.x))
-        .y((d) => yScale(d.y));
+        .x(d => xScale(d.x))
+        .y(d => yScale(d.y));
 
       svg
-        .append("path")
+        .append('path')
         .datum(realTimeChartData)
-        .attr("fill", "none")
-        .attr("stroke", "#4CAF50")
-        .attr("stroke-width", 2)
-        .attr("d", line);
+        .attr('fill', 'none')
+        .attr('stroke', '#4CAF50')
+        .attr('stroke-width', 2)
+        .attr('d', line);
 
       // Add special points (min/max prices) for both real-time and current
       svg
-        .selectAll(".point-price")
+        .selectAll('.point-price')
         .data(specialPoints.slice(0, 4)) // Real-time and current min/max prices
         .enter()
-        .append("circle")
-        .attr("class", "point-price")
-        .attr("cx", (d) => xScale(d.x))
-        .attr("cy", (d) => yScale(d.y))
-        .attr("r", 5)
-        .attr("fill", "red");
+        .append('circle')
+        .attr('class', 'point-price')
+        .attr('cx', d => xScale(d.x))
+        .attr('cy', d => yScale(d.y))
+        .attr('r', 5)
+        .attr('fill', 'red');
 
       // Add tooltip div
       const tooltip = d3
-        .select("body")
-        .append("div")
-        .attr("class", "tooltip")
-        .style("opacity", 0)
-        .style("position", "absolute")
-        .style("background-color", "white")
-        .style("border", "1px solid #ddd")
-        .style("border-radius", "4px")
-        .style("padding", "8px")
-        .style("pointer-events", "none")
-        .style("font-size", "12px");
+        .select('body')
+        .append('div')
+        .attr('class', 'tooltip')
+        .style('opacity', 0)
+        .style('position', 'absolute')
+        .style('background-color', 'white')
+        .style('border', '1px solid #ddd')
+        .style('border-radius', '4px')
+        .style('padding', '8px')
+        .style('pointer-events', 'none')
+        .style('font-size', '12px');
 
       // Modify the balance points section
       svg
-        .selectAll(".point-balance")
+        .selectAll('.point-balance')
         .data(specialPoints.slice(4, 6)) // Real-time and current balances
         .enter()
-        .append("circle")
-        .attr("class", "point-balance")
-        .attr("cx", (d) => xScale(d.x))
-        .attr("cy", (d) => yScale(d.y))
-        .attr("r", 5)
-        .attr("fill", "green")
-        .on("mouseover", (event, d) => {
+        .append('circle')
+        .attr('class', 'point-balance')
+        .attr('cx', d => xScale(d.x))
+        .attr('cy', d => yScale(d.y))
+        .attr('r', 5)
+        .attr('fill', 'green')
+        .on('mouseover', (event, d) => {
           tooltip
-            .style("opacity", 1)
+            .style('opacity', 1)
             .html(
               `Real Balance A: ${realTimeBalanceA.toFixed(
                 2
               )}<br/>Real Balance B: ${realTimeBalanceB.toFixed(2)}`
             )
-            .style("left", event.pageX + 10 + "px")
-            .style("top", event.pageY - 10 + "px");
+            .style('left', event.pageX + 10 + 'px')
+            .style('top', event.pageY - 10 + 'px');
         })
-        .on("mouseout", () => {
-          tooltip.style("opacity", 0);
+        .on('mouseout', () => {
+          tooltip.style('opacity', 0);
         })
-        .on("mousemove", (event) => {
+        .on('mousemove', event => {
           tooltip
-            .style("left", event.pageX + 10 + "px")
-            .style("top", event.pageY - 10 + "px");
+            .style('left', event.pageX + 10 + 'px')
+            .style('top', event.pageY - 10 + 'px');
         });
 
       // Add margin points for both real-time and current
       svg
-        .selectAll(".point-margin")
+        .selectAll('.point-margin')
         .data(specialPoints.slice(6)) // Real-time and current margins
         .enter()
-        .append("circle")
-        .attr("class", "point-margin")
-        .attr("cx", (d) => xScale(d.x))
-        .attr("cy", (d) => yScale(d.y))
-        .attr("r", 5)
-        .attr("fill", "blue");
+        .append('circle')
+        .attr('class', 'point-margin')
+        .attr('cx', d => xScale(d.x))
+        .attr('cy', d => yScale(d.y))
+        .attr('r', 5)
+        .attr('fill', 'blue');
 
       // Add axis labels
       svg
-        .append("text")
-        .attr("x", innerWidth / 2)
-        .attr("y", innerHeight + 40)
-        .attr("text-anchor", "middle")
-        .text("Total Balance A");
+        .append('text')
+        .attr('x', innerWidth / 2)
+        .attr('y', innerHeight + 40)
+        .attr('text-anchor', 'middle')
+        .text('Total Balance A');
 
       svg
-        .append("text")
-        .attr("transform", "rotate(-90)")
-        .attr("x", -innerHeight / 2)
-        .attr("y", -40)
-        .attr("text-anchor", "middle")
-        .text("Total Balance B");
+        .append('text')
+        .attr('transform', 'rotate(-90)')
+        .attr('x', -innerHeight / 2)
+        .attr('y', -40)
+        .attr('text-anchor', 'middle')
+        .text('Total Balance B');
 
       // Add legend
       const legendData = [
-        { color: "#4CAF50", text: "Real Time Invariant", type: "line" },
-        { color: "blue", text: "Current Invariant", type: "line" },
-        { color: "red", text: "Initial Invariant", type: "dashed-line" },
-        { color: "green", text: "Balances", type: "circle" },
-        { color: "red", text: "Min/Max Prices", type: "circle" },
-        { color: "blue", text: "Margins", type: "circle" },
+        { color: '#4CAF50', text: 'Real Time Invariant', type: 'line' },
+        { color: 'blue', text: 'Current Invariant', type: 'line' },
+        { color: 'red', text: 'Initial Invariant', type: 'dashed-line' },
+        { color: 'green', text: 'Balances', type: 'circle' },
+        { color: 'red', text: 'Min/Max Prices', type: 'circle' },
+        { color: 'blue', text: 'Margins', type: 'circle' },
       ];
 
       const legend = svg
-        .append("g")
-        .attr("class", "legend")
-        .attr("transform", `translate(${innerWidth - 200}, 20)`);
+        .append('g')
+        .attr('class', 'legend')
+        .attr('transform', `translate(${innerWidth - 200}, 20)`);
 
       // Add white background to legend
       const legendPadding = 10;
@@ -454,57 +454,57 @@ export const ReClammChart: React.FC<ReClammChartProps> = ({
       const legendHeight = legendData.length * 20 + legendPadding * 2;
 
       legend
-        .append("rect")
-        .attr("x", -2 * legendPadding)
-        .attr("y", -2 * legendPadding)
-        .attr("width", legendWidth)
-        .attr("height", legendHeight)
-        .attr("fill", "white")
-        .attr("stroke", "#ccc")
-        .attr("stroke-width", 1);
+        .append('rect')
+        .attr('x', -2 * legendPadding)
+        .attr('y', -2 * legendPadding)
+        .attr('width', legendWidth)
+        .attr('height', legendHeight)
+        .attr('fill', 'white')
+        .attr('stroke', '#ccc')
+        .attr('stroke-width', 1);
 
       // Add legend items
       const legendItems = legend
-        .selectAll(".legend-item")
+        .selectAll('.legend-item')
         .data(legendData)
         .enter()
-        .append("g")
-        .attr("class", "legend-item")
-        .attr("transform", (d, i) => `translate(0, ${i * 20})`);
+        .append('g')
+        .attr('class', 'legend-item')
+        .attr('transform', (d, i) => `translate(0, ${i * 20})`);
 
       // Add symbols
       legendItems.each(function (d) {
         const item = d3.select(this);
-        if (d.type === "circle") {
+        if (d.type === 'circle') {
           item
-            .append("circle")
-            .attr("cx", 0)
-            .attr("cy", 0)
-            .attr("r", 5)
-            .attr("fill", d.color);
-        } else if (d.type === "line" || d.type === "dashed-line") {
+            .append('circle')
+            .attr('cx', 0)
+            .attr('cy', 0)
+            .attr('r', 5)
+            .attr('fill', d.color);
+        } else if (d.type === 'line' || d.type === 'dashed-line') {
           item
-            .append("line")
-            .attr("x1", -10)
-            .attr("x2", 10)
-            .attr("y1", 0)
-            .attr("y2", 0)
-            .attr("stroke", d.color)
-            .attr("stroke-width", 2)
+            .append('line')
+            .attr('x1', -10)
+            .attr('x2', 10)
+            .attr('y1', 0)
+            .attr('y2', 0)
+            .attr('stroke', d.color)
+            .attr('stroke-width', 2)
             .attr(
-              "stroke-dasharray",
-              d.type === "dashed-line" ? "5,5" : "none"
+              'stroke-dasharray',
+              d.type === 'dashed-line' ? '5,5' : 'none'
             );
         }
       });
 
       // Add text labels
       legendItems
-        .append("text")
-        .attr("x", 15)
-        .attr("y", 4)
-        .text((d) => d.text)
-        .style("font-size", "12px");
+        .append('text')
+        .attr('x', 15)
+        .attr('y', 4)
+        .text(d => d.text)
+        .style('font-size', '12px');
     };
 
     renderChart();
@@ -521,7 +521,7 @@ export const ReClammChart: React.FC<ReClammChartProps> = ({
     // Cleanup
     return () => {
       resizeObserver.disconnect();
-      d3.select("body").selectAll(".tooltip").remove();
+      d3.select('body').selectAll('.tooltip').remove();
     };
   }, [
     realTimeChartData,

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, ReactNode } from "react";
+import React, { createContext, useContext, useState, ReactNode } from 'react';
 
 interface TimerContextType {
   // Timer state
@@ -92,7 +92,7 @@ export const TimerProvider: React.FC<TimerProviderProps> = ({ children }) => {
 export const useTimer = (): TimerContextType => {
   const context = useContext(TimerContext);
   if (context === undefined) {
-    throw new Error("useTimer must be used within a TimerProvider");
+    throw new Error('useTimer must be used within a TimerProvider');
   }
   return context;
 };
