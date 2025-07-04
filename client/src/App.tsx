@@ -9,6 +9,7 @@ import {
 } from "react-router-dom";
 import ReClamm from "./pool-types/reclamm/ReClamm";
 import StableSurge from "./pool-types/stable-surge/StableSurge";
+import { TimerProvider } from "./contexts/TimerContext";
 import styled from "styled-components";
 
 // Styled components for the menus
@@ -106,16 +107,18 @@ const Navigation = () => {
 
 function App() {
   return (
-    <Router>
-      <Navigation />
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/reclamm" element={<ReClamm />} />
-        <Route path="/acl-amm" element={<Navigate to="/reclamm" />} />
-        <Route path="/stable-surge" element={<StableSurge />} />
-        <Route path="*" element={<Navigate to="/" />} />
-      </Routes>
-    </Router>
+    <TimerProvider>
+      <Router>
+        <Navigation />
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/reclamm" element={<ReClamm />} />
+          <Route path="/acl-amm" element={<Navigate to="/reclamm" />} />
+          <Route path="/stable-surge" element={<StableSurge />} />
+          <Route path="*" element={<Navigate to="/" />} />
+        </Routes>
+      </Router>
+    </TimerProvider>
   );
 }
 
