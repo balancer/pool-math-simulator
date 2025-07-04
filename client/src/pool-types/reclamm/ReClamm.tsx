@@ -48,11 +48,12 @@ export default function ReClamm() {
   // Simulation variables
   const {
     isPlaying,
-    simulationSeconds,
-    setSimulationSeconds,
-    simulationSecondsLastTick,
-    setSimulationSecondsLastTick,
     setBlockNumber,
+    setSimulationSeconds,
+    setSimulationSecondsLastTick,
+    simulationSeconds,
+    simulationSecondsLastTick,
+    simulationSecondsPerBlock,
     speedMultiplier,
   } = useTimer();
 
@@ -120,13 +121,6 @@ export default function ReClamm() {
   const [endTime, setEndTime] = useState<number>(0);
 
   const [inputEndTime, setInputEndTime] = useState<number>(0);
-
-  // Add new state variables for inputs
-  const [inputSecondsPerBlock, setInputSecondsPerBlock] = useState<number>(12);
-
-  // Replace the constants with state variables
-  const [simulationSecondsPerBlock, setSimulationSecondsPerBlock] =
-    useState<number>(12);
 
   // Add new state for error message
   const [endTimeError, setEndTimeError] = useState<string>('');

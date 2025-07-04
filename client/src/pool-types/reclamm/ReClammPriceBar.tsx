@@ -148,7 +148,7 @@ export const ReClammPriceBar: React.FC<ReClammPriceBarProps> = ({
       .attr('stroke-width', 1);
 
     // Add price markers
-    priceData.forEach((d, i) => {
+    priceData.forEach((d, _) => {
       const x = xScale(d.value);
 
       // Add vertical line

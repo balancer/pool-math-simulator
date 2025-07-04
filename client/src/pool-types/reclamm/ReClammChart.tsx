@@ -385,7 +385,7 @@ export const ReClammChart: React.FC<ReClammChartProps> = ({
         .attr('cy', d => yScale(d.y))
         .attr('r', 5)
         .attr('fill', 'green')
-        .on('mouseover', (event, d) => {
+        .on('mouseover', (event, _) => {
           tooltip
             .style('opacity', 1)
             .html(
