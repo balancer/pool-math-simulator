@@ -1,11 +1,11 @@
-import React, { useRef, useEffect, useMemo, useState } from "react";
-import * as d3 from "d3";
-import { Paper, Typography } from "@mui/material";
+import React, { useRef, useEffect, useMemo, useState } from 'react';
+import * as d3 from 'd3';
+import { Paper, Typography } from '@mui/material';
 import {
   calculateLowerMargin,
   calculateUpperMargin,
   computeCenteredness,
-} from "./ReClammMath";
+} from './ReClammMath';
 
 interface ReClammPriceBarProps {
   realTimeBalanceA: number;
@@ -77,26 +77,26 @@ export const ReClammPriceBar: React.FC<ReClammPriceBarProps> = ({
     const maxPricePosition = 2;
 
     return [
-      { price: minPrice, value: minPricePosition, color: "red" },
+      { price: minPrice, value: minPricePosition, color: 'red' },
       {
         price: lowerMarginPrice,
         value: lowerMarginPricePosition,
-        color: "blue",
+        color: 'blue',
       },
-      { price: currentPrice, value: currentPricePosition, color: "green" },
+      { price: currentPrice, value: currentPricePosition, color: 'green' },
       {
         price: upperMarginPrice,
         value: upperMarginPricePosition,
-        color: "blue",
+        color: 'blue',
       },
-      { price: maxPrice, value: maxPricePosition, color: "red" },
+      { price: maxPrice, value: maxPricePosition, color: 'red' },
     ];
   }, [realTimeBalanceA, realTimeBalanceB, realTimeVirtualBalances, margin]);
 
   useEffect(() => {
     if (!containerRef.current) return;
 
-    const observer = new ResizeObserver((entries) => {
+    const observer = new ResizeObserver(entries => {
       for (let entry of entries) {
         setContainerWidth(entry.contentRect.width);
       }
@@ -111,7 +111,7 @@ export const ReClammPriceBar: React.FC<ReClammPriceBarProps> = ({
   useEffect(() => {
     if (!svgRef.current || priceData.length === 0) return;
 
-    d3.select(svgRef.current).selectAll("*").remove();
+    d3.select(svgRef.current).selectAll('*').remove();
 
     const svg = d3.select(svgRef.current);
     const width = containerWidth;
@@ -122,8 +122,8 @@ export const ReClammPriceBar: React.FC<ReClammPriceBarProps> = ({
     const chartHeight = height - margin.top - margin.bottom;
 
     // Create scales
-    const minValue = Math.min(...priceData.map((d) => d.value));
-    const maxValue = Math.max(...priceData.map((d) => d.value));
+    const minValue = Math.min(...priceData.map(d => d.value));
+    const maxValue = Math.max(...priceData.map(d => d.value));
     const padding = (maxValue - minValue) * 0.1;
 
     const xScale = d3
@@ -133,54 +133,54 @@ export const ReClammPriceBar: React.FC<ReClammPriceBarProps> = ({
 
     // Create the main chart group
     const chart = svg
-      .append("g")
-      .attr("transform", `translate(${margin.left}, ${margin.top})`);
+      .append('g')
+      .attr('transform', `translate(${margin.left}, ${margin.top})`);
 
     // Create the background bar
     chart
-      .append("rect")
-      .attr("x", 0)
-      .attr("y", chartHeight * 0.4)
-      .attr("width", chartWidth)
-      .attr("height", chartHeight * 0.2)
-      .attr("fill", "#f0f0f0")
-      .attr("stroke", "#ccc")
-      .attr("stroke-width", 1);
+      .append('rect')
+      .attr('x', 0)
+      .attr('y', chartHeight * 0.4)
+      .attr('width', chartWidth)
+      .attr('height', chartHeight * 0.2)
+      .attr('fill', '#f0f0f0')
+      .attr('stroke', '#ccc')
+      .attr('stroke-width', 1);
 
     // Add price markers
-    priceData.forEach((d, i) => {
+    priceData.forEach((d, _) => {
       const x = xScale(d.value);
 
       // Add vertical line
       chart
-        .append("line")
-        .attr("x1", x)
-        .attr("y1", chartHeight * 0.3)
-        .attr("x2", x)
-        .attr("y2", chartHeight * 0.7)
-        .attr("stroke", d.color)
-        .attr("stroke-width", 3)
-        .attr("opacity", 0.8);
+        .append('line')
+        .attr('x1', x)
+        .attr('y1', chartHeight * 0.3)
+        .attr('x2', x)
+        .attr('y2', chartHeight * 0.7)
+        .attr('stroke', d.color)
+        .attr('stroke-width', 3)
+        .attr('opacity', 0.8);
 
       // Add circle marker
       chart
-        .append("circle")
-        .attr("cx", x)
-        .attr("cy", chartHeight * 0.5)
-        .attr("r", 6)
-        .attr("fill", d.color)
-        .attr("stroke", "#fff")
-        .attr("stroke-width", 2);
+        .append('circle')
+        .attr('cx', x)
+        .attr('cy', chartHeight * 0.5)
+        .attr('r', 6)
+        .attr('fill', d.color)
+        .attr('stroke', '#fff')
+        .attr('stroke-width', 2);
 
       // Add value label on top
       chart
-        .append("text")
-        .attr("x", x)
-        .attr("y", chartHeight * 0.2)
-        .attr("text-anchor", "middle")
-        .attr("font-size", "12px")
-        .attr("fill", d.color)
-        .attr("font-weight", "bold")
+        .append('text')
+        .attr('x', x)
+        .attr('y', chartHeight * 0.2)
+        .attr('text-anchor', 'middle')
+        .attr('font-size', '12px')
+        .attr('fill', d.color)
+        .attr('font-weight', 'bold')
         .text(d.price.toFixed(1));
     });
   }, [priceData, containerWidth]);
@@ -188,29 +188,29 @@ export const ReClammPriceBar: React.FC<ReClammPriceBarProps> = ({
   return (
     <Paper style={{ padding: 16, marginBottom: 16 }}>
       <Typography
-        variant="h6"
-        style={{ marginBottom: 16, textAlign: "center" }}
+        variant='h6'
+        style={{ marginBottom: 16, textAlign: 'center' }}
         ref={containerRef}
       >
         ReClamm Price Range
       </Typography>
-      <div style={{ display: "flex", justifyContent: "center" }}>
-        <svg ref={svgRef} width={containerWidth} height="120" />
+      <div style={{ display: 'flex', justifyContent: 'center' }}>
+        <svg ref={svgRef} width={containerWidth} height='120' />
       </div>
       <div
         style={{
-          display: "flex",
-          justifyContent: "space-between",
+          display: 'flex',
+          justifyContent: 'space-between',
           marginTop: 16,
-          padding: "8px 16px",
-          backgroundColor: "#f5f5f5",
-          borderRadius: "4px",
+          padding: '8px 16px',
+          backgroundColor: '#f5f5f5',
+          borderRadius: '4px',
         }}
       >
-        <Typography variant="body2" style={{ fontWeight: "bold" }}>
+        <Typography variant='body2' style={{ fontWeight: 'bold' }}>
           Balance A: {realTimeBalanceA.toFixed(2)}
         </Typography>
-        <Typography variant="body2" style={{ fontWeight: "bold" }}>
+        <Typography variant='body2' style={{ fontWeight: 'bold' }}>
           Balance B: {realTimeBalanceB.toFixed(2)}
         </Typography>
       </div>

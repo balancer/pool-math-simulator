@@ -87,7 +87,7 @@ export function isSurging(
   newTotalImbalance: number
 ): boolean {
   // If we are balanced, or the balance has improved, do not surge: simply return the regular fee percentage.
-  if (newTotalImbalance == 0) {
+  if (newTotalImbalance === 0) {
     return false;
   }
 

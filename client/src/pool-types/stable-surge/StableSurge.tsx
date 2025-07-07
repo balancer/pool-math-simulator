@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo } from 'react';
 import {
   Grid,
   Paper,
@@ -9,12 +9,12 @@ import {
   AccordionDetails,
   TextField,
   Button,
-} from "@mui/material";
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-import { stableInvariant } from "../stable-pool/StableMath";
-import { StableSurgeChart } from "./StableSurgeChart";
-import { getTokenBalanceGivenInvariantAndAllOtherBalances } from "../stable-pool/StableMath";
-import { calculateImbalance, getSurgeFeePercentage } from "./StableSurgeHook";
+} from '@mui/material';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import { stableInvariant } from '../stable-pool/StableMath';
+import { StableSurgeChart } from './StableSurgeChart';
+import { getTokenBalanceGivenInvariantAndAllOtherBalances } from '../stable-pool/StableMath';
+import { calculateImbalance, getSurgeFeePercentage } from './StableSurgeHook';
 export default function StableSurge() {
   const [inputBalances, setInputBalances] = useState<number[]>([1000, 1000]);
   const [initialBalances, setInitialBalances] = useState<number[]>([
@@ -24,7 +24,7 @@ export default function StableSurge() {
     1000, 1000,
   ]);
   const [totalFees, setTotalFees] = useState<number[]>([0, 0]);
-  const [tokenNames, setTokenNames] = useState<string[]>(["A", "B", "C", "D"]);
+  const [tokenNames, setTokenNames] = useState<string[]>(['A', 'B', 'C', 'D']);
 
   const [inputTokenCount, setInputTokenCount] = useState<number>(2);
   const [tokenCount, setTokenCount] = useState<number>(2);
@@ -355,7 +355,7 @@ export default function StableSurge() {
         swapTokenOutIndex
       );
     setCurrentBalances(currentBalances);
-    setTotalFees((prevFees) => {
+    setTotalFees(prevFees => {
       const newFees = [...prevFees];
       newFees[swapTokenInIndex] += fees;
       return newFees;
@@ -369,16 +369,16 @@ export default function StableSurge() {
         <Grid item xs={3}>
           <Accordion>
             <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-              <Typography variant="h6">Initialize Pool</Typography>
+              <Typography variant='h6'>Initialize Pool</Typography>
             </AccordionSummary>
             <AccordionDetails>
               <TextField
                 select
-                label="Number of Tokens"
+                label='Number of Tokens'
                 fullWidth
-                margin="normal"
+                margin='normal'
                 value={inputTokenCount}
-                onChange={(e) => setInputTokenCount(Number(e.target.value))}
+                onChange={e => setInputTokenCount(Number(e.target.value))}
                 SelectProps={{
                   native: true,
                 }}
@@ -389,12 +389,12 @@ export default function StableSurge() {
               </TextField>
               <TextField
                 label={`Initial Balance ${tokenNames[0]}`}
-                type="number"
+                type='number'
                 fullWidth
-                margin="normal"
+                margin='normal'
                 value={inputBalances[0]}
-                onChange={(e) =>
-                  setInputBalances((prev) => {
+                onChange={e =>
+                  setInputBalances(prev => {
                     const result = [...prev];
                     result[0] = Number(e.target.value);
                     return result;
@@ -403,12 +403,12 @@ export default function StableSurge() {
               />
               <TextField
                 label={`Initial Balance ${tokenNames[1]}`}
-                type="number"
+                type='number'
                 fullWidth
-                margin="normal"
+                margin='normal'
                 value={inputBalances[1]}
-                onChange={(e) =>
-                  setInputBalances((prev) => {
+                onChange={e =>
+                  setInputBalances(prev => {
                     const result = [...prev];
                     result[1] = Number(e.target.value);
                     return result;
@@ -418,12 +418,12 @@ export default function StableSurge() {
               {inputTokenCount >= 3 && (
                 <TextField
                   label={`Initial Balance ${tokenNames[2]}`}
-                  type="number"
+                  type='number'
                   fullWidth
-                  margin="normal"
+                  margin='normal'
                   value={inputBalances[2]}
-                  onChange={(e) =>
-                    setInputBalances((prev) => {
+                  onChange={e =>
+                    setInputBalances(prev => {
                       const result = [...prev];
                       result[2] = Number(e.target.value);
                       return result;
@@ -434,12 +434,12 @@ export default function StableSurge() {
               {inputTokenCount >= 4 && (
                 <TextField
                   label={`Initial Balance ${tokenNames[3]}`}
-                  type="number"
+                  type='number'
                   fullWidth
-                  margin="normal"
+                  margin='normal'
                   value={inputBalances[3]}
-                  onChange={(e) =>
-                    setInputBalances((prev) => {
+                  onChange={e =>
+                    setInputBalances(prev => {
                       const result = [...prev];
                       result[3] = Number(e.target.value);
                       return result;
@@ -448,42 +448,42 @@ export default function StableSurge() {
                 />
               )}
               <TextField
-                label="Amplification Parameter"
-                type="number"
+                label='Amplification Parameter'
+                type='number'
                 fullWidth
-                margin="normal"
+                margin='normal'
                 value={inputAmplification}
-                onChange={(e) => setInputAmplification(Number(e.target.value))}
+                onChange={e => setInputAmplification(Number(e.target.value))}
               />
               <TextField
-                label="Static Swap Fee (%)"
-                type="number"
+                label='Static Swap Fee (%)'
+                type='number'
                 fullWidth
-                margin="normal"
+                margin='normal'
                 value={inputSwapFee}
-                onChange={(e) => setInputSwapFee(Number(e.target.value))}
-                inputProps={{ step: "0.1", min: "0", max: "100" }}
+                onChange={e => setInputSwapFee(Number(e.target.value))}
+                inputProps={{ step: '0.1', min: '0', max: '100' }}
               />
               <TextField
-                label="Max Surge Fee (%)"
-                type="number"
+                label='Max Surge Fee (%)'
+                type='number'
                 fullWidth
-                margin="normal"
+                margin='normal'
                 value={inputMaxSurgeFee}
-                onChange={(e) => setInputMaxSurgeFee(Number(e.target.value))}
-                inputProps={{ step: "0.1", min: "0", max: "100" }}
+                onChange={e => setInputMaxSurgeFee(Number(e.target.value))}
+                inputProps={{ step: '0.1', min: '0', max: '100' }}
               />
               <TextField
-                label="Surge Threshold (%)"
-                type="number"
+                label='Surge Threshold (%)'
+                type='number'
                 fullWidth
-                margin="normal"
+                margin='normal'
                 value={inputSurgeThreshold}
-                onChange={(e) => setInputSurgeThreshold(Number(e.target.value))}
-                inputProps={{ step: "0.1", min: "0", max: "100" }}
+                onChange={e => setInputSurgeThreshold(Number(e.target.value))}
+                inputProps={{ step: '0.1', min: '0', max: '100' }}
               />
               <Button
-                variant="contained"
+                variant='contained'
                 fullWidth
                 onClick={handleUpdate}
                 style={{ marginTop: 16 }}
@@ -495,16 +495,16 @@ export default function StableSurge() {
 
           <Accordion>
             <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-              <Typography variant="h6">Swap Exact In</Typography>
+              <Typography variant='h6'>Swap Exact In</Typography>
             </AccordionSummary>
             <AccordionDetails>
               <TextField
                 select
-                label="Token In"
+                label='Token In'
                 fullWidth
-                margin="normal"
+                margin='normal'
                 value={swapTokenInIndex}
-                onChange={(e) => setSwapTokenInIndex(Number(e.target.value))}
+                onChange={e => setSwapTokenInIndex(Number(e.target.value))}
                 SelectProps={{
                   native: true,
                 }}
@@ -516,11 +516,11 @@ export default function StableSurge() {
               </TextField>
               <TextField
                 select
-                label="Token Out"
+                label='Token Out'
                 fullWidth
-                margin="normal"
+                margin='normal'
                 value={swapTokenOutIndex}
-                onChange={(e) => setSwapTokenOutIndex(Number(e.target.value))}
+                onChange={e => setSwapTokenOutIndex(Number(e.target.value))}
                 SelectProps={{
                   native: true,
                 }}
@@ -543,28 +543,28 @@ export default function StableSurge() {
                 )}
               </TextField>
               <TextField
-                label="Amount In"
-                type="number"
+                label='Amount In'
+                type='number'
                 fullWidth
-                margin="normal"
+                margin='normal'
                 value={swapAmountIn}
-                onChange={(e) => setSwapAmountIn(Number(e.target.value))}
+                onChange={e => setSwapAmountIn(Number(e.target.value))}
               />
               <Typography style={{ marginTop: 8, marginBottom: 8 }}>
-                Amount Out {tokenNames[swapTokenOutIndex]}:{" "}
+                Amount Out {tokenNames[swapTokenOutIndex]}:{' '}
                 {swapPreview.amountOut > 0
                   ? swapPreview.amountOut.toFixed(2)
-                  : "0"}
+                  : '0'}
               </Typography>
               <Typography style={{ marginBottom: 8 }}>
                 Surge Fee (%): {swapPreview.feePercentage.toFixed(2)}
               </Typography>
               <Typography style={{ marginBottom: 8 }}>
-                Fee: {swapPreview.fee > 0 ? swapPreview.fee.toFixed(2) : "0"}{" "}
+                Fee: {swapPreview.fee > 0 ? swapPreview.fee.toFixed(2) : '0'}{' '}
                 {tokenNames[swapTokenInIndex]}
               </Typography>
               <Button
-                variant="contained"
+                variant='contained'
                 fullWidth
                 onClick={handleSwap}
                 style={{ marginTop: 16 }}
@@ -576,16 +576,16 @@ export default function StableSurge() {
 
           <Accordion>
             <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-              <Typography variant="h6">Config</Typography>
+              <Typography variant='h6'>Config</Typography>
             </AccordionSummary>
             <AccordionDetails>
               <TextField
-                label="Token A Name"
+                label='Token A Name'
                 fullWidth
-                margin="normal"
+                margin='normal'
                 value={tokenNames[0]}
-                onChange={(e) =>
-                  setTokenNames((prev) => {
+                onChange={e =>
+                  setTokenNames(prev => {
                     const result = [...prev];
                     result[0] = e.target.value;
                     return result;
@@ -593,12 +593,12 @@ export default function StableSurge() {
                 }
               />
               <TextField
-                label="Token B Name"
+                label='Token B Name'
                 fullWidth
-                margin="normal"
+                margin='normal'
                 value={tokenNames[1]}
-                onChange={(e) =>
-                  setTokenNames((prev) => {
+                onChange={e =>
+                  setTokenNames(prev => {
                     const result = [...prev];
                     result[1] = e.target.value;
                     return result;
@@ -607,12 +607,12 @@ export default function StableSurge() {
               />
               {tokenCount >= 3 && (
                 <TextField
-                  label="Token C Name"
+                  label='Token C Name'
                   fullWidth
-                  margin="normal"
+                  margin='normal'
                   value={tokenNames[2]}
-                  onChange={(e) =>
-                    setTokenNames((prev) => {
+                  onChange={e =>
+                    setTokenNames(prev => {
                       const result = [...prev];
                       result[2] = e.target.value;
                       return result;
@@ -622,12 +622,12 @@ export default function StableSurge() {
               )}
               {tokenCount >= 4 && (
                 <TextField
-                  label="Token D Name"
+                  label='Token D Name'
                   fullWidth
-                  margin="normal"
+                  margin='normal'
                   value={tokenNames[3]}
-                  onChange={(e) =>
-                    setTokenNames((prev) => {
+                  onChange={e =>
+                    setTokenNames(prev => {
                       const result = [...prev];
                       result[3] = e.target.value;
                       return result;
@@ -641,8 +641,8 @@ export default function StableSurge() {
 
         {/* Middle Column - Chart */}
         <Grid item xs={6}>
-          <Paper style={{ padding: 16, textAlign: "center" }}>
-            <div style={{ width: "100%", height: 600 }}>
+          <Paper style={{ padding: 16, textAlign: 'center' }}>
+            <div style={{ width: '100%', height: 600 }}>
               <StableSurgeChart
                 curvePoints={curvePoints}
                 curvePointsWithFees={curvePointsWithFees}
@@ -665,20 +665,20 @@ export default function StableSurge() {
         <Grid item xs={3}>
           <Accordion defaultExpanded>
             <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-              <Typography variant="h6">Current Values</Typography>
+              <Typography variant='h6'>Current Values</Typography>
             </AccordionSummary>
             <AccordionDetails>
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <Typography>Current Balance {tokenNames[0]}:</Typography>
                 <Typography>{currentBalances[0].toFixed(2)}</Typography>
               </div>
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <Typography>Current Balance {tokenNames[1]}:</Typography>
                 <Typography>{currentBalances[1].toFixed(2)}</Typography>
               </div>
               {tokenCount >= 3 && (
                 <div
-                  style={{ display: "flex", justifyContent: "space-between" }}
+                  style={{ display: 'flex', justifyContent: 'space-between' }}
                 >
                   <Typography>Current Balance {tokenNames[2]}:</Typography>
                   <Typography>{currentBalances[2].toFixed(2)}</Typography>
@@ -686,17 +686,17 @@ export default function StableSurge() {
               )}
               {tokenCount >= 4 && (
                 <div
-                  style={{ display: "flex", justifyContent: "space-between" }}
+                  style={{ display: 'flex', justifyContent: 'space-between' }}
                 >
                   <Typography>Current Balance {tokenNames[3]}:</Typography>
                   <Typography>{currentBalances[3].toFixed(2)}</Typography>
                 </div>
               )}
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <Typography>Current Invariant:</Typography>
                 <Typography>{currentInvariant.toFixed(2)}</Typography>
               </div>
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <Typography>Current Imbalance (%):</Typography>
                 <Typography>
                   {calculateImbalance(currentBalances).toFixed(2)}
@@ -704,7 +704,7 @@ export default function StableSurge() {
               </div>
               {previewPoint && (
                 <div
-                  style={{ display: "flex", justifyContent: "space-between" }}
+                  style={{ display: 'flex', justifyContent: 'space-between' }}
                 >
                   <Typography>Post-Swap Imbalance (%):</Typography>
                   <Typography>
@@ -720,22 +720,22 @@ export default function StableSurge() {
 
           <Accordion defaultExpanded>
             <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-              <Typography variant="h6">Pool Parameters</Typography>
+              <Typography variant='h6'>Pool Parameters</Typography>
             </AccordionSummary>
             <AccordionDetails>
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <Typography>Amplification Factor:</Typography>
                 <Typography>{amplification.toFixed(2)}</Typography>
               </div>
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <Typography>Static Swap Fee (%):</Typography>
                 <Typography>{swapFee.toFixed(2)}</Typography>
               </div>
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <Typography>Surge Threshold (%):</Typography>
                 <Typography>{surgeThreshold.toFixed(2)}</Typography>
               </div>
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <Typography>Max Surge Fee (%):</Typography>
                 <Typography>{maxSurgeFee.toFixed(2)}</Typography>
               </div>
@@ -744,20 +744,20 @@ export default function StableSurge() {
 
           <Accordion defaultExpanded>
             <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-              <Typography variant="h6">Initial Values</Typography>
+              <Typography variant='h6'>Initial Values</Typography>
             </AccordionSummary>
             <AccordionDetails>
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <Typography>Initial Balance {tokenNames[0]}:</Typography>
                 <Typography>{initialBalances[0].toFixed(2)}</Typography>
               </div>
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <Typography>Initial Balance {tokenNames[1]}:</Typography>
                 <Typography>{initialBalances[1].toFixed(2)}</Typography>
               </div>
               {tokenCount >= 3 && (
                 <div
-                  style={{ display: "flex", justifyContent: "space-between" }}
+                  style={{ display: 'flex', justifyContent: 'space-between' }}
                 >
                   <Typography>Initial Balance {tokenNames[2]}:</Typography>
                   <Typography>{initialBalances[2].toFixed(2)}</Typography>
@@ -765,13 +765,13 @@ export default function StableSurge() {
               )}
               {tokenCount >= 4 && (
                 <div
-                  style={{ display: "flex", justifyContent: "space-between" }}
+                  style={{ display: 'flex', justifyContent: 'space-between' }}
                 >
                   <Typography>Initial Balance {tokenNames[3]}:</Typography>
                   <Typography>{initialBalances[3].toFixed(2)}</Typography>
                 </div>
               )}
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <Typography>Initial Invariant:</Typography>
                 <Typography>
                   {stableInvariant(amplification, initialBalances).toFixed(2)}
@@ -782,20 +782,20 @@ export default function StableSurge() {
 
           <Accordion defaultExpanded>
             <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-              <Typography variant="h6">Collected Fees</Typography>
+              <Typography variant='h6'>Collected Fees</Typography>
             </AccordionSummary>
             <AccordionDetails>
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <Typography>{tokenNames[0]}:</Typography>
                 <Typography>{totalFees[0].toFixed(2)}</Typography>
               </div>
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <Typography>{tokenNames[1]}:</Typography>
                 <Typography>{totalFees[1].toFixed(2)}</Typography>
               </div>
               {tokenCount >= 3 && (
                 <div
-                  style={{ display: "flex", justifyContent: "space-between" }}
+                  style={{ display: 'flex', justifyContent: 'space-between' }}
                 >
                   <Typography>{tokenNames[2]}:</Typography>
                   <Typography>{totalFees[2].toFixed(2)}</Typography>
@@ -803,7 +803,7 @@ export default function StableSurge() {
               )}
               {tokenCount >= 4 && (
                 <div
-                  style={{ display: "flex", justifyContent: "space-between" }}
+                  style={{ display: 'flex', justifyContent: 'space-between' }}
                 >
                   <Typography>{tokenNames[3]}:</Typography>
                   <Typography>{totalFees[3].toFixed(2)}</Typography>

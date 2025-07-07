@@ -1,23 +1,21 @@
-import React, { createContext, useContext, useState, ReactNode } from "react";
+import React, { createContext, useContext, useState, ReactNode } from 'react';
 
 interface TimerContextType {
   // Timer state
   isPlaying: boolean;
-  setIsPlaying: (playing: boolean | ((p: boolean) => boolean)) => void;
+  setIsPlaying: (_: boolean | ((_: boolean) => boolean)) => void;
   simulationSeconds: number;
-  setSimulationSeconds: (seconds: number | ((s: number) => number)) => void;
+  setSimulationSeconds: (_: number | ((_: number) => number)) => void;
   simulationSecondsLastTick: number;
-  setSimulationSecondsLastTick: (
-    seconds: number | ((s: number) => number)
-  ) => void;
+  setSimulationSecondsLastTick: (_: number | ((_: number) => number)) => void;
   blockNumber: number;
-  setBlockNumber: (block: number | ((b: number) => number)) => void;
+  setBlockNumber: (_: number | ((_: number) => number)) => void;
   speedMultiplier: number;
-  setSpeedMultiplier: (speed: number | ((s: number) => number)) => void;
+  setSpeedMultiplier: (_: number | ((_: number) => number)) => void;
 
   // Simulation configuration
   simulationSecondsPerBlock: number;
-  setSimulationSecondsPerBlock: (seconds: number) => void;
+  setSimulationSecondsPerBlock: (_: number | ((_: number) => number)) => void;
 
   // Timer control functions
   resetTimer: () => void;
@@ -92,7 +90,7 @@ export const TimerProvider: React.FC<TimerProviderProps> = ({ children }) => {
 export const useTimer = (): TimerContextType => {
   const context = useContext(TimerContext);
   if (context === undefined) {
-    throw new Error("useTimer must be used within a TimerProvider");
+    throw new Error('useTimer must be used within a TimerProvider');
   }
   return context;
 };
