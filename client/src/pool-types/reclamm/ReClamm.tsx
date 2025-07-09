@@ -170,7 +170,7 @@ export default function ReClamm() {
     });
   }, [realTimeBalanceA, realTimeBalanceB, realTimeVirtualBalances]);
 
-  const lowerMargin = useMemo(() => {
+  const realTimeLowerMargin = useMemo(() => {
     return calculateLowerMargin({
       margin: margin,
       invariant: realTimeInvariant,
@@ -179,7 +179,7 @@ export default function ReClamm() {
     });
   }, [margin, realTimeVirtualBalances, realTimeInvariant]);
 
-  const higherMargin = useMemo(() => {
+  const realTimeUpperMargin = useMemo(() => {
     return calculateUpperMargin({
       margin: margin,
       invariant: realTimeInvariant,
@@ -187,6 +187,24 @@ export default function ReClamm() {
       virtualBalanceB: realTimeVirtualBalances.virtualBalanceB,
     });
   }, [margin, realTimeVirtualBalances, realTimeInvariant]);
+
+  const currentLowerMargin = useMemo(() => {
+    return calculateLowerMargin({
+      margin: margin,
+      invariant: currentInvariant,
+      virtualBalanceA: currentVirtualBalances.virtualBalanceA,
+      virtualBalanceB: currentVirtualBalances.virtualBalanceB,
+    });
+  }, [margin, currentVirtualBalances, currentInvariant]);
+
+  const currentUpperMargin = useMemo(() => {
+    return calculateUpperMargin({
+      margin: margin,
+      invariant: currentInvariant,
+      virtualBalanceA: currentVirtualBalances.virtualBalanceA,
+      virtualBalanceB: currentVirtualBalances.virtualBalanceB,
+    });
+  }, [margin, currentVirtualBalances, currentInvariant]);
 
   const calculatedSwapAmountOut = useMemo(() => {
     const amountOut = calculateOutGivenIn({
@@ -1050,7 +1068,7 @@ export default function ReClamm() {
                     </Typography>
                     <Typography style={{ color: 'blue' }}>
                       {toFixedDecimals(
-                        currentInvariant / Math.pow(higherMargin, 2)
+                        currentInvariant / Math.pow(currentUpperMargin, 2)
                       )}
                     </Typography>
                   </div>
@@ -1077,7 +1095,7 @@ export default function ReClamm() {
                     </Typography>
                     <Typography style={{ color: 'blue' }}>
                       {toFixedDecimals(
-                        currentInvariant / Math.pow(lowerMargin, 2)
+                        currentInvariant / Math.pow(currentLowerMargin, 2)
                       )}
                     </Typography>
                   </div>
@@ -1177,7 +1195,7 @@ export default function ReClamm() {
                     </Typography>
                     <Typography style={{ color: 'blue' }}>
                       {toFixedDecimals(
-                        realTimeInvariant / Math.pow(higherMargin, 2)
+                        realTimeInvariant / Math.pow(realTimeUpperMargin, 2)
                       )}
                     </Typography>
                   </div>
@@ -1204,7 +1222,7 @@ export default function ReClamm() {
                     </Typography>
                     <Typography style={{ color: 'blue' }}>
                       {toFixedDecimals(
-                        realTimeInvariant / Math.pow(lowerMargin, 2)
+                        realTimeInvariant / Math.pow(realTimeLowerMargin, 2)
                       )}
                     </Typography>
                   </div>
