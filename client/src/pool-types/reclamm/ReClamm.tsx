@@ -342,7 +342,6 @@ export default function ReClamm() {
       balanceB: realTimeBalanceB,
       oldVirtualBalanceA: realTimeVirtualBalances.virtualBalanceA,
       oldVirtualBalanceB: realTimeVirtualBalances.virtualBalanceB,
-      currentPriceRatio: priceRatio,
       poolParams: {
         margin: margin,
         priceShiftDailyRate: priceShiftDailyRate,
@@ -481,7 +480,6 @@ export default function ReClamm() {
         balanceB: result.newBalanceB,
         oldVirtualBalanceA: realTimeVirtualBalances.virtualBalanceA,
         oldVirtualBalanceB: realTimeVirtualBalances.virtualBalanceB,
-        currentPriceRatio: priceRatio,
         poolParams: {
           margin: margin,
           priceShiftDailyRate: priceShiftDailyRate,
@@ -508,7 +506,6 @@ export default function ReClamm() {
       balanceB: currentBalanceB,
       oldVirtualBalanceA: currentVirtualBalances.virtualBalanceA,
       oldVirtualBalanceB: currentVirtualBalances.virtualBalanceB,
-      currentPriceRatio: priceRatio,
       poolParams: {
         margin: margin,
         priceShiftDailyRate: priceShiftDailyRate,
@@ -557,7 +554,6 @@ export default function ReClamm() {
         balanceB: result.newBalanceB,
         oldVirtualBalanceA: newVirtualBalances.virtualBalanceA,
         oldVirtualBalanceB: newVirtualBalances.virtualBalanceB,
-        currentPriceRatio: priceRatio,
         poolParams: {
           margin: margin,
           priceShiftDailyRate: priceShiftDailyRate,

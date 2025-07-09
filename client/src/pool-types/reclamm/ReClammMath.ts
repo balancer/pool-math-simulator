@@ -157,7 +157,6 @@ export const recalculateVirtualBalances = (params: {
   balanceB: number;
   oldVirtualBalanceA: number;
   oldVirtualBalanceB: number;
-  currentPriceRatio: number;
   poolParams: {
     margin: number;
     priceShiftDailyRate: number;
@@ -194,10 +193,7 @@ export const recalculateVirtualBalances = (params: {
 
   let newVirtualBalanceA = params.oldVirtualBalanceA;
   let newVirtualBalanceB = params.oldVirtualBalanceB;
-  let newPriceRatio = params.currentPriceRatio;
-
-  // Q0 is updating.
-  newPriceRatio = computeCurrentPriceRatio(
+  let newPriceRatio = computeCurrentPriceRatio(
     params.simulationParams.simulationSeconds,
     params.updateQ0Params
   );
