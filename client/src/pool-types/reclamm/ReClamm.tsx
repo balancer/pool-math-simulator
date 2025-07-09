@@ -525,6 +525,7 @@ export default function ReClamm() {
         secondsSinceLastInteraction: simulationSeconds - lastSwapTime,
       },
     });
+
     setLastSwapTime(simulationSeconds);
     setCurrentVirtualBalances(newVirtualBalances);
 
@@ -554,8 +555,8 @@ export default function ReClamm() {
       recalculateVirtualBalances({
         balanceA: result.newBalanceA,
         balanceB: result.newBalanceB,
-        oldVirtualBalanceA: currentVirtualBalances.virtualBalanceA,
-        oldVirtualBalanceB: currentVirtualBalances.virtualBalanceB,
+        oldVirtualBalanceA: newVirtualBalances.virtualBalanceA,
+        oldVirtualBalanceB: newVirtualBalances.virtualBalanceB,
         currentPriceRatio: priceRatio,
         poolParams: {
           margin: margin,
