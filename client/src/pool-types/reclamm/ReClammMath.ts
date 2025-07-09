@@ -185,16 +185,6 @@ export const recalculateVirtualBalances = (params: {
     (params.simulationParams.secondsSinceLastInteraction %
       params.simulationParams.simulationSecondsPerBlock);
 
-  // if (fixedSecondsSinceLastInteraction <= 0.01) {
-  //   return {
-  //     newVirtualBalances: {
-  //       virtualBalanceA: params.oldVirtualBalanceA,
-  //       virtualBalanceB: params.oldVirtualBalanceB,
-  //     },
-  //     newPriceRatio: params.currentPriceRatio,
-  //   };
-  // }
-
   const { poolCenteredness, isPoolAboveCenter } = computeCenteredness({
     balanceA: params.balanceA,
     balanceB: params.balanceB,
@@ -207,20 +197,10 @@ export const recalculateVirtualBalances = (params: {
   let newPriceRatio = params.currentPriceRatio;
 
   // Q0 is updating.
-  newPriceRatio =
-    params.simulationParams.simulationSeconds >= params.updateQ0Params.endTime
-      ? params.updateQ0Params.targetPriceRatio
-      : params.updateQ0Params.startPriceRatio *
-        Math.pow(
-          params.updateQ0Params.targetPriceRatio /
-            params.updateQ0Params.startPriceRatio,
-          Math.min(
-            params.updateQ0Params.endTime - params.updateQ0Params.startTime,
-            params.simulationParams.simulationSeconds -
-              params.updateQ0Params.startTime
-          ) /
-            (params.updateQ0Params.endTime - params.updateQ0Params.startTime)
-        );
+  newPriceRatio = computeCurrentPriceRatio(
+    params.simulationParams.simulationSeconds,
+    params.updateQ0Params
+  );
 
   if (isPoolAboveCenter) {
     const a = Math.sqrt(newPriceRatio) - 1;
@@ -270,3 +250,33 @@ export const recalculateVirtualBalances = (params: {
     newPriceRatio: newPriceRatio,
   };
 };
+
+function computeCurrentPriceRatio(
+  currentTime: number,
+  updateQ0Params: {
+    startTime: number;
+    endTime: number;
+    startPriceRatio: number;
+    targetPriceRatio: number;
+  }
+) {
+  if (currentTime >= updateQ0Params.endTime) {
+    return updateQ0Params.targetPriceRatio;
+  } else if (currentTime <= updateQ0Params.startTime) {
+    return updateQ0Params.startPriceRatio;
+  }
+
+  const exponent =
+    (currentTime - updateQ0Params.startTime) /
+    (updateQ0Params.endTime - updateQ0Params.startTime);
+  const currentPriceRatio =
+    updateQ0Params.startPriceRatio *
+    Math.pow(
+      updateQ0Params.targetPriceRatio / updateQ0Params.startPriceRatio,
+      exponent
+    );
+  return Math.max(
+    Math.min(updateQ0Params.startPriceRatio, updateQ0Params.targetPriceRatio),
+    currentPriceRatio
+  );
+}
