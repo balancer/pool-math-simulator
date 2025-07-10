@@ -1,6 +1,7 @@
 import * as WeightedMath from '../weighted-pool/WeightedMath';
 
 const timeFix = 12464900; // Using the same constant as the Contract. The full value is 12464935.015039.
+const THIRTY_DAYS = 2592000; // 30 days in seconds
 
 export function computeCenteredness(params: {
   balanceA: number;
@@ -186,7 +187,7 @@ export const recalculateVirtualBalances = (params: {
 
   let newVirtualBalanceA = params.oldVirtualBalanceA;
   let newVirtualBalanceB = params.oldVirtualBalanceB;
-  let newPriceRatio = computeCurrentPriceRatio(
+  let newPriceRatio = computePriceRatioFromState(
     params.simulationParams.simulationSeconds,
     params.updateQ0Params
   );
@@ -214,23 +215,16 @@ export const recalculateVirtualBalances = (params: {
   });
 
   if (poolCenteredness <= params.poolParams.margin / 100) {
-    const tau = params.poolParams.priceShiftDailyRate / timeFix;
-
-    if (isPoolAboveCenter) {
-      newVirtualBalanceB =
-        newVirtualBalanceB *
-        Math.pow(1 - tau, fixedSecondsSinceLastInteraction);
-      newVirtualBalanceA =
-        (params.balanceA * (newVirtualBalanceB + params.balanceB)) /
-        (newVirtualBalanceB * (Math.sqrt(newPriceRatio) - 1) - params.balanceB);
-    } else {
-      newVirtualBalanceA =
-        newVirtualBalanceA *
-        Math.pow(1 - tau, fixedSecondsSinceLastInteraction);
-      newVirtualBalanceB =
-        (params.balanceB * (newVirtualBalanceA + params.balanceA)) /
-        (newVirtualBalanceA * (Math.sqrt(newPriceRatio) - 1) - params.balanceA);
-    }
+    [newVirtualBalanceA, newVirtualBalanceB] =
+      computeVirtualBalancesUpdatingPriceRange({
+        balanceA: params.balanceA,
+        balanceB: params.balanceB,
+        currentVirtualBalanceA: newVirtualBalanceA,
+        currentVirtualBalanceB: newVirtualBalanceB,
+        isPoolAboveCenter,
+        priceShiftDailyRate: params.poolParams.priceShiftDailyRate,
+        timeInterval: fixedSecondsSinceLastInteraction,
+      });
   }
 
   return {
@@ -284,7 +278,51 @@ function computeVirtualBalancesUpdatingPriceRatio(params: {
     : [virtualBalanceOvervalued, virtualBalanceUndervalued];
 }
 
-function computeCurrentPriceRatio(
+function computeVirtualBalancesUpdatingPriceRange(params: {
+  balanceA: number;
+  balanceB: number;
+  currentVirtualBalanceA: number;
+  currentVirtualBalanceB: number;
+  isPoolAboveCenter: boolean;
+  priceShiftDailyRate: number;
+  timeInterval: number;
+}): [number, number] {
+  const dailyPriceShiftBase = 1 - params.priceShiftDailyRate / timeFix;
+
+  const priceRatio = computePriceRatioFromBalances({
+    balanceA: params.balanceA,
+    balanceB: params.balanceB,
+    virtualBalanceA: params.currentVirtualBalanceA,
+    virtualBalanceB: params.currentVirtualBalanceB,
+  });
+
+  const [balanceUndervalued, balanceOvervalued] = params.isPoolAboveCenter
+    ? [params.balanceA, params.balanceB]
+    : [params.balanceB, params.balanceA];
+  let [virtualBalanceUndervalued, virtualBalanceOvervalued] =
+    params.isPoolAboveCenter
+      ? [params.currentVirtualBalanceA, params.currentVirtualBalanceB]
+      : [params.currentVirtualBalanceB, params.currentVirtualBalanceA];
+
+  const duration = Math.min(params.timeInterval, THIRTY_DAYS);
+  virtualBalanceOvervalued =
+    virtualBalanceOvervalued * Math.pow(dailyPriceShiftBase, duration);
+  virtualBalanceOvervalued = Math.max(
+    virtualBalanceOvervalued,
+    balanceOvervalued / (Math.sqrt(Math.sqrt(priceRatio)) - 1)
+  );
+
+  virtualBalanceUndervalued =
+    (balanceUndervalued * (virtualBalanceOvervalued + balanceOvervalued)) /
+    ((Math.sqrt(priceRatio) - 1) * virtualBalanceOvervalued -
+      balanceOvervalued);
+
+  return params.isPoolAboveCenter
+    ? [virtualBalanceUndervalued, virtualBalanceOvervalued]
+    : [virtualBalanceOvervalued, virtualBalanceUndervalued];
+}
+
+function computePriceRatioFromState(
   currentTime: number,
   updateQ0Params: {
     startTime: number;
@@ -312,4 +350,29 @@ function computeCurrentPriceRatio(
     Math.min(updateQ0Params.startPriceRatio, updateQ0Params.targetPriceRatio),
     currentPriceRatio
   );
+}
+
+export function computePriceRatioFromBalances(params: {
+  balanceA: number;
+  balanceB: number;
+  virtualBalanceA: number;
+  virtualBalanceB: number;
+}): number {
+  const [minPrice, maxPrice] = computePriceRangeFromBalances(params);
+  return maxPrice / minPrice;
+}
+
+function computePriceRangeFromBalances(params: {
+  balanceA: number;
+  balanceB: number;
+  virtualBalanceA: number;
+  virtualBalanceB: number;
+}): [number, number] {
+  const currentInvariant = calculateInvariant(params);
+  const minPrice =
+    (params.virtualBalanceB * params.virtualBalanceB) / currentInvariant;
+  const maxPrice =
+    currentInvariant / (params.virtualBalanceA * params.virtualBalanceA);
+
+  return [minPrice, maxPrice];
 }

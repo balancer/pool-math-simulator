@@ -23,6 +23,7 @@ import {
   calculateBalancesAfterSwapIn,
   recalculateVirtualBalances,
   calculateInvariant,
+  computePriceRatioFromBalances,
 } from './ReClammMath';
 import { MIN_SWAP, NETWORKS } from './constants';
 
@@ -438,9 +439,23 @@ export default function ReClamm() {
       return;
     }
 
+    updateRealTimeVirtualBalances(realTimeBalanceA, realTimeBalanceB);
+    updateCurrentVirtualBalances(
+      currentBalanceA,
+      currentBalanceB,
+      currentVirtualBalances.virtualBalanceA,
+      currentVirtualBalances.virtualBalanceB
+    );
+
     setEndTimeError('');
     setTargetPriceRatioError('');
-    setStartPriceRatio(priceRatio);
+    const currentPriceRatio = computePriceRatioFromBalances({
+      balanceA: currentBalanceA,
+      balanceB: currentBalanceB,
+      virtualBalanceA: currentVirtualBalances.virtualBalanceA,
+      virtualBalanceB: currentVirtualBalances.virtualBalanceB,
+    });
+    setStartPriceRatio(currentPriceRatio);
     setTargetPriceRatio(inputTargetPriceRatio);
     setStartTime(simulationSeconds);
     setEndTime(inputEndTime);
@@ -449,6 +464,36 @@ export default function ReClamm() {
   const handleSwap = () => {
     handleRealTimeSwap();
     handleCurrentSwap();
+  };
+
+  const updateRealTimeVirtualBalances = (
+    balanceA: number,
+    balanceB: number
+  ) => {
+    const { newVirtualBalances: virtualBalancesAfterSwap } =
+      recalculateVirtualBalances({
+        balanceA,
+        balanceB,
+        oldVirtualBalanceA: realTimeVirtualBalances.virtualBalanceA,
+        oldVirtualBalanceB: realTimeVirtualBalances.virtualBalanceB,
+        poolParams: {
+          margin: margin,
+          priceShiftDailyRate: priceShiftDailyRate,
+        },
+        updateQ0Params: {
+          startTime: startTime,
+          endTime: endTime,
+          startPriceRatio: startPriceRatio,
+          targetPriceRatio: targetPriceRatio,
+        },
+        simulationParams: {
+          simulationSeconds: simulationSeconds,
+          simulationSecondsPerBlock: simulationSecondsPerBlock,
+          secondsSinceLastInteraction: simulationSeconds - lastSwapTime,
+        },
+      });
+
+    setRealTimeVirtualBalances(virtualBalancesAfterSwap);
   };
 
   const handleRealTimeSwap = () => {
@@ -474,12 +519,21 @@ export default function ReClamm() {
     setRealTimeBalanceA(result.newBalanceA);
     setRealTimeBalanceB(result.newBalanceB);
 
+    updateRealTimeVirtualBalances(result.newBalanceA, result.newBalanceB);
+  };
+
+  const updateCurrentVirtualBalances = (
+    balanceA: number,
+    balanceB: number,
+    virtualBalanceA: number,
+    virtualBalanceB: number
+  ) => {
     const { newVirtualBalances: virtualBalancesAfterSwap } =
       recalculateVirtualBalances({
-        balanceA: result.newBalanceA,
-        balanceB: result.newBalanceB,
-        oldVirtualBalanceA: realTimeVirtualBalances.virtualBalanceA,
-        oldVirtualBalanceB: realTimeVirtualBalances.virtualBalanceB,
+        balanceA,
+        balanceB,
+        oldVirtualBalanceA: virtualBalanceA,
+        oldVirtualBalanceB: virtualBalanceB,
         poolParams: {
           margin: margin,
           priceShiftDailyRate: priceShiftDailyRate,
@@ -497,7 +551,16 @@ export default function ReClamm() {
         },
       });
 
-    setRealTimeVirtualBalances(virtualBalancesAfterSwap);
+    setCurrentVirtualBalances(virtualBalancesAfterSwap);
+
+    setCurrentInvariant(
+      calculateInvariant({
+        balanceA,
+        balanceB,
+        virtualBalanceA: virtualBalancesAfterSwap.virtualBalanceA,
+        virtualBalanceB: virtualBalancesAfterSwap.virtualBalanceB,
+      })
+    );
   };
 
   const handleCurrentSwap = () => {
@@ -548,38 +611,11 @@ export default function ReClamm() {
     setCurrentBalanceA(result.newBalanceA);
     setCurrentBalanceB(result.newBalanceB);
 
-    const { newVirtualBalances: virtualBalancesAfterSwap } =
-      recalculateVirtualBalances({
-        balanceA: result.newBalanceA,
-        balanceB: result.newBalanceB,
-        oldVirtualBalanceA: newVirtualBalances.virtualBalanceA,
-        oldVirtualBalanceB: newVirtualBalances.virtualBalanceB,
-        poolParams: {
-          margin: margin,
-          priceShiftDailyRate: priceShiftDailyRate,
-        },
-        updateQ0Params: {
-          startTime: startTime,
-          endTime: endTime,
-          startPriceRatio: startPriceRatio,
-          targetPriceRatio: targetPriceRatio,
-        },
-        simulationParams: {
-          simulationSeconds: simulationSeconds,
-          simulationSecondsPerBlock: simulationSecondsPerBlock,
-          secondsSinceLastInteraction: simulationSeconds - lastSwapTime,
-        },
-      });
-
-    setCurrentVirtualBalances(virtualBalancesAfterSwap);
-
-    setCurrentInvariant(
-      calculateInvariant({
-        balanceA: result.newBalanceA,
-        balanceB: result.newBalanceB,
-        virtualBalanceA: virtualBalancesAfterSwap.virtualBalanceA,
-        virtualBalanceB: virtualBalancesAfterSwap.virtualBalanceB,
-      })
+    updateCurrentVirtualBalances(
+      result.newBalanceA,
+      result.newBalanceB,
+      newVirtualBalances.virtualBalanceA,
+      newVirtualBalances.virtualBalanceB
     );
   };
 
