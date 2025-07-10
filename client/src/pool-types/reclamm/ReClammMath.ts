@@ -173,6 +173,7 @@ export const recalculateVirtualBalances = (params: {
     simulationSecondsPerBlock: number;
     secondsSinceLastInteraction: number;
   };
+  forceOutOfRange?: boolean;
 }): {
   newVirtualBalances: {
     virtualBalanceA: number;
@@ -217,7 +218,10 @@ export const recalculateVirtualBalances = (params: {
     virtualBalanceB: newVirtualBalanceB,
   });
 
-  if (poolCenteredness <= params.poolParams.margin / 100) {
+  if (
+    poolCenteredness <= params.poolParams.margin / 100 ||
+    params.forceOutOfRange
+  ) {
     [newVirtualBalanceA, newVirtualBalanceB] =
       computeVirtualBalancesUpdatingPriceRange({
         balanceA: params.balanceA,
