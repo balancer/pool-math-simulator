@@ -184,6 +184,9 @@ export const recalculateVirtualBalances = (params: {
     params.simulationParams.secondsSinceLastInteraction -
     (params.simulationParams.secondsSinceLastInteraction %
       params.simulationParams.simulationSecondsPerBlock);
+  const lastTimestamp =
+    params.simulationParams.simulationSeconds -
+    fixedSecondsSinceLastInteraction;
 
   let newVirtualBalanceA = params.oldVirtualBalanceA;
   let newVirtualBalanceB = params.oldVirtualBalanceB;
@@ -195,7 +198,7 @@ export const recalculateVirtualBalances = (params: {
   if (
     params.simulationParams.simulationSeconds >
       params.updateQ0Params.startTime &&
-    fixedSecondsSinceLastInteraction < params.updateQ0Params.endTime
+    lastTimestamp < params.updateQ0Params.endTime
   ) {
     [newVirtualBalanceA, newVirtualBalanceB] =
       computeVirtualBalancesUpdatingPriceRatio({
