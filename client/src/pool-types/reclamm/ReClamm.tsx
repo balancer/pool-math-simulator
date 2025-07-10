@@ -23,6 +23,7 @@ import {
   calculateBalancesAfterSwapIn,
   recalculateVirtualBalances,
   calculateInvariant,
+  computePriceRatioFromBalances,
 } from './ReClammMath';
 import { MIN_SWAP, NETWORKS } from './constants';
 
@@ -170,7 +171,7 @@ export default function ReClamm() {
     });
   }, [realTimeBalanceA, realTimeBalanceB, realTimeVirtualBalances]);
 
-  const lowerMargin = useMemo(() => {
+  const realTimeLowerMargin = useMemo(() => {
     return calculateLowerMargin({
       margin: margin,
       invariant: realTimeInvariant,
@@ -179,7 +180,7 @@ export default function ReClamm() {
     });
   }, [margin, realTimeVirtualBalances, realTimeInvariant]);
 
-  const higherMargin = useMemo(() => {
+  const realTimeUpperMargin = useMemo(() => {
     return calculateUpperMargin({
       margin: margin,
       invariant: realTimeInvariant,
@@ -187,6 +188,24 @@ export default function ReClamm() {
       virtualBalanceB: realTimeVirtualBalances.virtualBalanceB,
     });
   }, [margin, realTimeVirtualBalances, realTimeInvariant]);
+
+  const currentLowerMargin = useMemo(() => {
+    return calculateLowerMargin({
+      margin: margin,
+      invariant: currentInvariant,
+      virtualBalanceA: currentVirtualBalances.virtualBalanceA,
+      virtualBalanceB: currentVirtualBalances.virtualBalanceB,
+    });
+  }, [margin, currentVirtualBalances, currentInvariant]);
+
+  const currentUpperMargin = useMemo(() => {
+    return calculateUpperMargin({
+      margin: margin,
+      invariant: currentInvariant,
+      virtualBalanceA: currentVirtualBalances.virtualBalanceA,
+      virtualBalanceB: currentVirtualBalances.virtualBalanceB,
+    });
+  }, [margin, currentVirtualBalances, currentInvariant]);
 
   const calculatedSwapAmountOut = useMemo(() => {
     const amountOut = calculateOutGivenIn({
@@ -324,7 +343,6 @@ export default function ReClamm() {
       balanceB: realTimeBalanceB,
       oldVirtualBalanceA: realTimeVirtualBalances.virtualBalanceA,
       oldVirtualBalanceB: realTimeVirtualBalances.virtualBalanceB,
-      currentPriceRatio: priceRatio,
       poolParams: {
         margin: margin,
         priceShiftDailyRate: priceShiftDailyRate,
@@ -421,9 +439,23 @@ export default function ReClamm() {
       return;
     }
 
+    updateRealTimeVirtualBalances(realTimeBalanceA, realTimeBalanceB);
+    updateCurrentVirtualBalances(
+      currentBalanceA,
+      currentBalanceB,
+      currentVirtualBalances.virtualBalanceA,
+      currentVirtualBalances.virtualBalanceB
+    );
+
     setEndTimeError('');
     setTargetPriceRatioError('');
-    setStartPriceRatio(priceRatio);
+    const currentPriceRatio = computePriceRatioFromBalances({
+      balanceA: currentBalanceA,
+      balanceB: currentBalanceB,
+      virtualBalanceA: currentVirtualBalances.virtualBalanceA,
+      virtualBalanceB: currentVirtualBalances.virtualBalanceB,
+    });
+    setStartPriceRatio(currentPriceRatio);
     setTargetPriceRatio(inputTargetPriceRatio);
     setStartTime(simulationSeconds);
     setEndTime(inputEndTime);
@@ -432,6 +464,36 @@ export default function ReClamm() {
   const handleSwap = () => {
     handleRealTimeSwap();
     handleCurrentSwap();
+  };
+
+  const updateRealTimeVirtualBalances = (
+    balanceA: number,
+    balanceB: number
+  ) => {
+    const { newVirtualBalances: virtualBalancesAfterSwap } =
+      recalculateVirtualBalances({
+        balanceA,
+        balanceB,
+        oldVirtualBalanceA: realTimeVirtualBalances.virtualBalanceA,
+        oldVirtualBalanceB: realTimeVirtualBalances.virtualBalanceB,
+        poolParams: {
+          margin: margin,
+          priceShiftDailyRate: priceShiftDailyRate,
+        },
+        updateQ0Params: {
+          startTime: startTime,
+          endTime: endTime,
+          startPriceRatio: startPriceRatio,
+          targetPriceRatio: targetPriceRatio,
+        },
+        simulationParams: {
+          simulationSeconds: simulationSeconds,
+          simulationSecondsPerBlock: simulationSecondsPerBlock,
+          secondsSinceLastInteraction: simulationSeconds - lastSwapTime,
+        },
+      });
+
+    setRealTimeVirtualBalances(virtualBalancesAfterSwap);
   };
 
   const handleRealTimeSwap = () => {
@@ -457,13 +519,21 @@ export default function ReClamm() {
     setRealTimeBalanceA(result.newBalanceA);
     setRealTimeBalanceB(result.newBalanceB);
 
+    updateRealTimeVirtualBalances(result.newBalanceA, result.newBalanceB);
+  };
+
+  const updateCurrentVirtualBalances = (
+    balanceA: number,
+    balanceB: number,
+    virtualBalanceA: number,
+    virtualBalanceB: number
+  ) => {
     const { newVirtualBalances: virtualBalancesAfterSwap } =
       recalculateVirtualBalances({
-        balanceA: result.newBalanceA,
-        balanceB: result.newBalanceB,
-        oldVirtualBalanceA: realTimeVirtualBalances.virtualBalanceA,
-        oldVirtualBalanceB: realTimeVirtualBalances.virtualBalanceB,
-        currentPriceRatio: priceRatio,
+        balanceA,
+        balanceB,
+        oldVirtualBalanceA: virtualBalanceA,
+        oldVirtualBalanceB: virtualBalanceB,
         poolParams: {
           margin: margin,
           priceShiftDailyRate: priceShiftDailyRate,
@@ -481,7 +551,16 @@ export default function ReClamm() {
         },
       });
 
-    setRealTimeVirtualBalances(virtualBalancesAfterSwap);
+    setCurrentVirtualBalances(virtualBalancesAfterSwap);
+
+    setCurrentInvariant(
+      calculateInvariant({
+        balanceA,
+        balanceB,
+        virtualBalanceA: virtualBalancesAfterSwap.virtualBalanceA,
+        virtualBalanceB: virtualBalancesAfterSwap.virtualBalanceB,
+      })
+    );
   };
 
   const handleCurrentSwap = () => {
@@ -490,7 +569,6 @@ export default function ReClamm() {
       balanceB: currentBalanceB,
       oldVirtualBalanceA: currentVirtualBalances.virtualBalanceA,
       oldVirtualBalanceB: currentVirtualBalances.virtualBalanceB,
-      currentPriceRatio: priceRatio,
       poolParams: {
         margin: margin,
         priceShiftDailyRate: priceShiftDailyRate,
@@ -507,6 +585,7 @@ export default function ReClamm() {
         secondsSinceLastInteraction: simulationSeconds - lastSwapTime,
       },
     });
+
     setLastSwapTime(simulationSeconds);
     setCurrentVirtualBalances(newVirtualBalances);
 
@@ -532,39 +611,11 @@ export default function ReClamm() {
     setCurrentBalanceA(result.newBalanceA);
     setCurrentBalanceB(result.newBalanceB);
 
-    const { newVirtualBalances: virtualBalancesAfterSwap } =
-      recalculateVirtualBalances({
-        balanceA: result.newBalanceA,
-        balanceB: result.newBalanceB,
-        oldVirtualBalanceA: currentVirtualBalances.virtualBalanceA,
-        oldVirtualBalanceB: currentVirtualBalances.virtualBalanceB,
-        currentPriceRatio: priceRatio,
-        poolParams: {
-          margin: margin,
-          priceShiftDailyRate: priceShiftDailyRate,
-        },
-        updateQ0Params: {
-          startTime: startTime,
-          endTime: endTime,
-          startPriceRatio: startPriceRatio,
-          targetPriceRatio: targetPriceRatio,
-        },
-        simulationParams: {
-          simulationSeconds: simulationSeconds,
-          simulationSecondsPerBlock: simulationSecondsPerBlock,
-          secondsSinceLastInteraction: simulationSeconds - lastSwapTime,
-        },
-      });
-
-    setCurrentVirtualBalances(virtualBalancesAfterSwap);
-
-    setCurrentInvariant(
-      calculateInvariant({
-        balanceA: result.newBalanceA,
-        balanceB: result.newBalanceB,
-        virtualBalanceA: virtualBalancesAfterSwap.virtualBalanceA,
-        virtualBalanceB: virtualBalancesAfterSwap.virtualBalanceB,
-      })
+    updateCurrentVirtualBalances(
+      result.newBalanceA,
+      result.newBalanceB,
+      newVirtualBalances.virtualBalanceA,
+      newVirtualBalances.virtualBalanceB
     );
   };
 
@@ -1050,7 +1101,7 @@ export default function ReClamm() {
                     </Typography>
                     <Typography style={{ color: 'blue' }}>
                       {toFixedDecimals(
-                        currentInvariant / Math.pow(higherMargin, 2)
+                        currentInvariant / Math.pow(currentUpperMargin, 2)
                       )}
                     </Typography>
                   </div>
@@ -1077,7 +1128,7 @@ export default function ReClamm() {
                     </Typography>
                     <Typography style={{ color: 'blue' }}>
                       {toFixedDecimals(
-                        currentInvariant / Math.pow(lowerMargin, 2)
+                        currentInvariant / Math.pow(currentLowerMargin, 2)
                       )}
                     </Typography>
                   </div>
@@ -1177,7 +1228,7 @@ export default function ReClamm() {
                     </Typography>
                     <Typography style={{ color: 'blue' }}>
                       {toFixedDecimals(
-                        realTimeInvariant / Math.pow(higherMargin, 2)
+                        realTimeInvariant / Math.pow(realTimeUpperMargin, 2)
                       )}
                     </Typography>
                   </div>
@@ -1204,7 +1255,7 @@ export default function ReClamm() {
                     </Typography>
                     <Typography style={{ color: 'blue' }}>
                       {toFixedDecimals(
-                        realTimeInvariant / Math.pow(lowerMargin, 2)
+                        realTimeInvariant / Math.pow(realTimeLowerMargin, 2)
                       )}
                     </Typography>
                   </div>
