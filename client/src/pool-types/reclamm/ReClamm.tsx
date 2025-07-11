@@ -338,6 +338,13 @@ export default function ReClamm() {
     setSimulationSecondsLastTick(simulationSeconds);
     setBlockNumber(prev => prev + 1);
 
+    const { poolCenteredness: currentPoolCenteredness } = computeCenteredness({
+      balanceA: currentBalanceA,
+      balanceB: currentBalanceB,
+      virtualBalanceA: currentVirtualBalances.virtualBalanceA,
+      virtualBalanceB: currentVirtualBalances.virtualBalanceB,
+    });
+
     const { newVirtualBalances, newPriceRatio } = recalculateVirtualBalances({
       balanceA: realTimeBalanceA,
       balanceB: realTimeBalanceB,
@@ -358,6 +365,7 @@ export default function ReClamm() {
         simulationSecondsPerBlock: simulationSecondsPerBlock,
         secondsSinceLastInteraction: simulationSecondsPerBlock,
       },
+      forceOutOfRange: currentPoolCenteredness <= margin / 100,
     });
 
     setRealTimeVirtualBalances(newVirtualBalances);
