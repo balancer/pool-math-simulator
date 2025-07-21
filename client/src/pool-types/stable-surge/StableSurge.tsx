@@ -377,6 +377,7 @@ export default function StableSurge() {
 
     const data: {
       numberOfTokens: number;
+      tokenNames: string[];
       balances: number[];
       amplificationParameter: number;
       staticSwapFeePercentage: number;
@@ -408,8 +409,9 @@ export default function StableSurge() {
     setInputSurgeThreshold(surgeThreshold);
     setSurgeThreshold(surgeThreshold);
 
-    // setTotalFees(Array(balances.length).fill(0));
-    // // Optionally set other params if available
+    setTokenNames(data.tokenNames);
+
+    setTotalFees(Array(balances.length).fill(0));
   };
 
   return (

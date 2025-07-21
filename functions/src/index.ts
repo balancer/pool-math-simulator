@@ -2,10 +2,11 @@ import { onRequest } from "firebase-functions/v2/https";
 import * as logger from "firebase-functions/logger";
 import { defineString } from "firebase-functions/params";
 import { Web3 } from "web3";
-import { reclammAbi } from "./reclammAbi";
-import { stablePoolAbi } from "./stablePoolAbi";
-import { vaultExtensionAbi } from "./vaultExtensionAbi";
-import { stableSurgeAbi } from "./stableSurgeAbi";
+import { reclammAbi } from "./abi/reclammAbi";
+import { stablePoolAbi } from "./abi/stablePoolAbi";
+import { vaultExtensionAbi } from "./abi/vaultExtensionAbi";
+import { stableSurgeAbi } from "./abi/stableSurgeAbi";
+import { erc20Abi } from "./abi/erc20Abi";
 
 // Start writing functions
 // https://firebase.google.com/docs/functions/typescript
@@ -144,6 +145,13 @@ export const stableSurgeData = onRequest(
       immutableData.amplificationParameterPrecision;
     const staticSwapFeePercentage = dynamicData.staticSwapFeePercentage;
 
+    const tokenNames = (await Promise.all(
+      immutableData.tokens.map(async (tokenAddress) => {
+        const erc20Contract = new web3.eth.Contract(erc20Abi, tokenAddress);
+        return erc20Contract.methods.symbol().call();
+      })
+    )) as string[];
+
     const vaultExtensionContract = new web3.eth.Contract(
       vaultExtensionAbi,
       vaultAddress
@@ -169,6 +177,7 @@ export const stableSurgeData = onRequest(
     // Send the JSON response
     response.json({
       numberOfTokens,
+      tokenNames,
       balances,
       amplificationParameter,
       staticSwapFeePercentage,
