@@ -25,7 +25,7 @@ import {
   calculateInvariant,
   computePriceRatioFromBalances,
 } from './ReClammMath';
-import { MIN_SWAP, NETWORKS } from './constants';
+import { MIN_SWAP, NETWORKS } from '../../constants';
 
 import { formatTime } from '../../utils/Time';
 import { toFixedDecimals } from '../../utils/ToFixedLib';
