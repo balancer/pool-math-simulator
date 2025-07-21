@@ -3,6 +3,9 @@ import * as logger from "firebase-functions/logger";
 import { defineString } from "firebase-functions/params";
 import { Web3 } from "web3";
 import { reclammAbi } from "./reclammAbi";
+import { stablePoolAbi } from "./stablePoolAbi";
+import { vaultExtensionAbi } from "./vaultExtensionAbi";
+import { stableSurgeAbi } from "./stableSurgeAbi";
 
 // Start writing functions
 // https://firebase.google.com/docs/functions/typescript
@@ -80,13 +83,6 @@ export const reclammData = onRequest(
       ])
     ).map((obj) => convertBigIntToNumber(obj));
 
-    // Construct the response object
-    // const responseData = {
-    //   network,
-    //   address,
-    //   apiKey: apiKey.value(),
-    // };
-
     // Send the JSON response
     response.json({
       priceRange,
@@ -94,6 +90,90 @@ export const reclammData = onRequest(
       realBalances,
       dailyPriceShiftExponent,
       centerednessMargin,
+    });
+  }
+);
+
+export const stableSurgeData = onRequest(
+  { cors: true },
+  async (request, response) => {
+    logger.info("Received request", { query: request.query });
+
+    // Extract network and address from the query string
+    const network = request.query.network as string;
+    const address = request.query.address as string;
+
+    // Basic validation (optional but recommended)
+    if (!network || !address) {
+      logger.error("Missing network or address parameters", {
+        query: request.query,
+      });
+      response
+        .status(400)
+        .send("Missing 'network' or 'address' query parameter.");
+      return;
+    }
+
+    const apiKey = defineString("ALCHEMY_API_KEY");
+    const rpcUrl = `https://${network}.g.alchemy.com/v2/${apiKey.value()}`;
+
+    const web3 = new Web3(rpcUrl);
+
+    const stablePoolContract = new web3.eth.Contract(stablePoolAbi, address);
+
+    const [vaultAddress, immutableData, dynamicData] = (
+      await Promise.all([
+        stablePoolContract.methods.getVault().call(),
+        stablePoolContract.methods.getStablePoolImmutableData().call(),
+        stablePoolContract.methods.getStablePoolDynamicData().call(),
+      ])
+    ).map((obj) => convertBigIntToNumber(obj)) as [
+      string,
+      { tokens: string[]; amplificationParameterPrecision: number },
+      {
+        balancesLiveScaled18: number[];
+        amplificationParameter: number;
+        staticSwapFeePercentage: number;
+      }
+    ];
+
+    const numberOfTokens = immutableData.tokens.length;
+    const balances = dynamicData.balancesLiveScaled18;
+    const amplificationParameter =
+      dynamicData.amplificationParameter /
+      immutableData.amplificationParameterPrecision;
+    const staticSwapFeePercentage = dynamicData.staticSwapFeePercentage;
+
+    const vaultExtensionContract = new web3.eth.Contract(
+      vaultExtensionAbi,
+      vaultAddress
+    );
+
+    const { hooksContract: hooksAddress } =
+      (await vaultExtensionContract.methods.getHooksConfig(address).call()) as {
+        hooksContract: string;
+      };
+
+    const stableSurgeContract = new web3.eth.Contract(
+      stableSurgeAbi,
+      hooksAddress
+    );
+
+    const [maxSurgeFeePercentage, surgeThreshold] = (
+      await Promise.all([
+        stableSurgeContract.methods.getMaxSurgeFeePercentage(address).call(),
+        stableSurgeContract.methods.getSurgeThresholdPercentage(address).call(),
+      ])
+    ).map((obj) => convertBigIntToNumber(obj)) as [number, number];
+
+    // Send the JSON response
+    response.json({
+      numberOfTokens,
+      balances,
+      amplificationParameter,
+      staticSwapFeePercentage,
+      maxSurgeFeePercentage,
+      surgeThreshold,
     });
   }
 );

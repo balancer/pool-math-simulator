@@ -15,6 +15,7 @@ import { stableInvariant } from '../stable-pool/StableMath';
 import { StableSurgeChart } from './StableSurgeChart';
 import { getTokenBalanceGivenInvariantAndAllOtherBalances } from '../stable-pool/StableMath';
 import { calculateImbalance, getSurgeFeePercentage } from './StableSurgeHook';
+import { NETWORKS } from '../../constants';
 export default function StableSurge() {
   const [inputBalances, setInputBalances] = useState<number[]>([1000, 1000]);
   const [initialBalances, setInitialBalances] = useState<number[]>([
@@ -27,12 +28,12 @@ export default function StableSurge() {
   const [tokenNames, setTokenNames] = useState<string[]>(['A', 'B', 'C', 'D']);
 
   const [inputTokenCount, setInputTokenCount] = useState<number>(2);
-  const [tokenCount, setTokenCount] = useState<number>(2);
   const [inputAmplification, setInputAmplification] = useState<number>(100);
   const [inputSwapFee, setInputSwapFee] = useState<number>(1);
   const [inputMaxSurgeFee, setInputMaxSurgeFee] = useState<number>(10);
   const [inputSurgeThreshold, setInputSurgeThreshold] = useState<number>(20);
 
+  const [tokenCount, setTokenCount] = useState<number>(2);
   const [amplification, setAmplification] = useState<number>(100);
   const [swapFee, setSwapFee] = useState<number>(1);
   const [maxSurgeFee, setMaxSurgeFee] = useState<number>(10);
@@ -362,11 +363,104 @@ export default function StableSurge() {
     });
   };
 
+  // Add state for real pool loading
+  const [network, setNetwork] = useState<string>('base-mainnet');
+  const [address, setAddress] = useState<string>(
+    '0x7AB124EC4029316c2A42F713828ddf2a192B36db'
+  );
+
+  // Handler to load real pool data
+  const handleLoadPool = async () => {
+    const res = await fetch(
+      `${process.env.REACT_APP_FUNCTION_URL}/stableSurgeData?network=${network}&address=${address}`
+    );
+
+    const data: {
+      numberOfTokens: number;
+      balances: number[];
+      amplificationParameter: number;
+      staticSwapFeePercentage: number;
+      maxSurgeFeePercentage: number;
+      surgeThreshold: number;
+    } = await res.json();
+
+    setInputTokenCount(data.numberOfTokens);
+    setTokenCount(data.numberOfTokens);
+
+    const balances = data.balances.map(x => x / Math.pow(10, 18));
+    setInputBalances(balances);
+    setInitialBalances(balances);
+    setCurrentBalances(balances);
+
+    setInputAmplification(data.amplificationParameter);
+    setAmplification(data.amplificationParameter);
+
+    const staticSwapFeePercentage =
+      data.staticSwapFeePercentage / Math.pow(10, 16);
+    setInputSwapFee(staticSwapFeePercentage);
+    setSwapFee(staticSwapFeePercentage);
+
+    const maxSurgeFeePercentage = data.maxSurgeFeePercentage / Math.pow(10, 16);
+    setInputMaxSurgeFee(maxSurgeFeePercentage);
+    setMaxSurgeFee(maxSurgeFeePercentage);
+
+    const surgeThreshold = data.surgeThreshold / Math.pow(10, 16);
+    setInputSurgeThreshold(surgeThreshold);
+    setSurgeThreshold(surgeThreshold);
+
+    // setTotalFees(Array(balances.length).fill(0));
+    // // Optionally set other params if available
+  };
+
   return (
     <Container>
       <Grid container spacing={2}>
         {/* Left Column - Controls */}
         <Grid item xs={3}>
+          {/* Load Real Pool Section */}
+          <Accordion>
+            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+              <Typography variant='h6'>Load Real Pool</Typography>
+            </AccordionSummary>
+            <AccordionDetails>
+              <TextField
+                select
+                label='Network'
+                fullWidth
+                margin='normal'
+                value={network}
+                onChange={e => setNetwork(e.target.value)}
+                SelectProps={{
+                  native: true,
+                }}
+              >
+                {NETWORKS.sort((a, b) => a.name.localeCompare(b.name)).map(
+                  n => (
+                    <option key={n.network} value={n.network}>
+                      {n.name}
+                    </option>
+                  )
+                )}
+              </TextField>
+              <TextField
+                label='Address'
+                type='text'
+                fullWidth
+                margin='normal'
+                value={address}
+                onChange={e => setAddress(e.target.value)}
+              />
+              <Button
+                variant='contained'
+                fullWidth
+                onClick={handleLoadPool}
+                style={{ marginTop: 16 }}
+              >
+                Load Pool
+              </Button>
+            </AccordionDetails>
+          </Accordion>
+
           <Accordion>
             <AccordionSummary expandIcon={<ExpandMoreIcon />}>
               <Typography variant='h6'>Initialize Pool</Typography>
