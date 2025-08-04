@@ -1,6 +1,7 @@
 import React, { useRef, useEffect, useMemo } from 'react';
 import * as d3 from 'd3';
 import { calculateLowerMargin, calculateUpperMargin } from './ReClammMath';
+import { Tooltip } from '../../components/chart/Tooltip';
 
 interface ReClammChartProps {
   realTimeBalanceA: number;
@@ -42,14 +43,17 @@ export const ReClammChart: React.FC<ReClammChartProps> = ({
     const xForPointB =
       realTimeInvariant / realTimeVirtualBalances.virtualBalanceB;
 
+    const firstChartX =
+      realTimeVirtualBalances.virtualBalanceA -
+      MARGIN * (xForPointB - realTimeVirtualBalances.virtualBalanceA);
+    const lastChartX =
+      xForPointB +
+      MARGIN * (xForPointB - realTimeVirtualBalances.virtualBalanceA);
+    const chartXRange = lastChartX - firstChartX;
+
     // Create regular curve points
     const curvePoints = Array.from({ length: NUM_POINTS }, (_, i) => {
-      const x =
-        (1 - MARGIN) * realTimeVirtualBalances.virtualBalanceA +
-        (i *
-          ((1 + MARGIN) * xForPointB -
-            (1 - MARGIN) * realTimeVirtualBalances.virtualBalanceA)) /
-          NUM_POINTS;
+      const x = firstChartX + (i * chartXRange) / NUM_POINTS;
       const y = realTimeInvariant / x;
 
       return { x, y };
@@ -348,6 +352,8 @@ export const ReClammChart: React.FC<ReClammChartProps> = ({
         .attr('stroke-width', 2)
         .attr('d', line);
 
+      const tooltip = Tooltip();
+
       // Add special points (min/max prices) for both real-time and current
       svg
         .selectAll('.point-price')
@@ -358,23 +364,29 @@ export const ReClammChart: React.FC<ReClammChartProps> = ({
         .attr('cx', d => xScale(d.x))
         .attr('cy', d => yScale(d.y))
         .attr('r', 5)
-        .attr('fill', 'red');
+        .attr('fill', 'red')
+        .on('mouseover', (event, d) => {
+          tooltip
+            .style('opacity', 1)
+            .html(
+              `Balance A: ${(
+                d.x - realTimeVirtualBalances.virtualBalanceA
+              ).toFixed(
+                2
+              )}<br/>Balance B: ${(d.y - realTimeVirtualBalances.virtualBalanceB).toFixed(2)}`
+            )
+            .style('left', event.pageX + 10 + 'px')
+            .style('top', event.pageY - 10 + 'px');
+        })
+        .on('mouseout', () => {
+          tooltip.style('opacity', 0);
+        })
+        .on('mousemove', event => {
+          tooltip
+            .style('left', event.pageX + 10 + 'px')
+            .style('top', event.pageY - 10 + 'px');
+        });
 
-      // Add tooltip div
-      const tooltip = d3
-        .select('body')
-        .append('div')
-        .attr('class', 'tooltip')
-        .style('opacity', 0)
-        .style('position', 'absolute')
-        .style('background-color', 'white')
-        .style('border', '1px solid #ddd')
-        .style('border-radius', '4px')
-        .style('padding', '8px')
-        .style('pointer-events', 'none')
-        .style('font-size', '12px');
-
-      // Modify the balance points section
       svg
         .selectAll('.point-balance')
         .data(specialPoints.slice(4, 6)) // Real-time and current balances
@@ -389,9 +401,9 @@ export const ReClammChart: React.FC<ReClammChartProps> = ({
           tooltip
             .style('opacity', 1)
             .html(
-              `Real Balance A: ${realTimeBalanceA.toFixed(
+              `Balance A: ${realTimeBalanceA.toFixed(
                 2
-              )}<br/>Real Balance B: ${realTimeBalanceB.toFixed(2)}`
+              )}<br/>Balance B: ${realTimeBalanceB.toFixed(2)}`
             )
             .style('left', event.pageX + 10 + 'px')
             .style('top', event.pageY - 10 + 'px');
@@ -415,7 +427,28 @@ export const ReClammChart: React.FC<ReClammChartProps> = ({
         .attr('cx', d => xScale(d.x))
         .attr('cy', d => yScale(d.y))
         .attr('r', 5)
-        .attr('fill', 'blue');
+        .attr('fill', 'blue')
+        .on('mouseover', (event, d) => {
+          tooltip
+            .style('opacity', 1)
+            .html(
+              `Balance A: ${(
+                d.x - realTimeVirtualBalances.virtualBalanceA
+              ).toFixed(
+                2
+              )}<br/>Balance B: ${(d.y - realTimeVirtualBalances.virtualBalanceB).toFixed(2)}`
+            )
+            .style('left', event.pageX + 10 + 'px')
+            .style('top', event.pageY - 10 + 'px');
+        })
+        .on('mouseout', () => {
+          tooltip.style('opacity', 0);
+        })
+        .on('mousemove', event => {
+          tooltip
+            .style('left', event.pageX + 10 + 'px')
+            .style('top', event.pageY - 10 + 'px');
+        });
 
       // Add axis labels
       svg
