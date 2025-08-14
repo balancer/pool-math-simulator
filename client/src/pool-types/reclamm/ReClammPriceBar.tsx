@@ -151,13 +151,20 @@ export const ReClammPriceBar: React.FC<ReClammPriceBarProps> = ({
     priceData.forEach((d, _) => {
       const x = xScale(d.value);
 
-      // Add vertical line
+      // Add vertical line with different lengths based on color
+      const lineY2 =
+        d.color === 'blue'
+          ? chartHeight * 0.7
+          : d.color === 'red'
+            ? chartHeight * 0.7 + 15
+            : chartHeight * 0.7;
+
       chart
         .append('line')
         .attr('x1', x)
         .attr('y1', chartHeight * 0.3)
         .attr('x2', x)
-        .attr('y2', chartHeight * 0.7)
+        .attr('y2', lineY2)
         .attr('stroke', d.color)
         .attr('stroke-width', 3)
         .attr('opacity', 0.8);
@@ -172,11 +179,18 @@ export const ReClammPriceBar: React.FC<ReClammPriceBarProps> = ({
         .attr('stroke', '#fff')
         .attr('stroke-width', 2);
 
-      // Add value label on top
+      // Add value label with different positions based on color
+      const labelY =
+        d.color === 'green'
+          ? chartHeight * 0.2 // Green stays above
+          : d.color === 'red'
+            ? chartHeight * 0.8 + 20 // Red at blue's level
+            : chartHeight * 0.8 + 5; // Blue at red's level
+
       chart
         .append('text')
         .attr('x', x)
-        .attr('y', chartHeight * 0.2)
+        .attr('y', labelY)
         .attr('text-anchor', 'middle')
         .attr('font-size', '12px')
         .attr('fill', d.color)
