@@ -600,7 +600,12 @@ export default function StableSurge() {
                 fullWidth
                 margin='normal'
                 value={swapTokenInIndex}
-                onChange={e => setSwapTokenInIndex(Number(e.target.value))}
+                onChange={e => {
+                  if (Number(e.target.value) === swapTokenOutIndex) {
+                    setSwapTokenOutIndex(swapTokenInIndex);
+                  }
+                  setSwapTokenInIndex(Number(e.target.value));
+                }}
                 SelectProps={{
                   native: true,
                 }}
@@ -616,27 +621,20 @@ export default function StableSurge() {
                 fullWidth
                 margin='normal'
                 value={swapTokenOutIndex}
-                onChange={e => setSwapTokenOutIndex(Number(e.target.value))}
+                onChange={e => {
+                  if (Number(e.target.value) === swapTokenInIndex) {
+                    setSwapTokenInIndex(swapTokenOutIndex);
+                  }
+                  setSwapTokenOutIndex(Number(e.target.value));
+                }}
                 SelectProps={{
                   native: true,
                 }}
               >
-                <option value={0} disabled={swapTokenInIndex === 0}>
-                  {tokenNames[0]}
-                </option>
-                <option value={1} disabled={swapTokenInIndex === 1}>
-                  {tokenNames[1]}
-                </option>
-                {tokenCount >= 3 && (
-                  <option value={2} disabled={swapTokenInIndex === 2}>
-                    {tokenNames[2]}
-                  </option>
-                )}
-                {tokenCount >= 4 && (
-                  <option value={3} disabled={swapTokenInIndex === 3}>
-                    {tokenNames[3]}
-                  </option>
-                )}
+                <option value={0}>{tokenNames[0]}</option>
+                <option value={1}>{tokenNames[1]}</option>
+                {tokenCount >= 3 && <option value={2}>{tokenNames[2]}</option>}
+                {tokenCount >= 4 && <option value={3}>{tokenNames[3]}</option>}
               </TextField>
               <TextField
                 label='Amount In'
