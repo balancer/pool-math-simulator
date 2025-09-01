@@ -9,6 +9,7 @@ import {
 } from 'react-router-dom';
 import ReClamm from './pool-types/reclamm/ReClamm';
 import StableSurge from './pool-types/stable-surge/StableSurge';
+import HyperTokens from './hyper-tokens/HyperTokens';
 import { TimerProvider } from './contexts/TimerContext';
 import styled from 'styled-components';
 
@@ -75,6 +76,7 @@ const Home = () => (
   <CenterMenu>
     <Link to='/reclamm'>ReClamm</Link>
     <Link to='/stable-surge'>Stable Surge</Link>
+    <Link to='/hyper-tokens'>Hyper Tokens</Link>
   </CenterMenu>
 );
 
@@ -100,6 +102,12 @@ const Navigation = () => {
         >
           Stable Surge
         </Link>
+        <Link
+          to='/hyper-tokens'
+          className={location.pathname === '/hyper-tokens' ? 'active' : ''}
+        >
+          Hyper Tokens
+        </Link>
       </NavLinks>
     </TopNav>
   );
@@ -115,6 +123,7 @@ function App() {
           <Route path='/reclamm' element={<ReClamm />} />
           <Route path='/acl-amm' element={<Navigate to='/reclamm' />} />
           <Route path='/stable-surge' element={<StableSurge />} />
+          <Route path='/hyper-tokens' element={<HyperTokens />} />
           <Route path='*' element={<Navigate to='/' />} />
         </Routes>
       </Router>
