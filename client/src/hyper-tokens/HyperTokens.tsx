@@ -21,6 +21,7 @@ interface Token {
 
 interface Pair {
   name: string;
+  tokens: number[];
   index: number;
 }
 
@@ -63,13 +64,18 @@ export default function HyperTokens() {
       setPairs(
         data.universe.map(pairObj => {
           const baseAssetIdx = pairObj.tokens[0];
-          const token = data.tokens.find(
+          const quoteAssetIdx = pairObj.tokens[1];
+          const baseAssetToken = data.tokens.find(
             tokenObj => tokenObj.index === baseAssetIdx
+          );
+          const quoteAssetToken = data.tokens.find(
+            tokenObj => tokenObj.index === quoteAssetIdx
           );
 
           return {
             index: pairObj.index,
-            name: `${token?.name} / USDC`,
+            name: `${baseAssetToken?.name} / ${quoteAssetToken?.name}`,
+            tokens: pairObj.tokens,
           };
         }) || []
       );
@@ -183,6 +189,9 @@ export default function HyperTokens() {
                   <strong>Name</strong>
                 </TableCell>
                 <TableCell>
+                  <strong>Tokens</strong>
+                </TableCell>
+                <TableCell>
                   <strong>Pair Index</strong>
                 </TableCell>
               </TableRow>
@@ -195,6 +204,7 @@ export default function HyperTokens() {
                 .map((pair, index) => (
                   <TableRow key={index}>
                     <TableCell>{pair.name}</TableCell>
+                    <TableCell>{pair.tokens.join(', ')}</TableCell>
                     <TableCell>{pair.index}</TableCell>
                   </TableRow>
                 ))}
