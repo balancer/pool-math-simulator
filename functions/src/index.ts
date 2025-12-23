@@ -25,7 +25,7 @@ function convertBigIntToNumber(obj: any): any {
 }
 
 export const reclammData = onRequest(
-  { cors: true },
+  { cors: true, timeoutSeconds: 300 },
   async (request, response) => {
     logger.info("Received request", { query: request.query });
 
@@ -96,7 +96,7 @@ export const reclammData = onRequest(
 );
 
 export const stableSurgeData = onRequest(
-  { cors: true },
+  { cors: true, timeoutSeconds: 300 },
   async (request, response) => {
     logger.info("Received request", { query: request.query });
 
