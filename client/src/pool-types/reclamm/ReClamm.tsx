@@ -12,6 +12,9 @@ import {
   Switch,
   FormControlLabel,
   Fade,
+  Backdrop,
+  CircularProgress,
+  Alert,
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { ReClammChart } from './ReClammChart';
@@ -152,6 +155,8 @@ export default function ReClamm() {
 
   // Add debug mode state
   const [debugMode, setDebugMode] = useState<boolean>(false);
+  const [isLoadingPool, setIsLoadingPool] = useState<boolean>(false);
+  const [loadPoolError, setLoadPoolError] = useState<string | null>(null);
 
   const realTimeInvariant = useMemo(() => {
     return calculateInvariant({
@@ -626,70 +631,93 @@ export default function ReClamm() {
   };
 
   const handleLoadPool = async () => {
-    const res = await fetch(
-      `${process.env.REACT_APP_FUNCTION_URL}/reclammData?network=${network}&address=${address}`
-    );
-    const data: {
-      priceRange: { minPrice: number; maxPrice: number };
-      virtualBalances: {
-        currentVirtualBalanceA: number;
-        currentVirtualBalanceB: number;
-      };
-      realBalances: number[];
-      dailyPriceShiftExponent: number;
-      centerednessMargin: number;
-    } = await res.json();
+    try {
+      setIsLoadingPool(true);
+      setLoadPoolError(null);
+      const res = await fetch(
+        `${process.env.REACT_APP_FUNCTION_URL}/reclammData?network=${network}&address=${address}`
+      );
 
-    const balanceA = data.realBalances[0] / Math.pow(10, 18);
-    const balanceB = data.realBalances[1] / Math.pow(10, 18);
-    const virtualBalanceA =
-      data.virtualBalances.currentVirtualBalanceA / Math.pow(10, 18);
-    const virtualBalanceB =
-      data.virtualBalances.currentVirtualBalanceB / Math.pow(10, 18);
+      if (!res.ok) {
+        throw new Error(`Failed to load pool: ${res.status} ${res.statusText}`);
+      }
 
-    const maxPrice = data.priceRange.maxPrice / Math.pow(10, 18);
-    const minPrice = data.priceRange.minPrice / Math.pow(10, 18);
+      const data: {
+        priceRange: { minPrice: number; maxPrice: number };
+        virtualBalances: {
+          currentVirtualBalanceA: number;
+          currentVirtualBalanceB: number;
+        };
+        realBalances: number[];
+        dailyPriceShiftExponent: number;
+        centerednessMargin: number;
+      } = await res.json();
 
-    const priceRatio = maxPrice / minPrice;
+      const balanceA = data.realBalances[0] / Math.pow(10, 18);
+      const balanceB = data.realBalances[1] / Math.pow(10, 18);
+      const virtualBalanceA =
+        data.virtualBalances.currentVirtualBalanceA / Math.pow(10, 18);
+      const virtualBalanceB =
+        data.virtualBalances.currentVirtualBalanceB / Math.pow(10, 18);
 
-    const margin = data.centerednessMargin / Math.pow(10, 16);
-    const priceShift = data.dailyPriceShiftExponent / Math.pow(10, 16);
+      const maxPrice = data.priceRange.maxPrice / Math.pow(10, 18);
+      const minPrice = data.priceRange.minPrice / Math.pow(10, 18);
 
-    const targetPrice =
-      (balanceB + virtualBalanceB) / (balanceA + virtualBalanceA);
+      const priceRatio = maxPrice / minPrice;
 
-    setInputMaxPrice(maxPrice);
-    setInputMinPrice(minPrice);
-    setInputTargetPrice(targetPrice);
-    setInputMargin(margin);
-    setPriceShiftDailyRate(priceShift);
+      const margin = data.centerednessMargin / Math.pow(10, 16);
+      const priceShift = data.dailyPriceShiftExponent / Math.pow(10, 16);
 
-    setInputBalanceA(balanceA);
-    setInitialBalanceA(balanceA);
-    setInitialBalanceB(balanceB);
-    setCurrentBalanceA(balanceA);
-    setCurrentBalanceB(balanceB);
-    setRealTimeBalanceA(balanceA);
-    setRealTimeBalanceB(balanceB);
+      const targetPrice =
+        (balanceB + virtualBalanceB) / (balanceA + virtualBalanceA);
 
-    setCurrentVirtualBalances({
-      virtualBalanceA,
-      virtualBalanceB,
-    });
-    setRealTimeVirtualBalances({
-      virtualBalanceA,
-      virtualBalanceB,
-    });
+      setInputMaxPrice(maxPrice);
+      setInputMinPrice(minPrice);
+      setInputTargetPrice(targetPrice);
+      setInputMargin(margin);
+      setPriceShiftDailyRate(priceShift);
 
-    setPriceRatio(priceRatio);
-    setStartPriceRatio(priceRatio);
-    setTargetPriceRatio(priceRatio);
-    setMargin(margin);
-    setMinPrice(minPrice);
-    setMaxPrice(maxPrice);
-    initializeInvariants(balanceA, balanceB, virtualBalanceA, virtualBalanceB);
-    setSimulationSeconds(0);
-    setBlockNumber(0);
+      setInputBalanceA(balanceA);
+      setInitialBalanceA(balanceA);
+      setInitialBalanceB(balanceB);
+      setCurrentBalanceA(balanceA);
+      setCurrentBalanceB(balanceB);
+      setRealTimeBalanceA(balanceA);
+      setRealTimeBalanceB(balanceB);
+
+      setCurrentVirtualBalances({
+        virtualBalanceA,
+        virtualBalanceB,
+      });
+      setRealTimeVirtualBalances({
+        virtualBalanceA,
+        virtualBalanceB,
+      });
+
+      setPriceRatio(priceRatio);
+      setStartPriceRatio(priceRatio);
+      setTargetPriceRatio(priceRatio);
+      setMargin(margin);
+      setMinPrice(minPrice);
+      setMaxPrice(maxPrice);
+      initializeInvariants(
+        balanceA,
+        balanceB,
+        virtualBalanceA,
+        virtualBalanceB
+      );
+      setSimulationSeconds(0);
+      setBlockNumber(0);
+    } catch (error) {
+      console.error('Error loading pool:', error);
+      setLoadPoolError(
+        error instanceof Error
+          ? error.message
+          : 'Failed to load pool. Please check the network and address.'
+      );
+    } finally {
+      setIsLoadingPool(false);
+    }
   };
 
   return (
@@ -750,6 +778,11 @@ export default function ReClamm() {
                 value={address}
                 onChange={e => setAddress(e.target.value)}
               />
+              {loadPoolError && (
+                <Alert severity='error' sx={{ marginTop: 2, marginBottom: 1 }}>
+                  {loadPoolError}
+                </Alert>
+              )}
               <Button
                 variant='contained'
                 fullWidth
@@ -1427,6 +1460,12 @@ export default function ReClamm() {
           </Grid>
         </Fade>
       </Grid>
+      <Backdrop
+        sx={{ color: '#fff', zIndex: theme => theme.zIndex.drawer + 1 }}
+        open={isLoadingPool}
+      >
+        <CircularProgress color='inherit' />
+      </Backdrop>
     </Container>
   );
 }
