@@ -18,6 +18,30 @@ interface ReClammPriceBarProps {
   margin: number;
 }
 
+/**
+ * Formats a price with variable decimal places based on its value:
+ * - If price < 1: 4 decimals
+ * - If price < 2: 3 decimals
+ * - If price < 10: 2 decimals
+ * - Otherwise: 2 decimals
+ */
+const formatPrice = (price: number): string => {
+  const absPrice = Math.abs(price);
+  let decimals: number;
+
+  if (absPrice < 1) {
+    decimals = 4;
+  } else if (absPrice < 2) {
+    decimals = 3;
+  } else if (absPrice < 10) {
+    decimals = 2;
+  } else {
+    decimals = 2;
+  }
+
+  return price.toFixed(decimals);
+};
+
 export const ReClammPriceBar: React.FC<ReClammPriceBarProps> = ({
   realTimeBalanceA,
   realTimeBalanceB,
@@ -195,7 +219,7 @@ export const ReClammPriceBar: React.FC<ReClammPriceBarProps> = ({
         .attr('font-size', '12px')
         .attr('fill', d.color)
         .attr('font-weight', 'bold')
-        .text(d.price.toFixed(1));
+        .text(formatPrice(d.price));
     });
   }, [priceData, containerWidth]);
 
