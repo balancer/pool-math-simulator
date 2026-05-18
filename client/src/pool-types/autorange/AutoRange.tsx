@@ -147,12 +147,12 @@ export default function AutoRange() {
 
   // Load network and address from localStorage or use defaults
   const getStoredNetwork = (): string => {
-    const stored = localStorage.getItem('reclamm-pool-network');
+    const stored = localStorage.getItem('autorange-pool-network');
     return stored || 'base-mainnet';
   };
 
   const getStoredAddress = (): string => {
-    const stored = localStorage.getItem('reclamm-pool-address');
+    const stored = localStorage.getItem('autorange-pool-address');
     return stored || '0x7dc81fb7e93cdde7754bff7f55428226bd9cef7b';
   };
 
@@ -383,8 +383,8 @@ export default function AutoRange() {
       setBlockNumber(0);
 
       // Save to localStorage on successful load
-      localStorage.setItem('reclamm-pool-network', poolNetwork);
-      localStorage.setItem('reclamm-pool-address', poolAddress);
+      localStorage.setItem('autorange-pool-network', poolNetwork);
+      localStorage.setItem('autorange-pool-address', poolAddress);
     } catch (error) {
       console.error('Error loading pool:', error);
       setLoadPoolError(
@@ -403,8 +403,8 @@ export default function AutoRange() {
 
   // Load pool from localStorage on mount if available
   useEffect(() => {
-    const storedNetwork = localStorage.getItem('reclamm-pool-network');
-    const storedAddress = localStorage.getItem('reclamm-pool-address');
+    const storedNetwork = localStorage.getItem('autorange-pool-network');
+    const storedAddress = localStorage.getItem('autorange-pool-address');
 
     if (storedNetwork && storedAddress) {
       // Ensure state is set to stored values
