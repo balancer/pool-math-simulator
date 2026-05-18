@@ -24,7 +24,7 @@ function convertBigIntToNumber(obj: any): any {
   return obj;
 }
 
-export const reclammData = onRequest(
+export const autorangeData = onRequest(
   { cors: true, timeoutSeconds: 300 },
   async (request, response) => {
     logger.info("Received request", { query: request.query });

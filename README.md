@@ -1,7 +1,7 @@
 # pool-math-simulator
 
 Simulator of Balancer's Pool Maths.
-Currently, it supports the simulation of "Stable Surge" pools and "ReClamm" pools.
+Currently, it supports the simulation of "Stable Surge" pools and "AutoRange" pools.
 
 ## How to run locally
 
@@ -21,7 +21,7 @@ In the functions folder:
 5. run `npm install`
 6. run `npm run serve`
 
-The functions project is only required if you want to fetch data from ReClamm pools.
+The functions project is only required if you want to fetch data from AutoRange pools.
 
 ## How to Deploy
 

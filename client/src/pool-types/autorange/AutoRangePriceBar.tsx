@@ -5,9 +5,9 @@ import {
   calculateLowerMargin,
   calculateUpperMargin,
   computeCenteredness,
-} from './ReClammMath';
+} from './AutoRangeMath';
 
-interface ReClammPriceBarProps {
+interface AutoRangePriceBarProps {
   realTimeBalanceA: number;
   realTimeBalanceB: number;
   realTimeVirtualBalances: {
@@ -42,7 +42,7 @@ const formatPrice = (price: number): string => {
   return price.toFixed(decimals);
 };
 
-export const ReClammPriceBar: React.FC<ReClammPriceBarProps> = ({
+export const AutoRangePriceBar: React.FC<AutoRangePriceBarProps> = ({
   realTimeBalanceA,
   realTimeBalanceB,
   realTimeVirtualBalances,
@@ -230,7 +230,7 @@ export const ReClammPriceBar: React.FC<ReClammPriceBarProps> = ({
         style={{ marginBottom: 16, textAlign: 'center' }}
         ref={containerRef}
       >
-        ReClamm Price Range
+        AutoRange Price Range
       </Typography>
       <div style={{ display: 'flex', justifyContent: 'center' }}>
         <svg ref={svgRef} width={containerWidth} height='120' />
