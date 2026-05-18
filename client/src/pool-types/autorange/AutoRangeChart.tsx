@@ -1,9 +1,9 @@
 import React, { useRef, useEffect, useMemo } from 'react';
 import * as d3 from 'd3';
-import { calculateLowerMargin, calculateUpperMargin } from './ReClammMath';
+import { calculateLowerMargin, calculateUpperMargin } from './AutoRangeMath';
 import { Tooltip } from '../../components/chart/Tooltip';
 
-interface ReClammChartProps {
+interface AutoRangeChartProps {
   realTimeBalanceA: number;
   realTimeBalanceB: number;
   margin: number;
@@ -25,7 +25,7 @@ interface ReClammChartProps {
 const NUM_POINTS = 100;
 const MARGIN = 0.1;
 
-export const ReClammChart: React.FC<ReClammChartProps> = ({
+export const AutoRangeChart: React.FC<AutoRangeChartProps> = ({
   realTimeBalanceA,
   realTimeBalanceB,
   margin,

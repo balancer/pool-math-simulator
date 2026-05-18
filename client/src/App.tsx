@@ -7,7 +7,7 @@ import {
   useLocation,
   Navigate,
 } from 'react-router-dom';
-import ReClamm from './pool-types/reclamm/ReClamm';
+import AutoRange from './pool-types/autorange/AutoRange';
 import StableSurge from './pool-types/stable-surge/StableSurge';
 import HyperTokens from './hyper-tokens/HyperTokens';
 import { TimerProvider } from './contexts/TimerContext';
@@ -74,7 +74,7 @@ const CenterMenu = styled.div`
 // Home component for the start menu
 const Home = () => (
   <CenterMenu>
-    <Link to='/reclamm'>ReClamm</Link>
+    <Link to='/autorange'>AutoRange</Link>
     <Link to='/stable-surge'>Stable Surge</Link>
     <Link to='/hyper-tokens'>Hyper Tokens</Link>
   </CenterMenu>
@@ -91,10 +91,10 @@ const Navigation = () => {
       </Logo>
       <NavLinks>
         <Link
-          to='/reclamm'
-          className={location.pathname === '/reclamm' ? 'active' : ''}
+          to='/autorange'
+          className={location.pathname === '/autorange' ? 'active' : ''}
         >
-          ReClamm
+          AutoRange
         </Link>
         <Link
           to='/stable-surge'
@@ -120,8 +120,9 @@ function App() {
         <Navigation />
         <Routes>
           <Route path='/' element={<Home />} />
-          <Route path='/reclamm' element={<ReClamm />} />
-          <Route path='/acl-amm' element={<Navigate to='/reclamm' />} />
+          <Route path='/autorange' element={<AutoRange />} />
+          <Route path='/reclamm' element={<Navigate to='/autorange' />} />
+          <Route path='/acl-amm' element={<Navigate to='/autorange' />} />
           <Route path='/stable-surge' element={<StableSurge />} />
           <Route path='/hyper-tokens' element={<HyperTokens />} />
           <Route path='*' element={<Navigate to='/' />} />
