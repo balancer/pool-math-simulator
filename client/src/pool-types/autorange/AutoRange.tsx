@@ -14,7 +14,7 @@ import {
   Fade,
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import { ReClammChart } from './ReClammChart';
+import { AutoRangeChart } from './AutoRangeChart';
 import {
   calculateLowerMargin,
   calculateOutGivenIn,
@@ -24,14 +24,14 @@ import {
   recalculateVirtualBalances,
   calculateInvariant,
   computePriceRatioFromBalances,
-} from './ReClammMath';
+} from './AutoRangeMath';
 import { MIN_SWAP, NETWORKS } from '../../constants';
 
 import { formatTime } from '../../utils/Time';
 import { toFixedDecimals } from '../../utils/ToFixedLib';
 import Timer from '../../components/Timer';
 import { useTimer } from '../../contexts/TimerContext';
-import { ReClammPriceBar } from './ReClammPriceBar';
+import { AutoRangePriceBar } from './AutoRangePriceBar';
 
 const defaultInitialBalanceA = 1000;
 const defaultInitialBalanceB = 2000;
@@ -45,7 +45,7 @@ const defaultMaxBalanceA = 3000;
 
 const tickMilliseconds = 10;
 
-export default function ReClamm() {
+export default function AutoRange() {
   // Simulation variables
   const {
     isPlaying,
@@ -629,7 +629,7 @@ export default function ReClamm() {
 
   const handleLoadPool = async () => {
     const res = await fetch(
-      `${process.env.REACT_APP_FUNCTION_URL}/reclammData?network=${network}&address=${address}`
+      `${process.env.REACT_APP_FUNCTION_URL}/autorangeData?network=${network}&address=${address}`
     );
     const data: {
       priceRange: { minPrice: number; maxPrice: number };
@@ -996,8 +996,8 @@ export default function ReClamm() {
         <Grid item xs={debugMode ? 6 : 9}>
           <Timer />
 
-          {/* ReClamm Price Bar */}
-          <ReClammPriceBar
+          {/* AutoRange Price Bar */}
+          <AutoRangePriceBar
             realTimeBalanceA={realTimeBalanceA}
             realTimeBalanceB={realTimeBalanceB}
             realTimeVirtualBalances={realTimeVirtualBalances}
@@ -1016,7 +1016,7 @@ export default function ReClamm() {
               }}
             >
               <div style={{ width: '100%', height: 600 }}>
-                <ReClammChart
+                <AutoRangeChart
                   realTimeBalanceA={realTimeBalanceA}
                   realTimeBalanceB={realTimeBalanceB}
                   realTimeVirtualBalances={realTimeVirtualBalances}
