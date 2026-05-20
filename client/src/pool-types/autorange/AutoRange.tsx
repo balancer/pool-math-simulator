@@ -568,7 +568,7 @@ export default function AutoRange() {
     }
 
     if (inputTargetPriceRatio <= 1 || inputTargetPriceRatio > 1000) {
-      setTargetPriceRatioError('Target price ratio must be between 1 and 1000');
+      setTargetPriceRatioError('Target price ratio must be greater than 1 and at most 1000');
       return;
     }
 
