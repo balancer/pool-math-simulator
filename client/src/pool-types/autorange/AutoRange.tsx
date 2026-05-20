@@ -403,15 +403,12 @@ export default function AutoRange() {
 
   // Load pool from localStorage on mount if available
   useEffect(() => {
-    const storedNetwork = localStorage.getItem('autorange-pool-network');
-    const storedAddress = localStorage.getItem('autorange-pool-address');
+    const hasStoredPool =
+      localStorage.getItem('autorange-pool-network') !== null &&
+      localStorage.getItem('autorange-pool-address') !== null;
 
-    if (storedNetwork && storedAddress) {
-      // Ensure state is set to stored values
-      setNetwork(storedNetwork);
-      setAddress(storedAddress);
-      // Auto-load the stored pool
-      loadPoolData(storedNetwork, storedAddress);
+    if (hasStoredPool) {
+      loadPoolData(network, address);
     } else {
       // Start default scenario and show chart.
       setTimeout(() => {
