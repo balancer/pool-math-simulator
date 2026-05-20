@@ -6,6 +6,10 @@ export const NETWORKS = [
     network: 'base-mainnet',
   },
   {
+    name: 'Plasma',
+    network: 'plasma-mainnet',
+  },
+  {
     name: 'Ethereum',
     network: 'eth-mainnet',
   },

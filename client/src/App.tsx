@@ -121,8 +121,14 @@ function App() {
         <Routes>
           <Route path='/' element={<Home />} />
           <Route path='/autorange' element={<AutoRange />} />
-          <Route path='/reclamm' element={<Navigate to='/autorange' replace />} />
-          <Route path='/acl-amm' element={<Navigate to='/autorange' replace />} />
+          <Route
+            path='/reclamm'
+            element={<Navigate to='/autorange' replace />}
+          />
+          <Route
+            path='/acl-amm'
+            element={<Navigate to='/autorange' replace />}
+          />
           <Route path='/stable-surge' element={<StableSurge />} />
           <Route path='/hyper-tokens' element={<HyperTokens />} />
           <Route path='*' element={<Navigate to='/' />} />

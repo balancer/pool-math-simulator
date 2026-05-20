@@ -1,0 +1,13 @@
+{
+  "name": "pool-math-simulator",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently -k -n functions,client -c blue,green \"npm run dev:functions\" \"npm run dev:client\"",
+    "dev:client": "npm --prefix client start",
+    "dev:functions": "npm --prefix functions run serve",
+    "postinstall": "npm --prefix client install && npm --prefix functions install"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0"
+  }
+}

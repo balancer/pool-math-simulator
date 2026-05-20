@@ -12,6 +12,9 @@ import {
   Switch,
   FormControlLabel,
   Fade,
+  Backdrop,
+  CircularProgress,
+  Alert,
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { AutoRangeChart } from './AutoRangeChart';
@@ -142,16 +145,27 @@ export default function AutoRange() {
   const [targetPriceRatioError, setTargetPriceRatioError] =
     useState<string>('');
 
-  const [network, setNetwork] = useState<string>('base-mainnet');
-  const [address, setAddress] = useState<string>(
-    '0x7dc81fb7e93cdde7754bff7f55428226bd9cef7b'
-  );
+  // Load network and address from localStorage or use defaults
+  const getStoredNetwork = (): string => {
+    const stored = localStorage.getItem('autorange-pool-network');
+    return stored || 'base-mainnet';
+  };
+
+  const getStoredAddress = (): string => {
+    const stored = localStorage.getItem('autorange-pool-address');
+    return stored || '0x7dc81fb7e93cdde7754bff7f55428226bd9cef7b';
+  };
+
+  const [network, setNetwork] = useState<string>(getStoredNetwork());
+  const [address, setAddress] = useState<string>(getStoredAddress());
 
   // Add new state for LP fee percentage
   const [lpFeePercent, setLpFeePercent] = useState<number>(1);
 
   // Add debug mode state
   const [debugMode, setDebugMode] = useState<boolean>(false);
+  const [isLoadingPool, setIsLoadingPool] = useState<boolean>(false);
+  const [loadPoolError, setLoadPoolError] = useState<string | null>(null);
 
   const realTimeInvariant = useMemo(() => {
     return calculateInvariant({
@@ -287,24 +301,134 @@ export default function AutoRange() {
     return (inputBalanceA * idealBalanceB) / idealBalanceA;
   }, [inputBalanceA, idealBalanceB, idealBalanceA]);
 
-  // Start default scenario and show chart.
-  useEffect(() => {
-    setTimeout(() => {
+  // Helper function to load pool data (can be called with specific network/address)
+  const loadPoolData = async (poolNetwork: string, poolAddress: string) => {
+    try {
+      setIsLoadingPool(true);
+      setLoadPoolError(null);
+      const res = await fetch(
+        `${process.env.REACT_APP_FUNCTION_URL}/autorangeData?network=${poolNetwork}&address=${poolAddress}`
+      );
+
+      if (!res.ok) {
+        throw new Error(`Failed to load pool: ${res.status} ${res.statusText}`);
+      }
+
+      const data: {
+        priceRange: { minPrice: number; maxPrice: number };
+        virtualBalances: {
+          currentVirtualBalanceA: number;
+          currentVirtualBalanceB: number;
+        };
+        realBalances: number[];
+        dailyPriceShiftExponent: number;
+        centerednessMargin: number;
+      } = await res.json();
+
+      const balanceA = data.realBalances[0] / Math.pow(10, 18);
+      const balanceB = data.realBalances[1] / Math.pow(10, 18);
+      const virtualBalanceA =
+        data.virtualBalances.currentVirtualBalanceA / Math.pow(10, 18);
+      const virtualBalanceB =
+        data.virtualBalances.currentVirtualBalanceB / Math.pow(10, 18);
+
+      const maxPrice = data.priceRange.maxPrice / Math.pow(10, 18);
+      const minPrice = data.priceRange.minPrice / Math.pow(10, 18);
+
+      const priceRatio = maxPrice / minPrice;
+
+      const margin = data.centerednessMargin / Math.pow(10, 16);
+      const priceShift = data.dailyPriceShiftExponent / Math.pow(10, 16);
+
+      const targetPrice =
+        (balanceB + virtualBalanceB) / (balanceA + virtualBalanceA);
+
+      setInputMaxPrice(maxPrice);
+      setInputMinPrice(minPrice);
+      setInputTargetPrice(targetPrice);
+      setTargetPrice(targetPrice);
+      setInputMargin(margin);
+      setPriceShiftDailyRate(priceShift);
+
+      setInputBalanceA(balanceA);
+      setInitialBalanceA(balanceA);
+      setInitialBalanceB(balanceB);
+      setCurrentBalanceA(balanceA);
+      setCurrentBalanceB(balanceB);
+      setRealTimeBalanceA(balanceA);
+      setRealTimeBalanceB(balanceB);
+
       setCurrentVirtualBalances({
-        virtualBalanceA: inputVirtualBalanceA,
-        virtualBalanceB: inputVirtualBalanceB,
+        virtualBalanceA,
+        virtualBalanceB,
       });
       setRealTimeVirtualBalances({
-        virtualBalanceA: inputVirtualBalanceA,
-        virtualBalanceB: inputVirtualBalanceB,
+        virtualBalanceA,
+        virtualBalanceB,
       });
+
+      setPriceRatio(priceRatio);
+      setStartPriceRatio(priceRatio);
+      setTargetPriceRatio(priceRatio);
+      setMargin(margin);
+      setMinPrice(minPrice);
+      setMaxPrice(maxPrice);
       initializeInvariants(
-        inputBalanceA,
-        initialBalanceB,
-        inputVirtualBalanceA,
-        inputVirtualBalanceB
+        balanceA,
+        balanceB,
+        virtualBalanceA,
+        virtualBalanceB
       );
-    }, 1);
+      setSimulationSeconds(0);
+      setBlockNumber(0);
+
+      // Save to localStorage on successful load
+      localStorage.setItem('autorange-pool-network', poolNetwork);
+      localStorage.setItem('autorange-pool-address', poolAddress);
+    } catch (error) {
+      console.error('Error loading pool:', error);
+      setLoadPoolError(
+        error instanceof Error
+          ? error.message
+          : 'Failed to load pool. Please check the network and address.'
+      );
+    } finally {
+      setIsLoadingPool(false);
+    }
+  };
+
+  const handleLoadPool = async () => {
+    await loadPoolData(network, address);
+  };
+
+  // Load pool from localStorage on mount if available
+  useEffect(() => {
+    const hasStoredPool =
+      localStorage.getItem('autorange-pool-network') !== null &&
+      localStorage.getItem('autorange-pool-address') !== null;
+
+    if (hasStoredPool) {
+      loadPoolData(network, address);
+    } else {
+      // Start default scenario and show chart.
+      setTimeout(() => {
+        setCurrentVirtualBalances({
+          virtualBalanceA: inputVirtualBalanceA,
+          virtualBalanceB: inputVirtualBalanceB,
+        });
+        setRealTimeVirtualBalances({
+          virtualBalanceA: inputVirtualBalanceA,
+          virtualBalanceB: inputVirtualBalanceB,
+        });
+        initializeInvariants(
+          inputBalanceA,
+          initialBalanceB,
+          inputVirtualBalanceA,
+          inputVirtualBalanceB
+        );
+      }, 1);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -440,10 +564,8 @@ export default function AutoRange() {
       return;
     }
 
-    if (inputTargetPriceRatio < 1.1 || inputTargetPriceRatio > 1000) {
-      setTargetPriceRatioError(
-        'Target price ratio must be between 1.1 and 1000'
-      );
+    if (inputTargetPriceRatio <= 1 || inputTargetPriceRatio > 1000) {
+      setTargetPriceRatioError('Target price ratio must be greater than 1 and at most 1000');
       return;
     }
 
@@ -627,73 +749,6 @@ export default function AutoRange() {
     );
   };
 
-  const handleLoadPool = async () => {
-    const res = await fetch(
-      `${process.env.REACT_APP_FUNCTION_URL}/autorangeData?network=${network}&address=${address}`
-    );
-    const data: {
-      priceRange: { minPrice: number; maxPrice: number };
-      virtualBalances: {
-        currentVirtualBalanceA: number;
-        currentVirtualBalanceB: number;
-      };
-      realBalances: number[];
-      dailyPriceShiftExponent: number;
-      centerednessMargin: number;
-    } = await res.json();
-
-    const balanceA = data.realBalances[0] / Math.pow(10, 18);
-    const balanceB = data.realBalances[1] / Math.pow(10, 18);
-    const virtualBalanceA =
-      data.virtualBalances.currentVirtualBalanceA / Math.pow(10, 18);
-    const virtualBalanceB =
-      data.virtualBalances.currentVirtualBalanceB / Math.pow(10, 18);
-
-    const maxPrice = data.priceRange.maxPrice / Math.pow(10, 18);
-    const minPrice = data.priceRange.minPrice / Math.pow(10, 18);
-
-    const priceRatio = maxPrice / minPrice;
-
-    const margin = data.centerednessMargin / Math.pow(10, 16);
-    const priceShift = data.dailyPriceShiftExponent / Math.pow(10, 16);
-
-    const targetPrice =
-      (balanceB + virtualBalanceB) / (balanceA + virtualBalanceA);
-
-    setInputMaxPrice(maxPrice);
-    setInputMinPrice(minPrice);
-    setInputTargetPrice(targetPrice);
-    setInputMargin(margin);
-    setPriceShiftDailyRate(priceShift);
-
-    setInputBalanceA(balanceA);
-    setInitialBalanceA(balanceA);
-    setInitialBalanceB(balanceB);
-    setCurrentBalanceA(balanceA);
-    setCurrentBalanceB(balanceB);
-    setRealTimeBalanceA(balanceA);
-    setRealTimeBalanceB(balanceB);
-
-    setCurrentVirtualBalances({
-      virtualBalanceA,
-      virtualBalanceB,
-    });
-    setRealTimeVirtualBalances({
-      virtualBalanceA,
-      virtualBalanceB,
-    });
-
-    setPriceRatio(priceRatio);
-    setStartPriceRatio(priceRatio);
-    setTargetPriceRatio(priceRatio);
-    setMargin(margin);
-    setMinPrice(minPrice);
-    setMaxPrice(maxPrice);
-    initializeInvariants(balanceA, balanceB, virtualBalanceA, virtualBalanceB);
-    setSimulationSeconds(0);
-    setBlockNumber(0);
-  };
-
   return (
     <Container>
       <Grid container spacing={2}>
@@ -752,6 +807,11 @@ export default function AutoRange() {
                 value={address}
                 onChange={e => setAddress(e.target.value)}
               />
+              {loadPoolError && (
+                <Alert severity='error' sx={{ marginTop: 2, marginBottom: 1 }}>
+                  {loadPoolError}
+                </Alert>
+              )}
               <Button
                 variant='contained'
                 fullWidth
@@ -1429,6 +1489,12 @@ export default function AutoRange() {
           </Grid>
         </Fade>
       </Grid>
+      <Backdrop
+        sx={{ color: '#fff', zIndex: theme => theme.zIndex.drawer + 1 }}
+        open={isLoadingPool}
+      >
+        <CircularProgress color='inherit' />
+      </Backdrop>
     </Container>
   );
 }

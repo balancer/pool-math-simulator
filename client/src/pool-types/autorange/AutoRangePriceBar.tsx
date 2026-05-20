@@ -18,6 +18,25 @@ interface AutoRangePriceBarProps {
   margin: number;
 }
 
+/**
+ * Formats a price with variable decimal places based on its value:
+ * - If price < 1: 4 decimals
+ * - If price < 2: 3 decimals
+ * - Otherwise: 2 decimals
+ */
+const formatPrice = (price: number): string => {
+  const absPrice = Math.abs(price);
+  let decimals = 2;
+
+  if (absPrice < 1) {
+    decimals = 4;
+  } else if (absPrice < 2) {
+    decimals = 3;
+  }
+
+  return price.toFixed(decimals);
+};
+
 export const AutoRangePriceBar: React.FC<AutoRangePriceBarProps> = ({
   realTimeBalanceA,
   realTimeBalanceB,
@@ -195,7 +214,7 @@ export const AutoRangePriceBar: React.FC<AutoRangePriceBarProps> = ({
         .attr('font-size', '12px')
         .attr('fill', d.color)
         .attr('font-weight', 'bold')
-        .text(d.price.toFixed(1));
+        .text(formatPrice(d.price));
     });
   }, [priceData, containerWidth]);
 
