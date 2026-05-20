@@ -386,6 +386,7 @@ export default function AutoRange() {
       localStorage.setItem('autorange-pool-network', poolNetwork);
       localStorage.setItem('autorange-pool-address', poolAddress);
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error('Error loading pool:', error);
       setLoadPoolError(
         error instanceof Error
@@ -565,7 +566,9 @@ export default function AutoRange() {
     }
 
     if (inputTargetPriceRatio <= 1 || inputTargetPriceRatio > 1000) {
-      setTargetPriceRatioError('Target price ratio must be greater than 1 and at most 1000');
+      setTargetPriceRatioError(
+        'Target price ratio must be greater than 1 and at most 1000'
+      );
       return;
     }
 
