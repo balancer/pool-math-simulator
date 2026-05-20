@@ -22,21 +22,16 @@ interface AutoRangePriceBarProps {
  * Formats a price with variable decimal places based on its value:
  * - If price < 1: 4 decimals
  * - If price < 2: 3 decimals
- * - If price < 10: 2 decimals
  * - Otherwise: 2 decimals
  */
 const formatPrice = (price: number): string => {
   const absPrice = Math.abs(price);
-  let decimals: number;
+  let decimals = 2;
 
   if (absPrice < 1) {
     decimals = 4;
   } else if (absPrice < 2) {
     decimals = 3;
-  } else if (absPrice < 10) {
-    decimals = 2;
-  } else {
-    decimals = 2;
   }
 
   return price.toFixed(decimals);
