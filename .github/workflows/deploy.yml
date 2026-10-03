@@ -40,10 +40,33 @@ jobs:
       - name: Install Firebase CLI
         run: npm install -g firebase-tools
 
+      - name: Check the Alchemy key on every network
+        env:
+          ALCHEMY_API_KEY: ${{ secrets.ALCHEMY_API_KEY }}
+        run: |
+          # Same networks as ALCHEMY_NETWORKS in functions/src/index.ts.
+          for network in base-mainnet plasma-mainnet eth-mainnet eth-sepolia \
+            opt-mainnet arb-mainnet gnosis-mainnet avax-mainnet sonic-mainnet; do
+            if curl -sf -X POST -H 'Content-Type: application/json' \
+              --data '{"jsonrpc":"2.0","id":1,"method":"eth_chainId","params":[]}' \
+              "https://${network}.g.alchemy.com/v2/${ALCHEMY_API_KEY}" \
+              | jq -e '.result' > /dev/null; then
+              echo "ok      $network"
+            else
+              echo "failed  $network"
+              exit 1
+            fi
+          done
+
+      # Deploys only the two functions the live site calls. The site itself is
+      # left alone, because the client in this repo calls autorangeData, which
+      # has never been deployed.
       - name: Deploy to Firebase
         run: |
           printf '%s' "$FIREBASE_SERVICE_ACCOUNT" > "$RUNNER_TEMP/sa.json"
           export GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/sa.json"
-          firebase deploy --project aclamm --non-interactive
+          printf 'ALCHEMY_API_KEY=%s\n' "$ALCHEMY_API_KEY" > functions/.env.aclamm
+          firebase deploy --only functions:stableSurgeData,functions:reclammData --project aclamm --non-interactive
         env:
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          ALCHEMY_API_KEY: ${{ secrets.ALCHEMY_API_KEY }}

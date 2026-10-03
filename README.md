@@ -25,5 +25,7 @@ The functions project is only required if you want to fetch data from AutoRange 
 
 ## How to Deploy
 
-First, build the client: access the client folder and type `npm run build`
+Pushes to `main` deploy the `stableSurgeData` and `reclammData` functions through GitHub Actions. The workflow reads the Alchemy API key from the `ALCHEMY_API_KEY` repository secret, checks that it works on every network, and writes it to `functions/.env.aclamm` for the deploy. Git ignores that file and the deploy does not upload it, but the key ends up as a plain environment variable on the functions, visible to anyone who can view the Firebase project. To change the key, update the repository secret and rerun the workflow.
+
+To deploy by hand, put the key in `functions/.env.aclamm`, then build the client: access the client folder and type `npm run build`
 Then, in the root folder of the project, run `firebase deploy`. If you have the permission to deploy to the project, this will deploy both site and functions to firebase.

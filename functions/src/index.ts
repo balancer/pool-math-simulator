@@ -1,6 +1,7 @@
-import { onRequest } from "firebase-functions/v2/https";
+import { onRequest, Request } from "firebase-functions/v2/https";
 import * as logger from "firebase-functions/logger";
 import { defineString } from "firebase-functions/params";
+import type { Response } from "express";
 import { Web3 } from "web3";
 import { reclammAbi } from "./abi/reclammAbi";
 import { stablePoolAbi } from "./abi/stablePoolAbi";
@@ -10,6 +11,26 @@ import { erc20Abi } from "./abi/erc20Abi";
 
 // Start writing functions
 // https://firebase.google.com/docs/functions/typescript
+
+// Never committed: the deploy reads it from a dotenv file that CI writes from
+// a repository secret. See "How to Deploy" in the README.
+const alchemyApiKey = defineString("ALCHEMY_API_KEY");
+
+// The network name becomes part of the RPC host name, so only the networks
+// the client offers are accepted. Keep in sync with client/src/constants.ts.
+const ALCHEMY_NETWORKS = new Set([
+  "base-mainnet",
+  "plasma-mainnet",
+  "eth-mainnet",
+  "eth-sepolia",
+  "opt-mainnet",
+  "arb-mainnet",
+  "gnosis-mainnet",
+  "avax-mainnet",
+  "sonic-mainnet",
+]);
+
+const ADDRESS_PATTERN = /^0x[0-9a-fA-F]{40}$/;
 
 function convertBigIntToNumber(obj: any): any {
   if (typeof obj === "bigint") {
@@ -24,28 +45,68 @@ function convertBigIntToNumber(obj: any): any {
   return obj;
 }
 
+// Reads `network` and `address` from the query string. If either is invalid,
+// sends a 400 response and returns undefined.
+function readPoolParams(
+  request: Request,
+  response: Response
+): { network: string; address: string } | undefined {
+  const { network, address } = request.query;
+
+  if (typeof network !== "string" || !ALCHEMY_NETWORKS.has(network)) {
+    logger.error("Unsupported network parameter", { query: request.query });
+    response.status(400).send("Unsupported 'network' query parameter.");
+    return undefined;
+  }
+
+  if (typeof address !== "string" || !ADDRESS_PATTERN.test(address)) {
+    logger.error("Invalid address parameter", { query: request.query });
+    response.status(400).send("Invalid 'address' query parameter.");
+    return undefined;
+  }
+
+  return { network, address };
+}
+
+// Describes the error for logging, with the API key removed. A failed RPC
+// request reports its full URL, which contains the key.
+function describeError(error: unknown): string {
+  const details = String(error instanceof Error ? error.stack : error);
+  const key = alchemyApiKey.value();
+  return key ? details.split(key).join("<ALCHEMY_API_KEY>") : details;
+}
+
+// Sends a 500 response, without the error details, if the handler throws.
+function withErrorHandling(
+  handler: (request: Request, response: Response) => Promise<void>
+) {
+  return async (request: Request, response: Response) => {
+    try {
+      await handler(request, response);
+    } catch (error) {
+      logger.error("Request failed", {
+        query: request.query,
+        error: describeError(error),
+      });
+      if (!response.headersSent) {
+        response.status(500).send("Failed to load pool data.");
+      }
+    }
+  };
+}
+
 export const autorangeData = onRequest(
   { cors: true },
-  async (request, response) => {
+  withErrorHandling(async (request, response) => {
     logger.info("Received request", { query: request.query });
 
-    // Extract network and address from the query string
-    const network = request.query.network as string;
-    const address = request.query.address as string;
-
-    // Basic validation (optional but recommended)
-    if (!network || !address) {
-      logger.error("Missing network or address parameters", {
-        query: request.query,
-      });
-      response
-        .status(400)
-        .send("Missing 'network' or 'address' query parameter.");
+    const params = readPoolParams(request, response);
+    if (!params) {
       return;
     }
+    const { network, address } = params;
 
-    const apiKey = defineString("ALCHEMY_API_KEY");
-    const rpcUrl = `https://${network}.g.alchemy.com/v2/${apiKey.value()}`;
+    const rpcUrl = `https://${network}.g.alchemy.com/v2/${alchemyApiKey.value()}`;
 
     const web3 = new Web3(rpcUrl);
 
@@ -74,7 +135,7 @@ export const autorangeData = onRequest(
               return priceShiftBase * 124649;
             } catch (error) {
               logger.error("Error getting daily price shift exponent", {
-                error,
+                error: describeError(error),
               });
               return 1e18;
             }
@@ -92,31 +153,24 @@ export const autorangeData = onRequest(
       dailyPriceShiftExponent,
       centerednessMargin,
     });
-  }
+  })
 );
+
+// The deployed site predates the AutoRange rename and still calls this name.
+export const reclammData = autorangeData;
 
 export const stableSurgeData = onRequest(
   { cors: true },
-  async (request, response) => {
+  withErrorHandling(async (request, response) => {
     logger.info("Received request", { query: request.query });
 
-    // Extract network and address from the query string
-    const network = request.query.network as string;
-    const address = request.query.address as string;
-
-    // Basic validation (optional but recommended)
-    if (!network || !address) {
-      logger.error("Missing network or address parameters", {
-        query: request.query,
-      });
-      response
-        .status(400)
-        .send("Missing 'network' or 'address' query parameter.");
+    const params = readPoolParams(request, response);
+    if (!params) {
       return;
     }
+    const { network, address } = params;
 
-    const apiKey = defineString("ALCHEMY_API_KEY");
-    const rpcUrl = `https://${network}.g.alchemy.com/v2/${apiKey.value()}`;
+    const rpcUrl = `https://${network}.g.alchemy.com/v2/${alchemyApiKey.value()}`;
 
     const web3 = new Web3(rpcUrl);
 
@@ -184,5 +238,5 @@ export const stableSurgeData = onRequest(
       maxSurgeFeePercentage,
       surgeThreshold,
     });
-  }
+  })
 );
