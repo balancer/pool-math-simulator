@@ -58,6 +58,26 @@ jobs:
             fi
           done
 
+      # The firebase-functions SDK lists an empty "extensions" entry in its
+      # manifest, and firebase-tools takes that as a request to deploy Firebase
+      # Extensions. That step checks billing through the Cloud Billing API,
+      # which is turned off in this project and which the deploy account cannot
+      # turn on. firebase-tools reads functions/functions.yaml instead of asking
+      # the SDK when the file exists, so this writes the SDK's manifest there
+      # without that entry.
+      - name: Write the functions manifest without the extensions entry
+        working-directory: ./functions
+        run: |
+          FUNCTIONS_CONTROL_API=true node -e '
+            const { loadStack } = require("./node_modules/firebase-functions/lib/runtime/loader.js");
+            const { stackToWire } = require("./node_modules/firebase-functions/lib/runtime/manifest.js");
+            loadStack(".").then((stack) => {
+              const manifest = stackToWire(stack);
+              delete manifest.extensions;
+              require("fs").writeFileSync("functions.yaml", JSON.stringify(manifest, null, 2));
+            });
+          '
+
       # Deploys only the two functions the live site calls. The site itself is
       # left alone, because the client in this repo calls autorangeData, which
       # has never been deployed.
